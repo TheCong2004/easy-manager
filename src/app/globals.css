@@ -296,6 +296,14 @@
 }
 
 /* third-party libraries CSS */
+.apexcharts-legend {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
 .apexcharts-legend-text {
   @apply !text-gray-700 dark:!text-gray-400;
 }
