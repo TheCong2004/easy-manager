@@ -17,40 +17,19 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     setIsOpen(false);
   }
   return (
-    <div className="relative">
+    <div className="relative flex items-center">
       <button
         onClick={toggleDropdown} 
-        className="flex items-center text-gray-700 dark:text-gray-400 dropdown-toggle"
+        className="flex items-center text-gray-700 dark:text-gray-400 dropdown-toggle cursor-pointer"
       >
-        <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
+        <span className="overflow-hidden rounded-full h-7 w-7 border border-gray-200 dark:border-gray-800 flex-shrink-0">
           <Image
-            width={44}
-            height={44}
+            width={28}
+            height={28}
             src="/images/user/owner.jpg"
             alt="User"
           />
         </span>
-
-        <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
-
-        <svg
-          className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          width="18"
-          height="20"
-          viewBox="0 0 18 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M4.3125 8.65625L9 13.3437L13.6875 8.65625"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
       </button>
 
       <Dropdown
