@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { LandingPageItem, TemplateItem, FormConfigItem } from "@/components/landing-pages/dung-chung/types";
+import { LandingPageItem, TemplateItem, FormConfigItem, TagItem } from "@/components/landing-pages/dung-chung/types";
 import { SubSidebar } from "@/components/landing-pages/sidebar/SubSidebar";
 import { PagesList } from "@/components/landing-pages/pages/PagesList";
 import { TemplatesLibrary } from "@/components/landing-pages/templates/TemplatesLibrary";
 import { FormConfig } from "@/components/landing-pages/form-config/FormConfig";
+import { TagManagement } from "@/components/landing-pages/tags/TagManagement";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
 
@@ -104,6 +105,17 @@ const templatesData: TemplateItem[] = [
   },
 ];
 
+const initialTags: TagItem[] = [
+  {
+    id: "1",
+    name: "oke",
+    count: 0,
+    createdAt: "17:20, 13/06/2026",
+    status: "UNLOCKED",
+    updatedAt: "17:20, 13/06/2026",
+  },
+];
+
 export default function LandingPagesManagement() {
   const [pages, setPages] = useState<LandingPageItem[]>(initialPages);
   const [activeSubTab, setActiveSubTab] = useState("pages");
@@ -125,6 +137,9 @@ export default function LandingPagesManagement() {
 
   // Form Config Sub-View States
   const [formConfigs, setFormConfigs] = useState<FormConfigItem[]>([]);
+
+  // Tag Management Sub-View States
+  const [tags, setTags] = useState<TagItem[]>(initialTags);
 
   // Handler for select-all checkbox
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,6 +206,19 @@ export default function LandingPagesManagement() {
     setFormConfigs(prev => [newConfig, ...prev]);
   };
 
+  // Add a new Tag
+  const handleAddTag = (name: string) => {
+    const newTag: TagItem = {
+      id: String(Date.now()),
+      name,
+      count: 0,
+      createdAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+      status: "UNLOCKED",
+      updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+    };
+    setTags(prev => [newTag, ...prev]);
+  };
+
   // Filter calculation for pages
   const filteredPages = pages.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -238,6 +266,11 @@ export default function LandingPagesManagement() {
           <FormConfig 
             configs={formConfigs}
             onAddConfig={handleAddFormConfig}
+          />
+        ) : activeSubTab === "tags" ? (
+          <TagManagement 
+            tags={tags}
+            onAddTag={handleAddTag}
           />
         ) : (
           <PagesList 

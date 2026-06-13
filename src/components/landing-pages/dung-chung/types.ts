@@ -27,3 +27,13 @@ export type FormConfigItem = {
   status: "ACTIVE" | "INACTIVE";
   updatedAt: string;
 };
+
+export type TagItem = {
+  id: string;
+  name: string;
+  count: number;
+  createdAt: string;
+  status: "LOCKED" | "UNLOCKED";
+  updatedAt: string;
+};
+
