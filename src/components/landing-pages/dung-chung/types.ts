@@ -18,3 +18,12 @@ export type TemplateItem = {
   likes: number;
   scrollDist: string;
 };
+
+export type FormConfigItem = {
+  id: string;
+  name: string;
+  linkedAccounts: number;
+  type: "Google Forms" | "API" | "OTP";
+  status: "ACTIVE" | "INACTIVE";
+  updatedAt: string;
+};

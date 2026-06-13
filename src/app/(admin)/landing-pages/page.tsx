@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { LandingPageItem, TemplateItem } from "@/components/landing-pages/dung-chung/types";
+import { LandingPageItem, TemplateItem, FormConfigItem } from "@/components/landing-pages/dung-chung/types";
 import { SubSidebar } from "@/components/landing-pages/sidebar/SubSidebar";
 import { PagesList } from "@/components/landing-pages/pages/PagesList";
 import { TemplatesLibrary } from "@/components/landing-pages/templates/TemplatesLibrary";
+import { FormConfig } from "@/components/landing-pages/form-config/FormConfig";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
 
@@ -122,6 +123,9 @@ export default function LandingPagesManagement() {
   const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState<TemplateItem | null>(null);
   const [likedTemplates, setLikedTemplates] = useState<Record<string, boolean>>({});
 
+  // Form Config Sub-View States
+  const [formConfigs, setFormConfigs] = useState<FormConfigItem[]>([]);
+
   // Handler for select-all checkbox
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -174,6 +178,19 @@ export default function LandingPagesManagement() {
     setLikedTemplates(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // Add a new Form configuration
+  const handleAddFormConfig = (name: string, type: "Google Forms" | "API" | "OTP") => {
+    const newConfig: FormConfigItem = {
+      id: String(Date.now()),
+      name,
+      linkedAccounts: 1, // mock count
+      type,
+      status: "ACTIVE",
+      updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+    };
+    setFormConfigs(prev => [newConfig, ...prev]);
+  };
+
   // Filter calculation for pages
   const filteredPages = pages.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -216,6 +233,11 @@ export default function LandingPagesManagement() {
             toggleLikeTemplate={toggleLikeTemplate}
             setSelectedTemplateForPreview={setSelectedTemplateForPreview}
             handleUseTemplate={handleUseTemplate}
+          />
+        ) : activeSubTab === "forms" ? (
+          <FormConfig 
+            configs={formConfigs}
+            onAddConfig={handleAddFormConfig}
           />
         ) : (
           <PagesList 
