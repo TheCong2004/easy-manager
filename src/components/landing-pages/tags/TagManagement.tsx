@@ -107,7 +107,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                     className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
                   />
                 </th>
-                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                   <div className="flex items-center gap-1.5 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200">
                     <span>Tên Tag</span>
                     <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -115,7 +115,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                     </svg>
                   </div>
                 </th>
-                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                   <div className="flex items-center gap-1.5 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200">
                     <span>Số lượng</span>
                     <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -123,7 +123,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                     </svg>
                   </div>
                 </th>
-                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                   <div className="flex items-center gap-1.5 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200">
                     <span>Ngày tạo</span>
                     <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -131,10 +131,10 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                     </svg>
                   </div>
                 </th>
-                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                   Trạng thái
                 </th>
-                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                   <div className="flex items-center gap-1.5 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200">
                     <span>Ngày cập nhật</span>
                     <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

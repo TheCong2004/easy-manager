@@ -181,19 +181,19 @@ export const FormConfig: React.FC<FormConfigProps> = ({
                       className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
                     />
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                  <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                     Tên cấu hình Form
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                  <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                     Số tài khoản liên kết
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                  <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                     Loại cấu hình
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                  <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                  <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
                     Ngày cập nhật
                   </th>
                   <th className="py-3 px-4 w-16 text-center"></th>
