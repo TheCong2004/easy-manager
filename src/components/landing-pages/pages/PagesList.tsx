@@ -180,11 +180,11 @@ export const PagesList: React.FC<PagesListProps> = ({
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col items-start gap-1">
                           {item.status === "PUBLISHED" ? (
-                            <span className="px-2 py-0.5 text-[10px] font-bold text-success-600 bg-success-50 dark:text-success-400 dark:bg-success-950/20 rounded-md">
+                            <span className="px-2.5 py-0.5 text-[10px] font-black text-success-700 bg-success-100 dark:text-success-300 dark:bg-success-950/40 rounded-md tracking-wider">
                               ĐÃ XUẤT BẢN
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 dark:text-slate-400 dark:bg-gray-800 rounded-md uppercase">
+                            <span className="px-2.5 py-0.5 text-[10px] font-black text-slate-700 bg-slate-200/60 dark:text-slate-300 dark:bg-gray-800 rounded-md uppercase tracking-wider">
                               Chưa xuất bản
                             </span>
                           )}

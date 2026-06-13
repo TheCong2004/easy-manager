@@ -238,11 +238,11 @@ export const FormConfig: React.FC<FormConfigProps> = ({
                       </td>
                       <td className="py-3.5 px-4">
                         {item.status === "ACTIVE" ? (
-                          <span className="px-2 py-0.5 text-[10px] font-bold text-success-600 bg-success-50 dark:text-success-400 dark:bg-success-950/20 rounded-md">
+                          <span className="px-2.5 py-0.5 text-[10px] font-black text-success-700 bg-success-100 dark:text-success-300 dark:bg-success-950/40 rounded-md tracking-wider">
                             ĐANG HOẠT ĐỘNG
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 dark:text-slate-400 dark:bg-gray-800 rounded-md">
+                          <span className="px-2.5 py-0.5 text-[10px] font-black text-slate-700 bg-slate-200/60 dark:text-slate-300 dark:bg-gray-800 rounded-md tracking-wider">
                             TẠM DỪNG
                           </span>
                         )}
