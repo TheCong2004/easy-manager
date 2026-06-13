@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { LandingPageItem, TemplateItem, FormConfigItem, TagItem } from "@/components/landing-pages/dung-chung/types";
+import { LandingPageItem, TemplateItem, FormConfigItem, TagItem, DomainItem } from "@/components/landing-pages/dung-chung/types";
 import { SubSidebar } from "@/components/landing-pages/sidebar/SubSidebar";
 import { PagesList } from "@/components/landing-pages/pages/PagesList";
 import { TemplatesLibrary } from "@/components/landing-pages/templates/TemplatesLibrary";
 import { FormConfig } from "@/components/landing-pages/form-config/FormConfig";
 import { TagManagement } from "@/components/landing-pages/tags/TagManagement";
+import { DomainsConfig } from "@/components/landing-pages/domains/DomainsConfig";
+import { DataLeads } from "@/components/landing-pages/leads/DataLeads";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
 
@@ -141,6 +143,9 @@ export default function LandingPagesManagement() {
   // Tag Management Sub-View States
   const [tags, setTags] = useState<TagItem[]>(initialTags);
 
+  // Domains Sub-View States
+  const [domains, setDomains] = useState<DomainItem[]>([]);
+
   // Handler for select-all checkbox
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -219,6 +224,19 @@ export default function LandingPagesManagement() {
     setTags(prev => [newTag, ...prev]);
   };
 
+  // Add a new Domain
+  const handleAddDomain = (name: string, platform: string) => {
+    const newDomain: DomainItem = {
+      id: String(Date.now()),
+      name,
+      status: "VERIFIED",
+      platform,
+      sslStatus: "ACTIVE",
+      updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+    };
+    setDomains(prev => [newDomain, ...prev]);
+  };
+
   // Filter calculation for pages
   const filteredPages = pages.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -272,6 +290,13 @@ export default function LandingPagesManagement() {
             tags={tags}
             onAddTag={handleAddTag}
           />
+        ) : activeSubTab === "domains" ? (
+          <DomainsConfig 
+            domains={domains}
+            onAddDomain={handleAddDomain}
+          />
+        ) : activeSubTab === "leads" ? (
+          <DataLeads />
         ) : (
           <PagesList 
             searchQuery={searchQuery}

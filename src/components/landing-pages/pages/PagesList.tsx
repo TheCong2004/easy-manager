@@ -173,7 +173,7 @@ export const PagesList: React.FC<PagesListProps> = ({
                         />
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="text-sm font-semibold text-slate-800 dark:text-gray-200 hover:text-blue-600 transition cursor-pointer">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition cursor-pointer">
                           {item.name}
                         </span>
                       </td>
@@ -197,13 +197,13 @@ export const PagesList: React.FC<PagesListProps> = ({
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-gray-200">
+                      <td className="py-3.5 px-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                         {item.views}
                       </td>
-                      <td className="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-gray-200">
+                      <td className="py-3.5 px-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                         {item.conversions}
                       </td>
-                      <td className="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-gray-200">
+                      <td className="py-3.5 px-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                         {item.revenue.toLocaleString()}đ
                       </td>
                       <td className="py-3.5 px-4 text-center">

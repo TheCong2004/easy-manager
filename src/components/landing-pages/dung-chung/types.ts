@@ -37,3 +37,13 @@ export type TagItem = {
   updatedAt: string;
 };
 
+export type DomainItem = {
+  id: string;
+  name: string;
+  status: "VERIFIED" | "UNVERIFIED";
+  platform: string;
+  sslStatus: "ACTIVE" | "INACTIVE";
+  updatedAt: string;
+};
+
+
