@@ -8,6 +8,9 @@ import UserProfileCard from "@/components/quan-ly/tai-khoan-qc/UserProfileCard";
 import UtilitiesPanel from "@/components/quan-ly/tai-khoan-qc/UtilitiesPanel";
 import ConfigModal from "@/components/quan-ly/tai-khoan-qc/ConfigModal";
 
+import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
+import { facebookApiClient } from "@/lib/facebook/facebook-api.client";
+
 const initialUtilities: UtilityItem[] = [
   { id: "1", name: "Kích hoạt trả trước", enabled: true, color: "bg-amber-500" },
   { id: "2", name: "Thêm người", enabled: true, color: "bg-emerald-500" },
@@ -114,6 +117,7 @@ const mockAccounts: AdsAccount[] = [
 ];
 
 export default function TaiKhoanQC() {
+  const [accounts, setAccounts] = useState<AdsAccount[]>(mockAccounts);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -144,31 +148,56 @@ export default function TaiKhoanQC() {
   const [newUtilityName, setNewUtilityName] = useState("");
   const [isAddUtilityOpen, setIsAddUtilityOpen] = useState(false);
 
-  // Simulated Loader
-  const handleLoadData = () => {
+  // Simulated Loader connecting to facebookAuthService & facebookApiClient
+  const handleLoadData = async () => {
     setIsConfigModalOpen(false);
     setIsLoading(true);
     setLoadingProgress(0);
     setSelectedIds([]);
 
     const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsLoading(false);
-            setDataLoaded(true);
-          }, 300);
-          return 100;
-        }
-        return prev + 10;
-      });
+      setLoadingProgress((prev) => (prev >= 90 ? 90 : prev + 15));
     }, 100);
+
+    try {
+      // Refresh Facebook tokens
+      await facebookAuthService.refreshFullTokens();
+      // Fetch Ad Accounts using Api Client
+      const res = await facebookApiClient.getAdAccounts();
+      if (res?.data && Array.isArray(res.data)) {
+        const mapped: AdsAccount[] = res.data.map((acc: any) => ({
+          id: acc.id,
+          name: acc.name,
+          uid: acc.account_id || acc.id,
+          status: acc.account_status === 1 ? "ACTIVE" : "DISABLED",
+          type: acc.id.startsWith("act_") ? "PERSONAL" : "BM",
+          balance: acc.amount_spent ? `${acc.amount_spent} ${acc.currency}` : "0đ",
+          threshold: "N/A",
+          limit: "N/A",
+          currency: acc.currency || "USD",
+          role: "Quản trị viên",
+        }));
+        setAccounts(mapped);
+      } else {
+        setAccounts(mockAccounts);
+      }
+      setLoadingProgress(100);
+    } catch (err) {
+      console.warn("[TaiKhoanQC] API call failed, falling back to mocks:", err);
+      setAccounts(mockAccounts);
+      setLoadingProgress(100);
+    } finally {
+      clearInterval(interval);
+      setTimeout(() => {
+        setIsLoading(false);
+        setDataLoaded(true);
+      }, 300);
+    }
   };
 
   // Filtered Accounts
   const filteredAccounts = useMemo(() => {
-    return mockAccounts.filter((acc) => {
+    return accounts.filter((acc) => {
       const matchesSearch =
         acc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         acc.uid.includes(searchQuery);
@@ -180,7 +209,7 @@ export default function TaiKhoanQC() {
 
       return matchesSearch && matchesType;
     });
-  }, [searchQuery, accountFilter]);
+  }, [accounts, searchQuery, accountFilter]);
 
   // Select all checkbox
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {

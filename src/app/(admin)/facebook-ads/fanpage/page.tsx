@@ -8,6 +8,9 @@ import UserProfileCard from "@/components/quan-ly/fanpage/UserProfileCard";
 import UtilitiesPanel from "@/components/quan-ly/fanpage/UtilitiesPanel";
 import ConfigModal from "@/components/quan-ly/fanpage/ConfigModal";
 
+import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
+import { facebookApiClient } from "@/lib/facebook/facebook-api.client";
+
 const initialUtilities: UtilityItem[] = [
   { id: "1", name: "Thêm vào nhóm tài sản", enabled: true, color: "bg-orange-500" },
   { id: "2", name: "Chỉ định Page BM", enabled: true, color: "bg-teal-500" },
@@ -79,6 +82,7 @@ const mockPages: FanpageItem[] = [
 ];
 
 export default function Fanpage() {
+  const [pages, setPages] = useState<FanpageItem[]>(mockPages);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -113,31 +117,55 @@ export default function Fanpage() {
   const [newUtilityName, setNewUtilityName] = useState("");
   const [isAddUtilityOpen, setIsAddUtilityOpen] = useState(false);
 
-  // Simulated Loader
-  const handleLoadData = () => {
+  // Simulated Loader connecting to facebookAuthService & facebookApiClient
+  const handleLoadData = async () => {
     setIsConfigModalOpen(false);
     setIsLoading(true);
     setLoadingProgress(0);
     setSelectedIds([]);
 
     const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsLoading(false);
-            setDataLoaded(true);
-          }, 300);
-          return 100;
-        }
-        return prev + 10;
-      });
+      setLoadingProgress((prev) => (prev >= 90 ? 90 : prev + 15));
     }, 100);
+
+    try {
+      // Refresh Facebook tokens
+      await facebookAuthService.refreshFullTokens();
+      // Fetch Pages using Api Client
+      const res = await facebookApiClient.getMyPages();
+      if (res?.data && Array.isArray(res.data)) {
+        const mapped: FanpageItem[] = res.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          pageId: p.id,
+          status: "ACTIVE",
+          followers: p.followers_count ? p.followers_count.toLocaleString() : "0",
+          postsCount: 0,
+          verification: "NONE",
+          distribution: "Bình thường",
+          monetization: "Đủ điều kiện",
+        }));
+        setPages(mapped);
+      } else {
+        setPages(mockPages);
+      }
+      setLoadingProgress(100);
+    } catch (err) {
+      console.warn("[Fanpage] API call failed, falling back to mocks:", err);
+      setPages(mockPages);
+      setLoadingProgress(100);
+    } finally {
+      clearInterval(interval);
+      setTimeout(() => {
+        setIsLoading(false);
+        setDataLoaded(true);
+      }, 300);
+    }
   };
 
   // Filtered Pages
   const filteredPages = useMemo(() => {
-    return mockPages.filter((page) => {
+    return pages.filter((page) => {
       const matchesSearch =
         page.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         page.pageId.includes(searchQuery);
@@ -149,7 +177,7 @@ export default function Fanpage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, pageFilter]);
+  }, [pages, searchQuery, pageFilter]);
 
   // Select all checkbox
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {

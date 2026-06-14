@@ -41,6 +41,15 @@ export default function FacebookAdsLayout({
       ),
     },
     {
+      name: "Email tạm thời",
+      path: "/facebook-ads/email-tam-thoi",
+      icon: (
+        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
       name: "Cài đặt",
       path: "/facebook-ads/cai-dat",
       icon: (
@@ -53,27 +62,27 @@ export default function FacebookAdsLayout({
   ];
 
   return (
-    <div className="flex flex-col md:flex-row bg-white dark:bg-[#11121e] rounded-tr-2xl rounded-br-2xl rounded-bl-2xl overflow-hidden shadow-theme-xs min-h-[calc(100vh-46px)]">
+    <div className="flex flex-col md:flex-row bg-[#f8fafc] dark:bg-[#0c0d14] rounded-tr-2xl rounded-br-2xl rounded-bl-2xl overflow-hidden shadow-theme-xs min-h-[calc(100vh-46px)]">
       {/* Sub Sidebar */}
-      <div className="w-full md:w-52 shrink-0 bg-gray-50/30 dark:bg-gray-950/20 border-b md:border-b-0 py-5 px-3 flex flex-col gap-4 select-none">
+      <div className="w-full md:w-56 shrink-0 bg-slate-50 dark:bg-[#090a0f] border-b md:border-b-0 md:border-r border-gray-200/80 dark:border-gray-800/80 py-5 px-3.5 flex flex-col gap-4 select-none">
         {/* Sub Sidebar Header */}
-        <div className="flex items-center gap-2 px-2 pb-3.5">
-          <span className="font-black text-sm text-gray-850 dark:text-white truncate">Ads Manager</span>
+        <div className="flex items-center gap-2 px-2 pb-3.5 border-b border-gray-200/40 dark:border-gray-800/30">
+          <span className="font-extrabold text-sm text-slate-800 dark:text-white truncate">Ads Manager</span>
           <span className="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase leading-none">App</span>
         </div>
 
         {/* Navigation Items */}
-        <div className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
+        <div className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 mt-1">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? "bg-blue-50/70 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400"
-                    : "text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-850"
+                    ? "bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400"
+                    : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-900/50"
                 }`}
               >
                 {item.icon}
@@ -85,7 +94,7 @@ export default function FacebookAdsLayout({
       </div>
 
       {/* Main Panel Content */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col bg-slate-100/40 dark:bg-[#0d0e15]">
         {children}
       </div>
     </div>

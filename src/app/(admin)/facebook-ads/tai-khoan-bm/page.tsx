@@ -8,6 +8,9 @@ import UserProfileCard from "@/components/quan-ly/tai-khoan-bm/UserProfileCard";
 import UtilitiesPanel from "@/components/quan-ly/tai-khoan-bm/UtilitiesPanel";
 import ConfigModal from "@/components/quan-ly/tai-khoan-bm/ConfigModal";
 
+import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
+import { facebookApiClient } from "@/lib/facebook/facebook-api.client";
+
 const initialUtilities: UtilityItem[] = [
   { id: "1", name: "Kích Bm3", enabled: true, color: "bg-orange-500" },
   { id: "2", name: "Thêm tài sản cho user", enabled: true, color: "bg-blue-500" },
@@ -22,72 +25,47 @@ const initialUtilities: UtilityItem[] = [
 const mockBMs: BusinessManager[] = [
   {
     id: "1",
-    name: "Võ Thế Công - Agency Hub",
-    bmId: "128394857392847",
+    name: "Võ Thế Công Agency BM 01",
+    bmId: "102938475610293",
     status: "ACTIVE",
     limit: "Không giới hạn",
-    pagesCount: 12,
-    partnersCount: 4,
-    adminsCount: 2,
-    instagramCount: 2,
-    whatsappCount: 1,
+    pagesCount: 5,
+    partnersCount: 2,
+    adminsCount: 3,
+    instagramCount: 1,
+    whatsappCount: 0,
     paymentMethod: "Visa *4321",
   },
   {
     id: "2",
-    name: "Nguyễn Văn A - BM250 Ads",
-    bmId: "209485739201834",
+    name: "Nguyễn Văn A Business BM 02",
+    bmId: "305849603928173",
     status: "ACTIVE",
     limit: "5.000.000đ/ngày",
-    pagesCount: 3,
+    pagesCount: 2,
     partnersCount: 1,
-    adminsCount: 1,
+    adminsCount: 2,
     instagramCount: 0,
     whatsappCount: 0,
     paymentMethod: "Momo Wallet",
   },
   {
     id: "3",
-    name: "Lê Hoàng B - Business Backup",
-    bmId: "109482938472938",
+    name: "Lê Hoàng B Personal BM 03",
+    bmId: "109283749501834",
     status: "DISABLED",
-    limit: "0đ (Khoá)",
-    pagesCount: 8,
-    partnersCount: 0,
-    adminsCount: 2,
-    instagramCount: 1,
-    whatsappCount: 0,
-    paymentMethod: "Mastercard *8872",
-  },
-  {
-    id: "4",
-    name: "Phạm Minh C - Agency Verify",
-    bmId: "302948573928173",
-    status: "ACTIVE",
-    limit: "Không giới hạn",
-    pagesCount: 45,
-    partnersCount: 8,
-    adminsCount: 3,
-    instagramCount: 5,
-    whatsappCount: 2,
-    paymentMethod: "Invoice Payment",
-  },
-  {
-    id: "5",
-    name: "Trần Thị D - BM50 Scan",
-    bmId: "203948273619283",
-    status: "PENDING_REVIEW",
     limit: "1.100.000đ/ngày",
-    pagesCount: 5,
-    partnersCount: 1,
+    pagesCount: 1,
+    partnersCount: 0,
     adminsCount: 1,
     instagramCount: 0,
     whatsappCount: 0,
-    paymentMethod: "Visa *9012",
+    paymentMethod: "N/A",
   },
 ];
 
 export default function TaiKhoanBM() {
+  const [bms, setBms] = useState<BusinessManager[]>(mockBMs);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -122,31 +100,57 @@ export default function TaiKhoanBM() {
   const [newUtilityName, setNewUtilityName] = useState("");
   const [isAddUtilityOpen, setIsAddUtilityOpen] = useState(false);
 
-  // Simulated Loader
-  const handleLoadData = () => {
+  // Simulated Loader connecting to facebookAuthService & facebookApiClient
+  const handleLoadData = async () => {
     setIsConfigModalOpen(false);
     setIsLoading(true);
     setLoadingProgress(0);
     setSelectedIds([]);
 
     const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsLoading(false);
-            setDataLoaded(true);
-          }, 300);
-          return 100;
-        }
-        return prev + 10;
-      });
+      setLoadingProgress((prev) => (prev >= 90 ? 90 : prev + 15));
     }, 100);
+
+    try {
+      // Refresh Facebook tokens
+      await facebookAuthService.refreshFullTokens();
+      // Fetch Businesses using Api Client
+      const res = await facebookApiClient.getMyBusinesses();
+      if (res?.data && Array.isArray(res.data)) {
+        const mapped: BusinessManager[] = res.data.map((bm: any) => ({
+          id: bm.id,
+          name: bm.name,
+          bmId: bm.id,
+          status: "ACTIVE",
+          limit: "Không giới hạn",
+          pagesCount: 1,
+          partnersCount: 0,
+          adminsCount: 1,
+          instagramCount: 0,
+          whatsappCount: 0,
+          paymentMethod: "N/A",
+        }));
+        setBms(mapped);
+      } else {
+        setBms(mockBMs);
+      }
+      setLoadingProgress(100);
+    } catch (err) {
+      console.warn("[TaiKhoanBM] API call failed, falling back to mocks:", err);
+      setBms(mockBMs);
+      setLoadingProgress(100);
+    } finally {
+      clearInterval(interval);
+      setTimeout(() => {
+        setIsLoading(false);
+        setDataLoaded(true);
+      }, 300);
+    }
   };
 
   // Filtered BMs
   const filteredBMs = useMemo(() => {
-    return mockBMs.filter((bm) => {
+    return bms.filter((bm) => {
       const matchesSearch =
         bm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         bm.bmId.includes(searchQuery);
@@ -158,7 +162,7 @@ export default function TaiKhoanBM() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, bmFilter]);
+  }, [bms, searchQuery, bmFilter]);
 
   // Select all checkbox
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -95,18 +95,40 @@ const othersItems: NavItem[] = [
     path: "/ecom-store",
   },
   {
-    icon: (
-      <svg className="w-5 h-5 fill-current text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-      </svg>
-    ),
-    name: "Facebook Ads",
-    path: "/facebook-ads/tai-khoan-qc",
-  },
-  {
     icon: <PlugInIcon />,
     name: "Kho ứng dụng",
     path: "/kho-ung-dung",
+  },
+];
+
+const managementItems: NavItem[] = [
+  {
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.68-.34-1.16-1.04-1.16-1.84V9.58c0-.8.48-1.5 1.16-1.84L15.34 5.9c1.03-.52 2.16.24 2.16 1.4v13.4c0 1.16-1.13 1.92-2.16 1.4l-5-2.66zM7.5 9.5h-1a2.5 2.5 0 00-2.5 2.5v1a2.5 2.5 0 002.5 2.5h1" />
+      </svg>
+    ),
+    name: "Tài khoản QC",
+    path: "/facebook-ads/tai-khoan-qc",
+  },
+  {
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM16.5 10.5h-3v3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18" />
+      </svg>
+    ),
+    name: "Tài khoản BM",
+    path: "/facebook-ads/tai-khoan-bm",
+  },
+  {
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 8h6M9 12h6M9 16h6" />
+      </svg>
+    ),
+    name: "Fanpage",
+    path: "/facebook-ads/fanpage",
   },
 ];
 
@@ -381,6 +403,23 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
+                  "QUẢN LÝ"
+                ) : (
+                  <HorizontaLDots />
+                )}
+              </h2>
+              {renderMenuItems(managementItems, "main")}
+            </div>
+
+            <div>
+              <h2
+                className={`mb-2 text-[10px] font-bold tracking-wider uppercase flex leading-[20px] text-slate-400/80 ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "justify-start"
+                }`}
+              >
+                {isExpanded || isHovered || isMobileOpen ? (
                   "ỨNG DỤNG"
                 ) : (
                   <HorizontaLDots />
@@ -395,16 +434,16 @@ const AppSidebar: React.FC = () => {
         <div className="mt-auto border-t border-gray-200 dark:border-gray-800 pt-4 pb-6 space-y-2">
           {/* Cài đặt */}
           <Link
-            href="/facebook-ads/cai-dat"
+            href="/settings"
             className={`menu-item group ${
-              isActive("/facebook-ads/cai-dat") ? "menu-item-active" : "menu-item-inactive"
+              isActive("/settings") ? "menu-item-active" : "menu-item-inactive"
             } ${
               !isExpanded && !isHovered
                 ? "lg:justify-center"
                 : "lg:justify-start"
             }`}
           >
-            <span className={isActive("/facebook-ads/cai-dat") ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
+            <span className={isActive("/settings") ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
