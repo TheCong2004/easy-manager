@@ -11,6 +11,7 @@ import { DomainsConfig } from "@/components/landing-pages/domains/DomainsConfig"
 import { DataLeads } from "@/components/landing-pages/leads/DataLeads";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
+import { VisualEditor } from "@/components/landing-pages/editor/VisualEditor";
 
 const initialPages: LandingPageItem[] = [
   {
@@ -125,7 +126,10 @@ export default function LandingPagesManagement() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
-  
+
+  // Visual editor state
+  const [editingPage, setEditingPage] = useState<LandingPageItem | null>(null);
+
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPageName, setNewPageName] = useState("");
@@ -185,10 +189,20 @@ export default function LandingPagesManagement() {
     setActiveSubTab("pages"); // Redirect to pages list
   };
 
-  // Template select trigger
+  // Create page from template
   const handleUseTemplate = (template: TemplateItem) => {
     setNewPageName(template.name.split("-")[0].trim().toLowerCase() + "-copy");
     setIsCreateModalOpen(true);
+  };
+
+  // Handler for editing a page in visual editor
+  const handleEditPage = (page: LandingPageItem) => {
+    setEditingPage(page);
+  };
+
+  // Handler when published from editor
+  const handlePublishFromEditor = (updatedPage: LandingPageItem) => {
+    setPages((prev) => prev.map((p) => (p.id === updatedPage.id ? updatedPage : p)));
   };
 
   // Like action toggle
@@ -254,7 +268,17 @@ export default function LandingPagesManagement() {
   });
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 -m-4 md:-m-6 h-[calc(100vh-72px)] md:h-[calc(100vh-80px)] overflow-hidden">
+    <>
+      {/* Visual Editor — full screen overlay */}
+      {editingPage && (
+        <VisualEditor
+          page={editingPage}
+          onClose={() => setEditingPage(null)}
+          onPublish={handlePublishFromEditor}
+        />
+      )}
+
+      <div className="flex flex-col lg:flex-row gap-6 -m-4 md:-m-6 h-[calc(100vh-72px)] md:h-[calc(100vh-80px)] overflow-hidden">
       
       {/* 1. Secondary Sub-sidebar */}
       <SubSidebar 
@@ -308,6 +332,7 @@ export default function LandingPagesManagement() {
             handleSelectAll={handleSelectAll}
             handleSelectRow={handleSelectRow}
             setIsCreateModalOpen={setIsCreateModalOpen}
+            onEdit={handleEditPage}
           />
         )}
       </div>
@@ -331,5 +356,6 @@ export default function LandingPagesManagement() {
         }}
       />
     </div>
+  </>
   );
 }

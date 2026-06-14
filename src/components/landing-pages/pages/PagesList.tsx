@@ -11,6 +11,7 @@ interface PagesListProps {
   handleSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectRow: (id: string, checked: boolean) => void;
   setIsCreateModalOpen: (open: boolean) => void;
+  onEdit?: (page: LandingPageItem) => void;
 }
 
 export const PagesList: React.FC<PagesListProps> = ({
@@ -23,6 +24,7 @@ export const PagesList: React.FC<PagesListProps> = ({
   handleSelectAll,
   handleSelectRow,
   setIsCreateModalOpen,
+  onEdit,
 }) => {
   return (
     <div className="space-y-6">
@@ -206,12 +208,26 @@ export const PagesList: React.FC<PagesListProps> = ({
                       <td className="py-3.5 px-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                         {item.revenue.toLocaleString()}đ
                       </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <button className="text-slate-400 hover:text-slate-650 dark:hover:text-gray-300 p-1 cursor-pointer">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                          </svg>
-                        </button>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Edit button — opens visual editor */}
+                          <button
+                            onClick={() => onEdit?.(item)}
+                            title="Mở trình chỉnh sửa"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition cursor-pointer border border-blue-200/50 dark:border-blue-800/50"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                            Chỉnh sửa
+                          </button>
+                          {/* More options */}
+                          <button className="text-slate-400 hover:text-slate-650 dark:hover:text-gray-300 p-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
