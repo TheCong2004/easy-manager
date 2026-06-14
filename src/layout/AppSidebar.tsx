@@ -430,7 +430,7 @@ const AppSidebar: React.FC = () => {
           </div>
         </nav>
 
-        {/* Bottom items: Cài đặt và Thu gọn */}
+        {/* Bottom items: Cài đặt */}
         <div className="mt-auto border-t border-gray-200 dark:border-gray-800 pt-4 pb-6 space-y-2">
           {/* Cài đặt */}
           <Link
@@ -453,35 +453,25 @@ const AppSidebar: React.FC = () => {
               <span className="menu-item-text">Cài đặt</span>
             )}
           </Link>
-
-          {/* Thu gọn */}
-          <button
-            onClick={toggleSidebar}
-            className={`menu-item group menu-item-inactive w-full text-left cursor-pointer ${
-              !isExpanded && !isHovered
-                ? "lg:justify-center"
-                : "lg:justify-start"
-            }`}
-          >
-            <span className="menu-item-icon-inactive">
-              {isExpanded ? (
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="19" y1="12" x2="5" y2="12"></line>
-                  <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              )}
-            </span>
-            {(isExpanded || isHovered || isMobileOpen) && (
-              <span className="menu-item-text">Thu gọn</span>
-            )}
-          </button>
         </div>
       </div>
+
+      {/* Floating Toggle Button centered on the right edge */}
+      <button
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-[260px] z-50 hidden lg:flex items-center justify-center w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 border border-blue-500"
+        title={isExpanded ? "Thu gọn" : "Mở rộng"}
+      >
+        {isExpanded ? (
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        ) : (
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        )}
+      </button>
     </aside>
   );
 };
