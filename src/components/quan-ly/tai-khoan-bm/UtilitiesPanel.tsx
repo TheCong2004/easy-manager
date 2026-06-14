@@ -25,7 +25,7 @@ export default function UtilitiesPanel({
   onAddUtility,
 }: UtilitiesPanelProps) {
   return (
-    <div className="w-full lg:w-[340px] shrink-0 bg-white dark:bg-[#11121e] border border-gray-150 dark:border-gray-800 rounded-2xl overflow-hidden shadow-theme-xs p-4 flex flex-col gap-4 select-none">
+    <div className="p-4 flex flex-col gap-4 select-none">
       {/* Header Panel */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

@@ -228,12 +228,10 @@ export default function TaiKhoanBM() {
   };
 
   return (
-    <div className="flex flex-col gap-5 min-h-[calc(100vh-100px)] text-gray-800 dark:text-gray-200">
-      {/* Main Layout Flexbox */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
-        {/* Left Column: Actions + Table */}
-        <div className="flex-1 w-full flex flex-col gap-5">
-          {/* Action Toolbar Header */}
+    <div className="flex flex-col text-gray-800 dark:text-gray-200 w-full min-h-[calc(100vh-46px)]">
+      {/* Row 1: Unified Header Toolbar Card (Toolbar + User Profile) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full shrink-0">
+        <div className="flex-1 min-w-0">
           <ToolbarHeader
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -244,28 +242,32 @@ export default function TaiKhoanBM() {
             isLoading={isLoading}
             handleLoadData={handleLoadData}
           />
+        </div>
+        <div className="shrink-0">
+          <UserProfileCard />
+        </div>
+      </div>
 
-          {/* Left Column: Data Table Container */}
-          <div className="flex-1 w-full flex flex-col bg-white dark:bg-[#11121e] border border-gray-150 dark:border-gray-800 rounded-2xl overflow-hidden shadow-theme-xs min-h-[550px]">
-            <BMsTable
-              isLoading={isLoading}
-              loadingProgress={loadingProgress}
-              dataLoaded={dataLoaded}
-              filteredBMs={filteredBMs}
-              selectedIds={selectedIds}
-              onSelectAll={handleSelectAll}
-              onSelectRow={handleSelectRow}
-              dataOptions={dataOptions}
-              selectedRegion={selectedRegion}
-              openConfig={() => setIsConfigModalOpen(true)}
-            />
-          </div>
+      {/* Row 2: Table and Utilities Panel */}
+      <div className="flex-1 flex flex-col lg:flex-row w-full min-w-0 h-full">
+        {/* Left Column: Table Card */}
+        <div className="flex-1 w-full flex flex-col min-w-0 min-h-[550px] border border-gray-150 dark:border-gray-800 rounded-xl overflow-hidden">
+          <BMsTable
+            isLoading={isLoading}
+            loadingProgress={loadingProgress}
+            dataLoaded={dataLoaded}
+            filteredBMs={filteredBMs}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelectRow={handleSelectRow}
+            dataOptions={dataOptions}
+            selectedRegion={selectedRegion}
+            openConfig={() => setIsConfigModalOpen(true)}
+          />
         </div>
 
-        {/* Right Column: Profile + Utilities */}
-        <div className="w-full lg:w-[340px] shrink-0 flex flex-col gap-5">
-          <UserProfileCard />
-
+        {/* Right Column: Utilities Card */}
+        <div className="w-full lg:w-[320px] shrink-0 bg-gray-50/20 dark:bg-gray-950/10 flex flex-col">
           <UtilitiesPanel
             utilities={utilities}
             onToggleUtility={handleToggleUtility}
@@ -280,7 +282,6 @@ export default function TaiKhoanBM() {
         </div>
       </div>
 
-      {/* Configuration Modal ("Cấu hình tải dữ liệu BM") */}
       <ConfigModal
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}

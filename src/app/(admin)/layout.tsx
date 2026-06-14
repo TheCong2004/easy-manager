@@ -5,6 +5,7 @@ import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import React from "react";
+import { usePathname } from "next/navigation";
 
 export default function AdminLayout({
   children,
@@ -12,6 +13,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const pathname = usePathname();
+  const isFacebookAds = pathname?.startsWith("/facebook-ads");
 
   // Dynamic class for main content margin based on sidebar state
   const mainContentMargin = isMobileOpen
@@ -32,7 +35,7 @@ export default function AdminLayout({
         {/* Header */}
         <AppHeader />
         {/* Page Content */}
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+        <div className={isFacebookAds ? "w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
       </div>
     </div>
   );

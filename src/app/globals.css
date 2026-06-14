@@ -770,3 +770,8 @@ span.flatpickr-weekday,
 .group:hover .mobile-scroll-effect {
   transform: translateY(var(--scroll-dist)) !important;
 }
+
+/* Ensure SVG icons inside active menu items are white to maintain contrast */
+.menu-item-active svg {
+  color: white !important;
+}

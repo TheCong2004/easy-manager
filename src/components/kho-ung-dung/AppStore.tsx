@@ -106,10 +106,11 @@ const initialApps: AppItem[] = [
     name: "App trình quản lý quảng cáo fb",
     description: "Công cụ quản lý chiến dịch quảng cáo Facebook, tối ưu hóa ngân sách và đo lường báo cáo hiệu quả thời gian thực.",
     iconName: "fbads",
-    status: "NOT_INSTALLED",
+    status: "INSTALLED",
     category: "marketing",
-    price: "Miễn phí",
+    price: "Đã cài đặt",
     downloads: "1.520",
+    isPinned: true,
   },
   {
     id: "11",
@@ -168,7 +169,7 @@ export default function AppStore() {
   const handleOpen = (id: string) => {
     const app = apps.find((a) => a.id === id);
     if (id === "10") {
-      router.push("/tai-khoan-qc");
+      router.push("/facebook-ads/tai-khoan-qc");
     } else if (id === "1") {
       router.push("/landing-pages");
     } else if (id === "2") {
