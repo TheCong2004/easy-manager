@@ -10,7 +10,6 @@ type FacebookTokensSectionProps = {
   isRefreshing: boolean;
   statusMessage: string;
   onRefresh: () => void;
-  onTokenChange: (key: keyof FacebookTokenValues, value: string) => void;
   onToggleVisibility: (key: keyof FacebookTokenValues) => void;
 };
 
@@ -20,7 +19,6 @@ export default function FacebookTokensSection({
   isRefreshing,
   statusMessage,
   onRefresh,
-  onTokenChange,
   onToggleVisibility,
 }: FacebookTokensSectionProps) {
   return (
@@ -69,7 +67,6 @@ export default function FacebookTokensSection({
             field={field}
             value={tokenValues[field.key]}
             isVisible={visibleTokenFields[field.key]}
-            onChange={onTokenChange}
             onToggleVisibility={onToggleVisibility}
           />
         ))}

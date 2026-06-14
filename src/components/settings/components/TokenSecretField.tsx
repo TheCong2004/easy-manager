@@ -7,7 +7,6 @@ type TokenSecretFieldProps = {
   field: TokenFieldConfig;
   value: string;
   isVisible: boolean;
-  onChange: (key: keyof FacebookTokenValues, value: string) => void;
   onToggleVisibility: (key: keyof FacebookTokenValues) => void;
 };
 
@@ -15,7 +14,6 @@ export default function TokenSecretField({
   field,
   value,
   isVisible,
-  onChange,
   onToggleVisibility,
 }: TokenSecretFieldProps) {
   return (
@@ -28,8 +26,8 @@ export default function TokenSecretField({
           type={isVisible ? "text" : "password"}
           placeholder={field.placeholder}
           value={value}
-          onChange={(event) => onChange(field.key, event.target.value)}
-          className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-4 pr-10 text-xs font-semibold text-gray-800 shadow-theme-xs transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200"
+          readOnly
+          className="w-full cursor-default rounded-xl border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 text-xs font-semibold text-gray-800 shadow-theme-xs transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200"
         />
         <button
           type="button"

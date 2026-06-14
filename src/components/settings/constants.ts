@@ -11,11 +11,11 @@ export const TOKEN_STORAGE_KEYS: Record<keyof FacebookTokenValues, string> = {
 };
 
 export const TOKEN_FIELDS: TokenFieldConfig[] = [
-  { key: "eaag", label: "TOKEN EAAG", placeholder: "Nhập Token EAAG..." },
-  { key: "eaab", label: "TOKEN EAAB", placeholder: "Nhập Token EAAB..." },
-  { key: "eaai", label: "TOKEN EAAI", placeholder: "Nhập Token EAAI..." },
-  { key: "eaah", label: "TOKEN EAAH", placeholder: "Nhập Token EAAH..." },
-  { key: "cookie", label: "COOKIE", placeholder: "Nhập Cookie Facebook..." },
+  { key: "eaag", label: "TOKEN EAAG", placeholder: "Tự động lấy từ cookie/bridge..." },
+  { key: "eaab", label: "TOKEN EAAB", placeholder: "Tự động lấy từ cookie/bridge..." },
+  { key: "eaai", label: "TOKEN EAAI", placeholder: "Tự động lấy từ cookie/bridge..." },
+  { key: "eaah", label: "TOKEN EAAH", placeholder: "Tự động lấy từ cookie/bridge..." },
+  { key: "cookie", label: "COOKIE", placeholder: "Tự động đồng bộ từ phiên Facebook..." },
 ];
 
 export const EMPTY_TOKEN_VALUES: FacebookTokenValues = {

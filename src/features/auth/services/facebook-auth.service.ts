@@ -32,6 +32,11 @@ function sanitizeAuthToken(value?: string) {
   return token.includes("_MOCK_") ? "" : token;
 }
 
+function sanitizeAuthCookie(value?: string) {
+  const cookie = String(value || "").trim();
+  return cookie.includes("mock_session") || cookie.includes("xs=mock_") ? "" : cookie;
+}
+
 async function getFacebookSessionInfo(): Promise<FacebookSessionInfo | null> {
   const browserBridgeApi = getBrowserBridgeApi();
 
@@ -223,11 +228,11 @@ export class FacebookAuthService {
 
     try {
       const storedAuth = await this.getStoredFacebookAuth();
-      let cookie = store.profile?.cookie || storedAuth?.cookie || "";
+      let cookie = sanitizeAuthCookie(store.profile?.cookie || storedAuth?.cookie || "");
 
       const sessionInfo = await getFacebookSessionInfo();
       if (sessionInfo?.cookie) {
-        cookie = sessionInfo.cookie;
+        cookie = sanitizeAuthCookie(sessionInfo.cookie);
       }
 
       if (!cookie) {
@@ -300,6 +305,7 @@ export class FacebookAuthService {
    */
   async syncFacebookAuthCookie(cookie: string): Promise<boolean> {
     const store = useAuthStore.getState();
+    cookie = sanitizeAuthCookie(cookie);
     if (!cookie) return false;
 
     try {

@@ -5,9 +5,19 @@ export function isMockToken(value?: string) {
   return String(value || "").includes("_MOCK_");
 }
 
+export function isMockCookie(value?: string) {
+  const cookie = String(value || "");
+  return cookie.includes("mock_session") || cookie.includes("xs=mock_") || cookie.includes("mock_session_xs_value");
+}
+
 export function sanitizeToken(value?: string) {
   const trimmedValue = String(value || "").trim();
   return isMockToken(trimmedValue) ? "" : trimmedValue;
+}
+
+export function sanitizeCookie(value?: string) {
+  const trimmedValue = String(value || "").trim();
+  return isMockCookie(trimmedValue) ? "" : trimmedValue;
 }
 
 export function sanitizeTokenSet(tokens: FacebookTokenSet): FacebookTokenSet {

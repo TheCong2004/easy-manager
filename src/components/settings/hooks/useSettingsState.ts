@@ -12,7 +12,14 @@ import {
   TOKEN_STORAGE_KEYS,
 } from "../constants";
 import { readFacebookAuthRecord, readSettingValue, saveSettingValue } from "../storage";
-import { isMockToken, normalizeTokenResult, sanitizeToken, sanitizeTokenSet } from "../token-refresh";
+import {
+  isMockCookie,
+  isMockToken,
+  normalizeTokenResult,
+  sanitizeCookie,
+  sanitizeToken,
+  sanitizeTokenSet,
+} from "../token-refresh";
 import type { FacebookTokenValues, ThemePreference } from "../types";
 
 export function useSettingsState() {
@@ -34,7 +41,7 @@ export function useSettingsState() {
       eaab: sanitizeToken(profile?.tokenSet?.eaab),
       eaai: sanitizeToken(profile?.tokenSet?.eaai),
       eaah: sanitizeToken(profile?.tokenSet?.eaah),
-      cookie: profile?.cookie || "",
+      cookie: sanitizeCookie(profile?.cookie),
     }),
     [profile]
   );
@@ -57,7 +64,7 @@ export function useSettingsState() {
         eaab: sanitizeToken(rawSavedTokenValues.eaab),
         eaai: sanitizeToken(rawSavedTokenValues.eaai),
         eaah: sanitizeToken(rawSavedTokenValues.eaah),
-        cookie: rawSavedTokenValues.cookie,
+        cookie: sanitizeCookie(rawSavedTokenValues.cookie),
       };
 
       const storedFacebookAuth = await readFacebookAuthRecord();
@@ -66,19 +73,21 @@ export function useSettingsState() {
         eaab: sanitizeToken(storedFacebookAuth?.accessToken2),
         eaai: sanitizeToken(storedFacebookAuth?.accessToken4),
         eaah: sanitizeToken(storedFacebookAuth?.accessToken5),
-        cookie: storedFacebookAuth?.cookie || storedFacebookAuth?.cookieText || "",
+        cookie: sanitizeCookie(storedFacebookAuth?.cookie || storedFacebookAuth?.cookieText),
       };
 
       Object.entries(rawSavedTokenValues).forEach(([key, value]) => {
-        if (key !== "cookie" && isMockToken(String(value || ""))) {
+        const shouldClear = key === "cookie" ? isMockCookie(String(value || "")) : isMockToken(String(value || ""));
+        if (shouldClear) {
           void saveSettingValue(TOKEN_STORAGE_KEYS[key as keyof FacebookTokenValues], "");
         }
       });
 
-      if (profile?.tokenSet && Object.values(profile.tokenSet).some(isMockToken)) {
+      if (profile && ((profile.tokenSet && Object.values(profile.tokenSet).some(isMockToken)) || isMockCookie(profile.cookie))) {
         setProfile({
           ...profile,
-          tokenSet: sanitizeTokenSet(profile.tokenSet),
+          cookie: sanitizeCookie(profile.cookie),
+          tokenSet: profile.tokenSet ? sanitizeTokenSet(profile.tokenSet) : undefined,
         });
       }
 
@@ -147,7 +156,7 @@ export function useSettingsState() {
   };
 
   const handleTokenChange = (key: keyof FacebookTokenValues, value: string) => {
-    const nextValue = key === "cookie" ? value : sanitizeToken(value);
+    const nextValue = key === "cookie" ? sanitizeCookie(value) : sanitizeToken(value);
     setTokenValues((currentValues) => ({ ...currentValues, [key]: nextValue }));
     void saveSettingValue(TOKEN_STORAGE_KEYS[key], nextValue);
 

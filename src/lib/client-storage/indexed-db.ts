@@ -184,6 +184,11 @@ function normalizeToken(value: unknown) {
   return token.includes("_MOCK_") ? "" : token;
 }
 
+function normalizeCookie(value: unknown) {
+  const cookie = normalizeText(value);
+  return cookie.includes("mock_session") || cookie.includes("xs=mock_") ? "" : cookie;
+}
+
 function normalizeFacebookAuth(
   incoming: Partial<FacebookAuthRecord>,
   current?: Partial<FacebookAuthRecord>
@@ -203,7 +208,7 @@ function normalizeFacebookAuth(
     accessToken2: normalizeToken(incoming.accessToken2 || base.accessToken2),
     accessToken4: normalizeToken(incoming.accessToken4 || base.accessToken4),
     accessToken5: normalizeToken(incoming.accessToken5 || base.accessToken5),
-    cookie: normalizeText(incoming.cookie || incoming.cookieText || base.cookie || base.cookieText),
+    cookie: normalizeCookie(incoming.cookie || incoming.cookieText || base.cookie || base.cookieText),
     dtsg: normalizeText(incoming.dtsg || base.dtsg),
     dtsg2: normalizeText(incoming.dtsg2 || base.dtsg2),
     lsd: normalizeText(incoming.lsd || base.lsd),

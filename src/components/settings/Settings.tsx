@@ -13,7 +13,6 @@ export default function Settings() {
     isRefreshing,
     statusMessage,
     handleThemePreferenceChange,
-    handleTokenChange,
     handleRefreshTokens,
     toggleTokenVisibility,
   } = useSettingsState();
@@ -30,7 +29,6 @@ export default function Settings() {
             isRefreshing={isRefreshing}
             statusMessage={statusMessage}
             onRefresh={handleRefreshTokens}
-            onTokenChange={handleTokenChange}
             onToggleVisibility={toggleTokenVisibility}
           />
         </div>
