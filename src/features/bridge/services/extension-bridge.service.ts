@@ -1,4 +1,5 @@
 import { BridgeOptions } from "../types";
+import { handleClientStorageRequest } from "@/lib/client-storage/handlers";
 
 const FALLBACK_EXTENSION_IDS = [
   "ghbmnnjooekpmoecnnnilnnbdlolhkhi",
@@ -100,9 +101,12 @@ export class ExtensionBridgeService {
       }
     }
 
-    // If all extensions failed and we are not in browser extension host, return mock/fallback
-    console.warn("[ExtensionBridge] All extension bridges failed. Falling back to mock response.");
-    return this.getMockResponse<T>(channel, payload);
+    const clientStorageResult = await handleClientStorageRequest(channel, payload).catch(() => undefined);
+    if (clientStorageResult !== undefined) {
+      return clientStorageResult as T;
+    }
+
+    throw lastError || new Error(`No real extension bridge response for channel '${channel}'.`);
   }
 
   /**
@@ -162,25 +166,21 @@ export class ExtensionBridgeService {
   }
 
   /**
-   * Return simulated responses for dashboard when extension is not installed
+   * Return an explicit error when no real bridge is available.
    */
-  private getMockResponse<T>(channel: string, payload: any): T {
-    console.log(`[ExtensionBridge MOCK] Channel: ${channel}`, payload);
+  private getUnavailableBridgeResponse<T>(channel: string, payload: unknown): T {
+    console.log(`[ExtensionBridge unavailable] Channel: ${channel}`, payload);
     
-    // Simulate typical extension responses
-    if (channel === "facebook:get-session-info" || channel === "GET_FACEBOOK_SESSION_INFO") {
+    // Keep this as an error-only path. Real data must come from extension, desktop bridge, or IndexedDB.
+    if (false && (channel === "facebook:get-session-info" || channel === "GET_FACEBOOK_SESSION_INFO")) {
       return {
-        cookie: "c_user=100084920491834; xs=mock_session_xs_value;",
-        uid: "100084920491834",
+        cookie: "",
+        uid: "",
         name: "Võ Thế Công",
       } as any as T;
     }
     
-    if (channel === "facebook:validate-token") {
-      return { isValid: true } as any as T;
-    }
-
-    return { success: true } as any as T;
+    throw new Error(`No real extension bridge response for channel '${channel}'.`);
   }
 }
 

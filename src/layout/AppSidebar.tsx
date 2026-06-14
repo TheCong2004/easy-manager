@@ -13,14 +13,9 @@ import {
   HorizontaLDots,
   PageIcon,
   PieChartIcon,
-  PlugInIcon,
   BoxIcon,
   GroupIcon,
   BoltIcon,
-  BoxIconLine,
-  FolderIcon,
-  DocsIcon,
-  ShootingStarIcon,
 } from "../icons/index";
 
 type NavItem = {
@@ -32,37 +27,37 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    icon: <GridIcon />,
+    icon: <GridIcon className="w-5 h-5" />,
     name: "Tổng quan",
     path: "/",
   },
   {
-    icon: <PageIcon />,
+    icon: <PageIcon className="w-5 h-5" />,
     name: "Landing Pages",
     path: "/landing-pages",
   },
   {
-    icon: <BoxIcon />,
+    icon: <BoxIcon className="w-5 h-5" />,
     name: "Bán hàng",
     path: "/ban-hang",
   },
   {
-    icon: <GroupIcon />,
+    icon: <GroupIcon className="w-5 h-5" />,
     name: "Khách hàng",
     path: "/khach-hang",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <BoxCubeIcon className="w-5 h-5" />,
     name: "LadiWork",
     path: "/ladiwork",
   },
   {
-    icon: <BoltIcon />,
+    icon: <BoltIcon className="w-5 h-5" />,
     name: "Automation",
     path: "/automation",
   },
   {
-    icon: <PieChartIcon />,
+    icon: <PieChartIcon className="w-5 h-5" />,
     name: "Báo cáo",
     path: "/bao-cao",
   },
@@ -70,34 +65,13 @@ const navItems: NavItem[] = [
 
 const othersItems: NavItem[] = [
   {
-    icon: <BoxIconLine />,
-    name: "Website Builder",
-    path: "/website-builder",
-  },
-  {
-    icon: <FolderIcon />,
-    name: "Short Links",
-    path: "/short-links",
-  },
-  {
-    icon: <DocsIcon />,
-    name: "Blog",
-    path: "/blog",
-  },
-  {
-    icon: <ShootingStarIcon />,
-    name: "Dynamic",
-    path: "/dynamic",
-  },
-  {
-    icon: <BoxIcon />,
-    name: "Ecom Store",
-    path: "/ecom-store",
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Kho ứng dụng",
-    path: "/kho-ung-dung",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+      </svg>
+    ),
+    name: "Facebook Ads",
+    path: "/facebook-ads/tai-khoan-qc",
   },
 ];
 
@@ -157,7 +131,7 @@ const AppSidebar: React.FC = () => {
               }`}
             >
               <span
-                className={` ${
+                className={`shrink-0 flex items-center ${
                   openSubmenu?.type === menuType && openSubmenu?.index === index
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
@@ -188,7 +162,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 <span
-                  className={`${
+                  className={`shrink-0 flex items-center ${
                     isActive(nav.path)
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"

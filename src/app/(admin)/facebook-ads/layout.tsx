@@ -64,7 +64,7 @@ export default function FacebookAdsLayout({
   return (
     <div className="flex flex-col md:flex-row bg-[#f8fafc] dark:bg-[#0c0d14] rounded-tr-2xl rounded-br-2xl rounded-bl-2xl overflow-hidden shadow-theme-xs min-h-[calc(100vh-46px)]">
       {/* Sub Sidebar */}
-      <div className="w-full md:w-56 shrink-0 bg-slate-50 dark:bg-[#090a0f] border-b md:border-b-0 md:border-r border-gray-200/80 dark:border-gray-800/80 py-5 px-3.5 flex flex-col gap-4 select-none">
+      <div className="w-full md:w-56 shrink-0 bg-slate-50 dark:bg-[#090a0f] border-b md:border-b-0 md:border-r border-gray-200/80 dark:border-gray-800/80 py-5 px-3.5 flex flex-col select-none">
         {/* Sub Sidebar Header */}
         <div className="flex items-center gap-2 px-2 pb-3.5 border-b border-gray-200/40 dark:border-gray-800/30">
           <span className="font-extrabold text-sm text-slate-800 dark:text-white truncate">Ads Manager</span>
@@ -72,14 +72,14 @@ export default function FacebookAdsLayout({
         </div>
 
         {/* Navigation Items */}
-        <div className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 mt-1">
+        <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
                     ? "bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400"
                     : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-900/50"
