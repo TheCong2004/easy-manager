@@ -36,7 +36,7 @@ export const IncompleteOrders: React.FC = () => {
                 onClick={() => setActiveTab(tab.key as typeof activeTab)}
                 className={`px-4 py-2 text-xs font-bold transition-all relative border-b-2 rounded-t-lg cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-blue-600 text-blue-600 bg-blue-50/40 dark:bg-blue-950/20"
+                    ? "border-lime-500 text-lime-500 bg-lime-50/40 dark:bg-lime-950/20"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >

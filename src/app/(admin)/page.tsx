@@ -304,7 +304,7 @@ export default function GeneralOverview() {
     <div className="space-y-6">
       {/* Top Banner Greeting */}
       <div className="flex flex-col gap-2">
-        <div className="inline-flex items-center gap-1.5 self-start px-3 py-1 text-sm font-semibold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30 rounded-full">
+        <div className="inline-flex items-center gap-1.5 self-start px-3 py-1 text-sm font-semibold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/30 rounded-full">
           <span>👋</span>
           <span>Chào buổi chiều, cong</span>
         </div>
@@ -330,7 +330,7 @@ export default function GeneralOverview() {
               {/* Progress Bar */}
               <div className="w-24 bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden hidden sm:block">
                 <div 
-                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-500" 
+                  className="bg-lime-500 h-1.5 rounded-full transition-all duration-500" 
                   style={{ width: `${(steps.filter(s => s.isCompleted).length / steps.length) * 100}%` }}
                 />
               </div>
@@ -359,7 +359,7 @@ export default function GeneralOverview() {
               onClick={() => handleTabChange(tab.id)}
               className={`whitespace-nowrap pb-2 text-sm transition-all cursor-pointer border-b-2 -mb-2.5 flex items-center gap-2 ${
                 activeTab === tab.id
-                  ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                  ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
                   : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
               }`}
             >
@@ -379,21 +379,21 @@ export default function GeneralOverview() {
                 onClick={() => setActiveStepId(step.id)}
                 className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                   activeStepId === step.id
-                    ? "bg-[#f4f7ff] border-[#cddcff] dark:bg-blue-950/20 dark:border-blue-900/50"
+                    ? "bg-[#f4f7ff] border-[#cddcff] dark:bg-lime-950/20 dark:border-lime-900/50"
                     : "border-slate-100 bg-white hover:border-slate-200 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-gray-700"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   {step.isCompleted ? (
                     // Checked Icon
-                    <span className="flex-shrink-0 text-blue-600 dark:text-blue-400">
+                    <span className="flex-shrink-0 text-lime-500 dark:text-lime-300">
                       <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </span>
                   ) : activeStepId === step.id ? (
                     // Active Step circle with number
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold shadow-xs">
+                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-lime-500 text-white text-[11px] font-bold shadow-xs">
                       {step.id}
                     </span>
                   ) : (
@@ -406,7 +406,7 @@ export default function GeneralOverview() {
                     step.isCompleted
                       ? "text-slate-500 dark:text-slate-400 font-medium"
                       : activeStepId === step.id
-                      ? "text-blue-600 dark:text-blue-400 font-semibold"
+                      ? "text-lime-500 dark:text-lime-300 font-semibold"
                       : "text-slate-700 dark:text-slate-400 font-normal"
                   }`}>
                     {step.title}
@@ -417,7 +417,7 @@ export default function GeneralOverview() {
                     {step.duration}
                   </span>
                   {activeStepId === step.id && (
-                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-lime-500 dark:text-lime-300" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5-7.5"></path>
                     </svg>
                   )}
@@ -431,7 +431,7 @@ export default function GeneralOverview() {
             {/* Info panel */}
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 text-[11px] font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30 rounded-full">
+                <span className="px-2.5 py-0.5 text-[11px] font-bold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/30 rounded-full">
                   {activeStep.badge}
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
@@ -463,7 +463,7 @@ export default function GeneralOverview() {
 
               {/* Buttons */}
               <div className="flex items-center gap-3 pt-2">
-                <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition cursor-pointer">
+                <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-lime-500 rounded-lg hover:bg-lime-600 shadow-sm transition cursor-pointer">
                   <span>Mở</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path>
@@ -476,7 +476,7 @@ export default function GeneralOverview() {
             </div>
 
             {/* Graphic Panel */}
-            <div className="w-full md:w-56 h-48 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/30 dark:border-blue-900/10 flex items-center justify-center p-4 flex-shrink-0 select-none">
+            <div className="w-full md:w-56 h-48 rounded-xl bg-lime-50/50 dark:bg-lime-950/20 border border-lime-50/30 dark:border-lime-900/10 flex items-center justify-center p-4 flex-shrink-0 select-none">
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800 p-3.5 w-full max-w-[200px] flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center text-purple-600 dark:text-purple-400">
@@ -491,17 +491,17 @@ export default function GeneralOverview() {
 
                 {/* Mock Content */}
                 <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-2 flex flex-col gap-1.5 border border-gray-100 dark:border-gray-800">
-                  <div className="h-2 w-16 bg-blue-100 dark:bg-blue-950/40 rounded" />
+                  <div className="h-2 w-16 bg-lime-50 dark:bg-lime-950/40 rounded" />
                   <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-                  <div className="h-3 w-full bg-blue-600 rounded" />
-                  <div className="h-2 w-6 bg-blue-800 rounded self-end" />
+                  <div className="h-3 w-full bg-lime-500 rounded" />
+                  <div className="h-2 w-6 bg-lime-800 rounded self-end" />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5">
                   {(activeStep.tags || ["AI", "Kéo thả"]).map((tag) => (
                     <span 
                       key={tag} 
-                      className="px-2 py-0.5 text-[9px] font-semibold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/40 rounded-full"
+                      className="px-2 py-0.5 text-[9px] font-semibold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/40 rounded-full"
                     >
                       {tag}
                     </span>
@@ -525,7 +525,7 @@ export default function GeneralOverview() {
               </h3>
               <Link 
                 href="/khach-hang" 
-                className="inline-flex items-center gap-0.5 text-[13px] font-medium text-blue-600 hover:text-blue-700 transition dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+                className="inline-flex items-center gap-0.5 text-[13px] font-medium text-lime-500 hover:text-lime-600 transition dark:text-lime-300 dark:hover:text-lime-200 cursor-pointer"
               >
                 <span>Xem chi tiết</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -567,7 +567,7 @@ export default function GeneralOverview() {
                     <span className="font-semibold text-slate-700 dark:text-slate-300">0</span>
                   </div>
                   <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1 overflow-hidden">
-                    <div className="bg-blue-600 h-1 rounded-full" style={{ width: "0%" }} />
+                    <div className="bg-lime-500 h-1 rounded-full" style={{ width: "0%" }} />
                   </div>
                 </div>
                 {/* Segment 2 */}
@@ -577,7 +577,7 @@ export default function GeneralOverview() {
                     <span className="font-semibold text-slate-700 dark:text-slate-300">0</span>
                   </div>
                   <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1 overflow-hidden">
-                    <div className="bg-blue-600 h-1 rounded-full" style={{ width: "0%" }} />
+                    <div className="bg-lime-500 h-1 rounded-full" style={{ width: "0%" }} />
                   </div>
                 </div>
                 {/* Segment 3 */}
@@ -587,7 +587,7 @@ export default function GeneralOverview() {
                     <span className="font-semibold text-slate-700 dark:text-slate-300">0</span>
                   </div>
                   <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1 overflow-hidden">
-                    <div className="bg-blue-600 h-1 rounded-full" style={{ width: "0%" }} />
+                    <div className="bg-lime-500 h-1 rounded-full" style={{ width: "0%" }} />
                   </div>
                 </div>
               </div>
@@ -596,7 +596,7 @@ export default function GeneralOverview() {
 
           {/* Buttons Row */}
           <div className="flex items-center gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-gray-800">
-            <button className="flex-1 inline-flex items-center justify-center gap-2 h-9 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer transition whitespace-nowrap shadow-xs">
+            <button className="flex-1 inline-flex items-center justify-center gap-2 h-9 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg cursor-pointer transition whitespace-nowrap shadow-xs">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
               </svg>
@@ -622,7 +622,7 @@ export default function GeneralOverview() {
                   onClick={() => setBottomTab("campaign")}
                   className={`text-sm pb-2.5 border-b-2 -mb-3 transition-all cursor-pointer ${
                     bottomTab === "campaign"
-                      ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                      ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
                       : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
                   }`}
                 >
@@ -632,7 +632,7 @@ export default function GeneralOverview() {
                   onClick={() => setBottomTab("landing-page")}
                   className={`text-sm pb-2.5 border-b-2 -mb-3 transition-all cursor-pointer ${
                     bottomTab === "landing-page"
-                      ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                      ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
                       : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
                   }`}
                 >
@@ -641,7 +641,7 @@ export default function GeneralOverview() {
               </div>
               <Link 
                 href={bottomTab === "campaign" ? "/automation" : "/landing-pages"} 
-                className="inline-flex items-center gap-0.5 text-[13px] font-medium text-blue-600 hover:text-blue-700 transition dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+                className="inline-flex items-center gap-0.5 text-[13px] font-medium text-lime-500 hover:text-lime-600 transition dark:text-lime-300 dark:hover:text-lime-200 cursor-pointer"
               >
                 <span>Xem tất cả</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -734,7 +734,7 @@ export default function GeneralOverview() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   {/* Badge */}
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30 rounded-full">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/30 rounded-full">
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253" />
                     </svg>
@@ -771,7 +771,7 @@ export default function GeneralOverview() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   {/* Badge */}
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30 rounded-full">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/30 rounded-full">
                     <span>Dùng cho landing page</span>
                   </span>
                 </div>
@@ -797,7 +797,7 @@ export default function GeneralOverview() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-blue-500">⏳</span>
+                    <span className="text-lime-400">⏳</span>
                     <h3 className="font-bold text-slate-800 dark:text-white text-base">
                       FunnelX
                     </h3>
@@ -805,7 +805,7 @@ export default function GeneralOverview() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   {/* Badge */}
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30 rounded-full">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/30 rounded-full">
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253" />
                     </svg>

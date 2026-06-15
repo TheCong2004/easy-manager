@@ -42,7 +42,7 @@ export const JobsReport: React.FC<JobsReportProps> = ({ isSimulated }) => {
             <select
               value={space}
               onChange={(e) => setSpace(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer shadow-2xs"
             >
               <option>Chọn Space</option>
               <option>Phát triển sản phẩm</option>
@@ -61,7 +61,7 @@ export const JobsReport: React.FC<JobsReportProps> = ({ isSimulated }) => {
             <select
               value={member}
               onChange={(e) => setMember(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer shadow-2xs"
             >
               <option>Chọn thành viên</option>
               <option>Nguyễn Văn An</option>
@@ -91,7 +91,7 @@ export const JobsReport: React.FC<JobsReportProps> = ({ isSimulated }) => {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2.5 text-xs font-bold transition-all relative border-b-2 cursor-pointer ${
                 activeTab === tab
-                  ? "border-blue-600 text-blue-600 font-extrabold"
+                  ? "border-lime-500 text-lime-500 font-extrabold"
                   : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >

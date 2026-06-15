@@ -50,7 +50,7 @@ export const CustomerReport: React.FC<CustomerReportProps> = ({ isSimulated }) =
             <select
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer shadow-2xs"
             >
               <option>Chọn tag</option>
               <option>VIP</option>
@@ -72,7 +72,7 @@ export const CustomerReport: React.FC<CustomerReportProps> = ({ isSimulated }) =
           onClick={() => setActiveTab("overview")}
           className={`px-4 py-2.5 text-xs font-bold transition-all relative border-b-2 cursor-pointer ${
             activeTab === "overview"
-              ? "border-blue-600 text-blue-600 font-extrabold"
+              ? "border-lime-500 text-lime-500 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
@@ -82,7 +82,7 @@ export const CustomerReport: React.FC<CustomerReportProps> = ({ isSimulated }) =
           onClick={() => setActiveTab("segments")}
           className={`px-4 py-2.5 text-xs font-bold transition-all relative border-b-2 cursor-pointer ${
             activeTab === "segments"
-              ? "border-blue-600 text-blue-600 font-extrabold"
+              ? "border-lime-500 text-lime-500 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
@@ -92,7 +92,7 @@ export const CustomerReport: React.FC<CustomerReportProps> = ({ isSimulated }) =
           onClick={() => setActiveTab("time")}
           className={`px-4 py-2.5 text-xs font-bold transition-all relative border-b-2 cursor-pointer ${
             activeTab === "time"
-              ? "border-blue-600 text-blue-600 font-extrabold"
+              ? "border-lime-500 text-lime-500 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >

@@ -72,7 +72,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
           >
             <span>+ Tạo cấu hình Form</span>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -121,7 +121,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
         </div>
         <a 
           href="#" 
-          className="text-blue-650 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold whitespace-nowrap inline-flex items-center gap-0.5 ml-2 cursor-pointer"
+          className="text-lime-600 hover:text-lime-600 dark:text-lime-300 dark:hover:text-lime-200 font-bold whitespace-nowrap inline-flex items-center gap-0.5 ml-2 cursor-pointer"
         >
           <span>Tư vấn 1-1 miễn phí</span>
           <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -142,7 +142,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
             placeholder="Tìm kiếm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
           />
         </div>
 
@@ -151,7 +151,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
           <select 
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer"
+            className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer"
           >
             <option value="ALL">Tất cả loại</option>
             <option value="Google Forms">Google Forms</option>
@@ -178,7 +178,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
                       type="checkbox" 
                       onChange={handleSelectAll}
                       checked={filteredConfigs.length > 0 && selectedIds.length === filteredConfigs.length}
-                      className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                      className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer" 
                     />
                   </th>
                   <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
@@ -206,7 +206,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
                     <tr 
                       key={item.id}
                       className={`transition hover:bg-slate-50/50 dark:hover:bg-gray-800/10 ${
-                        isSelected ? "bg-[#f4f7ff] dark:bg-blue-950/10" : ""
+                        isSelected ? "bg-[#f4f7ff] dark:bg-lime-950/10" : ""
                       }`}
                     >
                       <td className="py-3.5 px-4 text-center">
@@ -214,11 +214,11 @@ export const FormConfig: React.FC<FormConfigProps> = ({
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(item.id, e.target.checked)}
-                          className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer"
                         />
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="text-sm font-semibold text-slate-800 dark:text-gray-200 hover:text-blue-600 transition cursor-pointer">
+                        <span className="text-sm font-semibold text-slate-800 dark:text-gray-200 hover:text-lime-500 transition cursor-pointer">
                           {item.name}
                         </span>
                       </td>
@@ -230,7 +230,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
                           item.type === "Google Forms" 
                             ? "text-purple-600 bg-purple-55 dark:text-purple-400 dark:bg-purple-950/20" 
                             : item.type === "API"
-                            ? "text-blue-650 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/20"
+                            ? "text-lime-600 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/20"
                             : "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/20"
                         }`}>
                           {item.type}
@@ -267,7 +267,7 @@ export const FormConfig: React.FC<FormConfigProps> = ({
       ) : (
         /* Empty State */
         <div className="py-24 text-center border border-dashed border-gray-250 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-900 flex flex-col items-center justify-center space-y-4">
-          <div className="w-16 h-16 rounded-full border-2 border-dashed border-blue-500/40 dark:border-blue-400/30 flex items-center justify-center text-blue-500 dark:text-blue-400 animate-pulse">
+          <div className="w-16 h-16 rounded-full border-2 border-dashed border-lime-400/40 dark:border-lime-300/30 flex items-center justify-center text-lime-400 dark:text-lime-300 animate-pulse">
             {/* Form list document icon */}
             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

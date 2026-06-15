@@ -66,7 +66,7 @@ export const CustomerTags: React.FC = () => {
         <div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer font-inter"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer font-inter"
           >
             <span>Tạo Tag mới</span>
           </button>
@@ -84,7 +84,7 @@ export const CustomerTags: React.FC = () => {
             placeholder="Tìm kiếm theo tên Tag..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-lime-400 font-medium"
           />
         </div>
         <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -121,7 +121,7 @@ export const CustomerTags: React.FC = () => {
                     className="transition hover:bg-slate-50/50 dark:hover:bg-gray-800/10"
                   >
                     <td className="py-4 px-6 text-xs font-semibold text-slate-800 dark:text-white">
-                      <span className="px-2 py-0.5 text-[11px] font-bold text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/30 rounded-full">
+                      <span className="px-2 py-0.5 text-[11px] font-bold text-lime-600 bg-lime-50 dark:text-lime-200 dark:bg-lime-950/30 rounded-full">
                         {item.name}
                       </span>
                     </td>
@@ -163,7 +163,7 @@ export const CustomerTags: React.FC = () => {
                       </p>
                       <button
                         onClick={() => setIsModalOpen(true)}
-                        className="px-4.5 py-1.5 border border-blue-600 bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 rounded-lg shadow-2xs transition cursor-pointer"
+                        className="px-4.5 py-1.5 border border-lime-500 bg-lime-500 text-xs font-bold text-white hover:bg-lime-600 rounded-lg shadow-2xs transition cursor-pointer"
                       >
                         + Tạo Tag mới
                       </button>
@@ -211,7 +211,7 @@ export const CustomerTags: React.FC = () => {
                   placeholder="Ví dụ: VIP, Mua lại nhiều lần..."
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-lime-400 font-medium"
                 />
               </div>
 
@@ -225,7 +225,7 @@ export const CustomerTags: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg shadow-sm transition duration-150 cursor-pointer font-inter"
+                  className="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-xs font-bold text-white rounded-lg shadow-sm transition duration-150 cursor-pointer font-inter"
                 >
                   Lưu
                 </button>

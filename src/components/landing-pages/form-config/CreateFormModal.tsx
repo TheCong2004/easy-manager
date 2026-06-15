@@ -70,13 +70,13 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
           <div className="flex items-start gap-3">
             <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all duration-300 ${
               step >= 1 
-                ? "bg-blue-600 text-white shadow-xs" 
+                ? "bg-lime-500 text-white shadow-xs" 
                 : "bg-gray-200 text-slate-400 dark:bg-gray-850 dark:text-slate-500"
             }`}>
               1
             </span>
             <div className="space-y-0.5">
-              <span className={`text-xs font-bold block ${step === 1 ? "text-blue-600 dark:text-blue-400" : "text-slate-800 dark:text-gray-200"}`}>
+              <span className={`text-xs font-bold block ${step === 1 ? "text-lime-500 dark:text-lime-300" : "text-slate-800 dark:text-gray-200"}`}>
                 Chọn tài khoản liên kết
               </span>
               <span className="text-[10px] text-slate-400 dark:text-slate-550 block font-medium leading-normal">
@@ -89,13 +89,13 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
           <div className="flex items-start gap-3">
             <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all duration-300 ${
               step === 2 
-                ? "bg-blue-600 text-white shadow-xs" 
+                ? "bg-lime-500 text-white shadow-xs" 
                 : "bg-gray-100 text-slate-400 dark:bg-gray-800/80 dark:text-slate-600"
             }`}>
               2
             </span>
             <div className="space-y-0.5">
-              <span className={`text-xs font-bold block ${step === 2 ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-550"}`}>
+              <span className={`text-xs font-bold block ${step === 2 ? "text-lime-500 dark:text-lime-300" : "text-slate-400 dark:text-slate-550"}`}>
                 Điền cấu hình Form
               </span>
               <span className="text-[10px] text-slate-400 dark:text-slate-550 block font-medium leading-normal">
@@ -121,7 +121,7 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
                   placeholder="Tìm kiếm..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400 focus:ring-1 focus:ring-lime-400"
                 />
               </div>
 
@@ -148,7 +148,7 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
                     </div>
                     <button 
                       onClick={() => handleSelectType("Google Forms")}
-                      className="px-4 py-1.5 text-xs font-bold text-blue-600 bg-white border border-blue-200 hover:bg-blue-50 rounded-lg transition dark:bg-gray-900 dark:text-blue-400 dark:border-blue-900 dark:hover:bg-blue-950/20 cursor-pointer"
+                      className="px-4 py-1.5 text-xs font-bold text-lime-500 bg-white border border-lime-100 hover:bg-lime-50 rounded-lg transition dark:bg-gray-900 dark:text-lime-300 dark:border-lime-900 dark:hover:bg-lime-950/20 cursor-pointer"
                     >
                       Chọn
                     </button>
@@ -159,7 +159,7 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
                 {("api".includes(searchQuery.toLowerCase()) || searchQuery === "") && (
                   <div className="flex items-center justify-between p-4 border border-gray-150 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900/50 hover:shadow-2xs transition duration-200">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-lime-50 dark:bg-lime-950/20 flex items-center justify-center text-lime-500 dark:text-lime-300 flex-shrink-0">
                         {/* API Icon */}
                         <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
@@ -176,7 +176,7 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
                     </div>
                     <button 
                       onClick={() => handleSelectType("API")}
-                      className="px-4 py-1.5 text-xs font-bold text-blue-600 bg-white border border-blue-200 hover:bg-blue-50 rounded-lg transition dark:bg-gray-900 dark:text-blue-400 dark:border-blue-900 dark:hover:bg-blue-950/20 cursor-pointer"
+                      className="px-4 py-1.5 text-xs font-bold text-lime-500 bg-white border border-lime-100 hover:bg-lime-50 rounded-lg transition dark:bg-gray-900 dark:text-lime-300 dark:border-lime-900 dark:hover:bg-lime-950/20 cursor-pointer"
                     >
                       Chọn
                     </button>
@@ -208,13 +208,13 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
                   placeholder="Ví dụ: Sheets Khách Hàng, API Nhập Liệu"
                   value={configName}
                   onChange={(e) => setConfigName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400 focus:ring-1 focus:ring-lime-400"
                   required
                   autoFocus
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/10 border border-blue-100/30 text-xs text-blue-700 dark:text-blue-400 space-y-1 leading-relaxed">
+              <div className="p-4 rounded-xl bg-lime-50/50 dark:bg-lime-950/10 border border-lime-50/30 text-xs text-lime-600 dark:text-lime-300 space-y-1 leading-relaxed">
                 <p className="font-bold">✓ Đã chọn kết nối: {selectedType}</p>
                 <p className="opacity-90 font-medium">Bạn sẽ sử dụng tài khoản hệ thống mặc định để thiết lập. Vui lòng nhập tên gợi nhớ cho cấu hình này và nhấn Hoàn thành để lưu lại.</p>
               </div>
@@ -234,7 +234,7 @@ export const CreateFormModal: React.FC<CreateFormModalProps> = ({
           {step === 2 && (
             <button
               onClick={handleFormSubmit}
-              className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+              className="px-5 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
             >
               Hoàn thành
             </button>

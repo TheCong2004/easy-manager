@@ -214,7 +214,7 @@ export const CustomerCustomFields: React.FC = () => {
         <div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer font-inter"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer font-inter"
           >
             <span>Tạo trường mới</span>
           </button>
@@ -233,7 +233,7 @@ export const CustomerCustomFields: React.FC = () => {
             placeholder="Tìm kiếm theo tên hiển thị, tên trường..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-lime-400 font-medium"
           />
         </div>
 
@@ -243,7 +243,7 @@ export const CustomerCustomFields: React.FC = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as any)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden focus:border-blue-500 cursor-pointer"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden focus:border-lime-400 cursor-pointer"
             >
               <option value="ALL">Tất cả kiểu dữ liệu</option>
               <option value="Chữ">Chữ (Text)</option>
@@ -296,14 +296,14 @@ export const CustomerCustomFields: React.FC = () => {
                     <td className="py-4 px-6 text-xs font-bold text-slate-800 dark:text-white">
                       {item.displayName}
                     </td>
-                    <td className="py-4 px-6 text-xs font-mono text-blue-600 dark:text-blue-400">
+                    <td className="py-4 px-6 text-xs font-mono text-lime-500 dark:text-lime-300">
                       {item.fieldName}
                     </td>
                     <td className="py-4 px-6">
                       <span
                         className={`px-2.5 py-0.5 text-[10px] rounded-md font-extrabold tracking-wider ${
                           item.dataType === "Chữ"
-                            ? "text-blue-800 bg-blue-100 dark:text-blue-300 dark:bg-blue-950/40"
+                            ? "text-lime-800 bg-lime-50 dark:text-lime-200 dark:bg-lime-950/40"
                             : item.dataType === "Số"
                             ? "text-amber-800 bg-amber-100 dark:text-amber-300 dark:bg-amber-950/40"
                             : item.dataType === "Ngày tháng"
@@ -403,7 +403,7 @@ export const CustomerCustomFields: React.FC = () => {
                       );
                     }
                   }}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-lime-400 font-medium"
                 />
               </div>
 
@@ -417,7 +417,7 @@ export const CustomerCustomFields: React.FC = () => {
                   placeholder="Ví dụ: shopping_demands"
                   value={newFieldName}
                   onChange={(e) => setNewFieldName(e.target.value)}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white font-mono focus:outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white font-mono focus:outline-hidden focus:border-lime-400 font-medium"
                 />
               </div>
 
@@ -428,7 +428,7 @@ export const CustomerCustomFields: React.FC = () => {
                 <select
                   value={newDataType}
                   onChange={(e) => setNewDataType(e.target.value as any)}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-blue-500 font-medium cursor-pointer"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-lime-400 font-medium cursor-pointer"
                 >
                   <option value="Chữ">Chữ (Text)</option>
                   <option value="Số">Số (Number)</option>
@@ -447,7 +447,7 @@ export const CustomerCustomFields: React.FC = () => {
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   rows={3}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-blue-500 font-medium resize-none"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-lime-400 font-medium resize-none"
                 />
               </div>
 
@@ -461,7 +461,7 @@ export const CustomerCustomFields: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg shadow-sm transition duration-150 cursor-pointer"
+                  className="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-xs font-bold text-white rounded-lg shadow-sm transition duration-150 cursor-pointer"
                 >
                   Lưu
                 </button>

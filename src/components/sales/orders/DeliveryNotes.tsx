@@ -36,7 +36,7 @@ export const DeliveryNotes: React.FC = () => {
                 onClick={() => setActiveTab(tab.key as typeof activeTab)}
                 className={`px-4 py-2 text-xs font-bold transition-all relative border-b-2 rounded-t-lg cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-blue-600 text-blue-600 bg-blue-50/40 dark:bg-blue-950/20"
+                    ? "border-lime-500 text-lime-500 bg-lime-50/40 dark:bg-lime-950/20"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >
@@ -63,7 +63,7 @@ export const DeliveryNotes: React.FC = () => {
 
           {/* Status dropdown */}
           <div className="relative">
-            <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-7 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-blue-500 cursor-pointer">
+            <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-7 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-lime-400 cursor-pointer">
               <option>Tất cả trạng thái</option>
               <option>Chờ lấy hàng</option>
               <option>Đã lấy hàng</option>
@@ -79,7 +79,7 @@ export const DeliveryNotes: React.FC = () => {
 
           {/* Payment collection dropdown */}
           <div className="relative">
-            <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-7 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-blue-500 cursor-pointer">
+            <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-7 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-lime-400 cursor-pointer">
               <option>Tất cả thu tiền</option>
               <option>Đã thu tiền</option>
               <option>Chưa thu tiền</option>
@@ -117,8 +117,8 @@ export const DeliveryNotes: React.FC = () => {
       {/* Empty State */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-theme-xs flex-1 flex flex-col items-center justify-center py-28 select-none">
         {/* Mail / delivery icon */}
-        <div className="w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center mb-5">
-          <svg className="w-9 h-9 text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+        <div className="w-20 h-20 rounded-full bg-lime-50 dark:bg-lime-950/30 flex items-center justify-center mb-5">
+          <svg className="w-9 h-9 text-lime-300 dark:text-lime-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
           </svg>
         </div>

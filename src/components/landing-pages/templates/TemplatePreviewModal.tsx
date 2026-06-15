@@ -64,7 +64,7 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
           </button>
           <button
             onClick={() => onUseTemplate(template)}
-            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1.5"
           >
             <IconPlus size={16} />
             <span>Sử dụng Template này</span>

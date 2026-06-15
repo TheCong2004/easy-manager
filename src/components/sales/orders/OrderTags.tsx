@@ -81,7 +81,7 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({ isOpen, onClose, onSave
                 placeholder="Ví dụ: VIP, Khách quen, Giao gấp..."
                 value={tagName}
                 onChange={(e) => setTagName(e.target.value)}
-                className="w-full px-3 py-2.5 text-xs rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-900"
+                className="w-full px-3 py-2.5 text-xs rounded-lg border border-lime-300 dark:border-lime-500 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-100 dark:focus:ring-lime-900"
                 autoFocus
                 required
               />
@@ -107,7 +107,7 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({ isOpen, onClose, onSave
                     title={color.label}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer border-2 ${
                       isSelected
-                        ? "border-blue-600 scale-110 shadow-md"
+                        ? "border-lime-500 scale-110 shadow-md"
                         : "border-transparent hover:scale-105"
                     }`}
                     style={{ backgroundColor: color.value }}
@@ -217,7 +217,7 @@ export const OrderTags: React.FC = () => {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer whitespace-nowrap"
         >
           + Tạo Tag mới
         </button>
@@ -235,7 +235,7 @@ export const OrderTags: React.FC = () => {
           placeholder="Tìm kiếm tag..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium"
+          className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 font-medium"
         />
       </div>
 
@@ -304,8 +304,8 @@ export const OrderTags: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="py-24 text-center select-none">
                     <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
-                        <svg className="w-7 h-7 text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <div className="w-16 h-16 rounded-full bg-lime-50 dark:bg-lime-950/30 flex items-center justify-center">
+                        <svg className="w-7 h-7 text-lime-300 dark:text-lime-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.592 0l4.318-4.318a1.125 1.125 0 000-1.591l-9.581-9.581A2.25 2.25 0 009.568 3z"/>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z"/>
                         </svg>
@@ -316,7 +316,7 @@ export const OrderTags: React.FC = () => {
                       </p>
                       <button
                         onClick={() => setIsModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
                       >
                         + Tạo Tag mới
                       </button>

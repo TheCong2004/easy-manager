@@ -65,7 +65,7 @@ export const CompanyList: React.FC = () => {
         <div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
           >
             <span>Thêm công ty mới</span>
           </button>
@@ -83,7 +83,7 @@ export const CompanyList: React.FC = () => {
             placeholder="Tìm kiếm công ty theo tên..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-lime-400 font-medium"
           />
         </div>
       </div>
@@ -140,7 +140,7 @@ export const CompanyList: React.FC = () => {
                 <tr>
                   <td colSpan={4} className="py-20 text-center select-none">
                     <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="w-14 h-14 rounded-full bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50">
+                      <div className="w-14 h-14 rounded-full bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300 flex items-center justify-center border border-lime-50 dark:border-lime-900/50">
                         <IconBuilding size={26} />
                       </div>
                       <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
@@ -151,7 +151,7 @@ export const CompanyList: React.FC = () => {
                       </p>
                       <button
                         onClick={() => setIsModalOpen(true)}
-                        className="px-4.5 py-1.5 border border-blue-600 bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 rounded-lg shadow-2xs transition cursor-pointer"
+                        className="px-4.5 py-1.5 border border-lime-500 bg-lime-500 text-xs font-bold text-white hover:bg-lime-600 rounded-lg shadow-2xs transition cursor-pointer"
                       >
                         + Thêm công ty mới
                       </button>
@@ -199,7 +199,7 @@ export const CompanyList: React.FC = () => {
                   placeholder="Ví dụ: Công ty TNHH LadiPage Việt Nam"
                   value={newCompanyName}
                   onChange={(e) => setNewCompanyName(e.target.value)}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-lime-400 font-medium"
                 />
               </div>
 
@@ -213,7 +213,7 @@ export const CompanyList: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg shadow-sm transition cursor-pointer"
+                  className="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-xs font-bold text-white rounded-lg shadow-sm transition cursor-pointer"
                 >
                   Lưu
                 </button>

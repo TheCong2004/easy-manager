@@ -19,7 +19,7 @@ const TRIGGER_OPTIONS = [
 ];
 
 const ACTION_OPTIONS = [
-  { id: "send_zalo", name: "Gửi tin nhắn Zalo ZNS", desc: "Gửi tin nhắn OA chính thống chăm sóc khách hàng tự động.", icon: "Z", color: "bg-blue-500", previewType: "zalo" },
+  { id: "send_zalo", name: "Gửi tin nhắn Zalo ZNS", desc: "Gửi tin nhắn OA chính thống chăm sóc khách hàng tự động.", icon: "Z", color: "bg-lime-400", previewType: "zalo" },
   { id: "send_email", name: "Gửi Email tự động", desc: "Gửi email HTML chào mừng, xác nhận thông tin hay nuôi dưỡng.", icon: "E", color: "bg-indigo-500", previewType: "email" },
   { id: "send_sms", name: "Gửi SMS Brandname", desc: "Gửi tin nhắn SMS Brandname viễn thông nhanh, xác thực OTP.", icon: "S", color: "bg-purple-600", previewType: "sms" },
   { id: "add_tag", name: "Tự động gắn Tag", desc: "Thêm thẻ Tag phân loại khách hàng tự động vào cơ sở dữ liệu.", icon: "T", color: "bg-amber-500", previewType: "tag" },
@@ -128,8 +128,8 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
       case "zalo":
         return (
           <div className="flex flex-col h-full bg-[#eef3f7] text-slate-800 text-[10px] font-sans">
-            <div className="bg-[#1b53f4] text-white p-2 flex items-center gap-1.5 shadow-3xs">
-              <div className="w-4.5 h-4.5 rounded-full bg-white text-[#1b53f4] flex items-center justify-center font-black text-[9px]">
+            <div className="bg-[#65a30d] text-white p-2 flex items-center gap-1.5 shadow-3xs">
+              <div className="w-4.5 h-4.5 rounded-full bg-white text-[#65a30d] flex items-center justify-center font-black text-[9px]">
                 Z
               </div>
               <div>
@@ -145,7 +145,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                 <div className="text-slate-650 text-[8.5px] leading-relaxed">
                   {"Xin chào Quý khách,\n\nTài khoản của bạn đã được tích hợp thành công trên hệ thống tự động hóa chăm sóc khách hàng LadiPage.\n\nChúc quý khách có trải nghiệm tốt nhất!"}
                 </div>
-                <button className="w-full bg-blue-50 text-blue-600 font-bold py-1.5 rounded-md text-[8px] hover:bg-blue-100 transition">
+                <button className="w-full bg-lime-50 text-lime-500 font-bold py-1.5 rounded-md text-[8px] hover:bg-lime-50 transition">
                   Kết nối OA ngay
                 </button>
               </div>
@@ -227,7 +227,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") setIsEditingName(false);
                 }}
-                className="text-sm font-bold text-slate-800 dark:text-white bg-gray-50 dark:bg-gray-850 border border-blue-500 rounded px-2 py-0.5 outline-hidden"
+                className="text-sm font-bold text-slate-800 dark:text-white bg-gray-50 dark:bg-gray-850 border border-lime-400 rounded px-2 py-0.5 outline-hidden"
                 autoFocus
               />
             ) : (
@@ -237,7 +237,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                 </span>
                 <button
                   onClick={() => setIsEditingName(true)}
-                  className="p-0.5 text-slate-400 hover:text-blue-600 cursor-pointer rounded"
+                  className="p-0.5 text-slate-400 hover:text-lime-500 cursor-pointer rounded"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
@@ -284,7 +284,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer ${
               isSaved
                 ? "bg-gray-100 dark:bg-gray-800 text-slate-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-lime-500 hover:bg-lime-600 text-white"
             }`}
           >
             Lưu nháp
@@ -343,7 +343,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                   ) : (
                     <button
                       onClick={() => setPanelMode(panelMode === "trigger" ? "none" : "trigger")}
-                      className="w-full py-4 border-2 border-dashed border-gray-250 hover:border-blue-500 dark:border-gray-750 dark:hover:border-blue-500/80 rounded-xl text-slate-450 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-slate-50/20"
+                      className="w-full py-4 border-2 border-dashed border-gray-250 hover:border-lime-400 dark:border-gray-750 dark:hover:border-lime-400/80 rounded-xl text-slate-450 dark:text-slate-500 hover:text-lime-500 dark:hover:text-lime-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-slate-50/20"
                     >
                       <IconPlus size={14} />
                       <span>Thêm sự kiện Trigger</span>
@@ -360,7 +360,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
 
                 {/* 2. Action Block */}
                 <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs relative">
-                  <div className="absolute -top-3.5 left-6 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs">
+                  <div className="absolute -top-3.5 left-6 bg-lime-500 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs">
                     ⚙ HÀNH ĐỘNG
                   </div>
                   {selectedAction ? (
@@ -389,7 +389,7 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                   ) : (
                     <button
                       onClick={() => setPanelMode(panelMode === "action" ? "none" : "action")}
-                      className="w-full py-4 border-2 border-dashed border-gray-250 hover:border-blue-500 dark:border-gray-750 dark:hover:border-blue-500/80 rounded-xl text-slate-450 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-slate-50/20"
+                      className="w-full py-4 border-2 border-dashed border-gray-250 hover:border-lime-400 dark:border-gray-750 dark:hover:border-lime-400/80 rounded-xl text-slate-450 dark:text-slate-500 hover:text-lime-500 dark:hover:text-lime-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-slate-50/20"
                     >
                       <IconPlus size={14} />
                       <span>Thêm hành động Automation</span>
@@ -419,9 +419,9 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                         <button
                           key={opt.id}
                           onClick={() => handleSelectTrigger(opt)}
-                          className="w-full p-3 bg-slate-50 hover:bg-blue-50/40 dark:bg-gray-900 dark:hover:bg-blue-950/20 text-left border border-gray-200/60 dark:border-gray-800 rounded-xl transition hover:border-blue-300 dark:hover:border-blue-900 group cursor-pointer"
+                          className="w-full p-3 bg-slate-50 hover:bg-lime-50/40 dark:bg-gray-900 dark:hover:bg-lime-950/20 text-left border border-gray-200/60 dark:border-gray-800 rounded-xl transition hover:border-lime-200 dark:hover:border-lime-900 group cursor-pointer"
                         >
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                          <h4 className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-lime-500 dark:group-hover:text-lime-300 transition">
                             {opt.name}
                           </h4>
                           <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-normal">
@@ -433,13 +433,13 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                         <button
                           key={opt.id}
                           onClick={() => handleSelectAction(opt)}
-                          className="w-full p-3 bg-slate-50 hover:bg-blue-50/40 dark:bg-gray-900 dark:hover:bg-blue-950/20 text-left border border-gray-200/60 dark:border-gray-800 rounded-xl transition hover:border-blue-300 dark:hover:border-blue-900 flex gap-3 group cursor-pointer"
+                          className="w-full p-3 bg-slate-50 hover:bg-lime-50/40 dark:bg-gray-900 dark:hover:bg-lime-950/20 text-left border border-gray-200/60 dark:border-gray-800 rounded-xl transition hover:border-lime-200 dark:hover:border-lime-900 flex gap-3 group cursor-pointer"
                         >
                           <div className={`w-8 h-8 rounded-lg ${opt.color} text-white font-black flex items-center justify-center text-sm shadow-sm flex-shrink-0`}>
                             {opt.icon}
                           </div>
                           <div>
-                            <h4 className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                            <h4 className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-lime-500 dark:group-hover:text-lime-300 transition">
                               {opt.name}
                             </h4>
                             <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-normal">
@@ -513,10 +513,10 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
               {/* Action node */}
               <div className={`w-80 p-5 rounded-2xl border text-center shadow-xs ${
                 selectedAction
-                  ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900"
+                  ? "bg-lime-50 dark:bg-lime-950/20 border-lime-100 dark:border-lime-900"
                   : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 border-dashed"
               }`}>
-                <div className="text-[9px] font-extrabold text-blue-600 dark:text-blue-450 uppercase tracking-widest mb-1.5">
+                <div className="text-[9px] font-extrabold text-lime-500 dark:text-lime-400 uppercase tracking-widest mb-1.5">
                   Hành động thực hiện (Action)
                 </div>
                 <h4 className="text-xs font-bold text-slate-800 dark:text-white">

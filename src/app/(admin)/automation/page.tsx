@@ -104,7 +104,7 @@ export default function AutomationPage() {
       case "campaigns":
         return (
           <div className="flex-1 flex flex-col justify-center items-center py-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 text-center">
-            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-950/20 text-blue-650 rounded-full flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-lime-50 dark:bg-lime-950/20 text-lime-600 rounded-full flex items-center justify-center mb-4">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
@@ -115,7 +115,7 @@ export default function AutomationPage() {
             </p>
             <button
               onClick={() => alert("Tính năng gửi chiến dịch hàng loạt đang được chuẩn bị phát hành ở phiên bản tiếp theo.")}
-              className="mt-6 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
+              className="mt-6 px-5 py-2 bg-lime-500 hover:bg-lime-600 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
             >
               Tìm hiểu thêm
             </button>
@@ -135,7 +135,7 @@ export default function AutomationPage() {
             </p>
             <button
               onClick={() => alert("Tính năng chuỗi Sequence tự động đang được cập nhật.")}
-              className="mt-6 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
+              className="mt-6 px-5 py-2 bg-lime-500 hover:bg-lime-600 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
             >
               Tìm hiểu thêm
             </button>
@@ -170,7 +170,7 @@ export default function AutomationPage() {
             </div>
             <button
               onClick={() => alert("Đã lưu các thiết lập cài đặt chung.")}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
+              className="px-5 py-2.5 bg-lime-500 hover:bg-lime-600 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
             >
               Lưu thay đổi
             </button>
@@ -183,7 +183,7 @@ export default function AutomationPage() {
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Quản lý thẻ phân loại (Tag)</h2>
               <button
                 onClick={() => alert("Thêm tag mới...")}
-                className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-xs hover:bg-blue-700 transition"
+                className="px-4 py-2 bg-lime-500 text-white font-bold rounded-lg text-xs hover:bg-lime-600 transition"
               >
                 + Tạo Tag mới
               </button>
@@ -296,7 +296,7 @@ export default function AutomationPage() {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hạn ngạch còn lại trong tháng</span>
                       <span className="text-base font-black text-slate-800 dark:text-white">{isSimulated ? "4,820 / 5,000 tin nhắn" : "5,000 / 5,000 tin nhắn"}</span>
                       <div className="w-full bg-gray-100 dark:bg-gray-850 h-1.5 rounded-full overflow-hidden mt-1">
-                        <div className="bg-[#1b53f4] h-full rounded-full" style={{ width: isSimulated ? "3.6%" : "0%" }} />
+                        <div className="bg-[#65a30d] h-full rounded-full" style={{ width: isSimulated ? "3.6%" : "0%" }} />
                       </div>
                     </div>
                   </div>
@@ -364,7 +364,7 @@ export default function AutomationPage() {
                       placeholder="Tìm kiếm"
                       value={bounceSearchQuery}
                       onChange={(e) => setBounceSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 text-xs bg-gray-50/50 dark:bg-gray-850 border border-gray-200 dark:border-gray-750 focus:border-blue-500 rounded-lg outline-hidden text-slate-800 dark:text-white"
+                      className="w-full pl-9 pr-4 py-2 text-xs bg-gray-50/50 dark:bg-gray-850 border border-gray-200 dark:border-gray-750 focus:border-lime-400 rounded-lg outline-hidden text-slate-800 dark:text-white"
                     />
                   </div>
                   <select

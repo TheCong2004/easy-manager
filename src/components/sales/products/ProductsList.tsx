@@ -137,7 +137,7 @@ export const ProductsList: React.FC = () => {
           {/* Create product → open type chooser */}
           <button
             onClick={() => setIsChooseTypeOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
           >
             + Tạo sản phẩm
           </button>
@@ -155,7 +155,7 @@ export const ProductsList: React.FC = () => {
                 onClick={() => setActiveTab(tab.key as typeof activeTab)}
                 className={`px-4 py-2 text-xs font-bold transition-all relative border-b-2 rounded-t-lg cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-blue-600 text-blue-600 bg-blue-50/40 dark:bg-blue-950/20"
+                    ? "border-lime-500 text-lime-500 bg-lime-50/40 dark:bg-lime-950/20"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >
@@ -174,7 +174,7 @@ export const ProductsList: React.FC = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-blue-500 cursor-pointer"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-lime-400 cursor-pointer"
             >
               <option value="all">Tất cả loại</option>
               <option value="physical">Sản phẩm vật lý</option>
@@ -194,7 +194,7 @@ export const ProductsList: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-blue-500 cursor-pointer"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-205 dark:border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-650 dark:text-slate-400 focus:outline-none focus:border-lime-400 cursor-pointer"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="visible">Đang hiển thị</option>
@@ -231,9 +231,9 @@ export const ProductsList: React.FC = () => {
 
       {/* Bulk action bar */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl animate-fade-in">
+        <div className="flex items-center justify-between p-4 bg-lime-50/60 dark:bg-lime-950/20 border border-lime-50 dark:border-lime-900/40 rounded-xl animate-fade-in">
           <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-            Đã chọn <strong className="text-blue-600">{selectedIds.length}</strong> sản phẩm
+            Đã chọn <strong className="text-lime-500">{selectedIds.length}</strong> sản phẩm
           </span>
           <button
             onClick={() => handleDeleteProducts(selectedIds)}
@@ -255,7 +255,7 @@ export const ProductsList: React.FC = () => {
                     type="checkbox"
                     onChange={handleSelectAll}
                     checked={filteredProducts.length > 0 && selectedIds.length === filteredProducts.length}
-                    className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer"
                   />
                 </th>
                 <th className="py-3.5 px-4 text-xs font-bold text-slate-855 dark:text-slate-200">Tên sản phẩm</th>
@@ -274,18 +274,18 @@ export const ProductsList: React.FC = () => {
                   return (
                     <tr
                       key={p.id}
-                      className={`hover:bg-slate-50/40 dark:hover:bg-gray-800/10 transition ${isSelected ? "bg-[#f4f7ff] dark:bg-blue-950/10" : ""}`}
+                      className={`hover:bg-slate-50/40 dark:hover:bg-gray-800/10 transition ${isSelected ? "bg-[#f4f7ff] dark:bg-lime-950/10" : ""}`}
                     >
                       <td className="py-4 px-4 text-center">
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(p.id, e.target.checked)}
-                          className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer"
                         />
                       </td>
                       <td className="py-4 px-4">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 cursor-pointer">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-lime-500 cursor-pointer">
                           {p.name}
                         </span>
                       </td>
@@ -293,7 +293,7 @@ export const ProductsList: React.FC = () => {
                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{p.typeName}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <code className="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 rounded">
+                        <code className="text-[11px] font-mono font-bold text-lime-500 dark:text-lime-300 bg-lime-50 dark:bg-lime-950/30 px-2 py-0.5 rounded">
                           {p.sku}
                         </code>
                       </td>
@@ -321,7 +321,7 @@ export const ProductsList: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={7} className="py-24 text-center select-none">
-                    <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    <p className="text-sm font-semibold text-lime-500 dark:text-lime-300">
                       Chưa có sản phẩm khớp với bộ lọc
                     </p>
                   </td>
@@ -341,7 +341,7 @@ export const ProductsList: React.FC = () => {
               <button className="flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 dark:border-gray-800 text-slate-400 cursor-pointer hover:text-slate-700 transition">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
               </button>
-              <button className="flex items-center justify-center w-7 h-7 rounded-md bg-blue-600 text-white font-bold text-xs cursor-pointer">1</button>
+              <button className="flex items-center justify-center w-7 h-7 rounded-md bg-lime-500 text-white font-bold text-xs cursor-pointer">1</button>
               <button className="flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 dark:border-gray-800 text-slate-400 cursor-pointer hover:text-slate-700 transition">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
               </button>

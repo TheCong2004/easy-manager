@@ -55,7 +55,7 @@ export const AutomationReport: React.FC<AutomationReportProps> = ({ isSimulated 
         vertical: 0,
       },
     },
-    colors: ["#fbbf24", "#1b53f4", "#ef4444", "#0d9488"], // Yellow, Dark Blue, Red, Teal
+    colors: ["#fbbf24", "#65a30d", "#ef4444", "#0d9488"], // Yellow, Dark Blue, Red, Teal
     chart: {
       fontFamily: "Outfit, sans-serif",
       height: 310,
@@ -219,7 +219,7 @@ export const AutomationReport: React.FC<AutomationReportProps> = ({ isSimulated 
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-xs font-bold transition-all relative border-b-2 rounded-t-lg cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-blue-600 text-blue-600 font-extrabold"
+                    ? "border-lime-500 text-lime-500 font-extrabold"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-55 dark:hover:bg-white/5"
                 }`}
               >

@@ -43,7 +43,7 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({
         vertical: 0,
       },
     },
-    colors: ["#1b53f4", "#95b3ff"],
+    colors: ["#65a30d", "#95b3ff"],
     chart: {
       fontFamily: "Outfit, sans-serif",
       height: 310,

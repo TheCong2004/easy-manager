@@ -7,57 +7,94 @@ import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
 import {
-  BoxCubeIcon,
   ChevronDownIcon,
-  GridIcon,
   HorizontaLDots,
-  PageIcon,
-  PieChartIcon,
-  BoxIcon,
-  GroupIcon,
-  BoltIcon,
 } from "../icons/index";
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
+  iconColor?: string;
   path?: string;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
 const navItems: NavItem[] = [
   {
-    icon: <GridIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    ),
+    iconColor: "text-indigo-600 dark:text-indigo-400",
     name: "Tổng quan",
     path: "/",
   },
   {
-    icon: <PageIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+    ),
+    iconColor: "text-orange-600 dark:text-orange-400",
     name: "Landing Pages",
     path: "/landing-pages",
   },
   {
-    icon: <BoxIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+    ),
+    iconColor: "text-emerald-600 dark:text-emerald-400",
     name: "Bán hàng",
     path: "/ban-hang",
   },
   {
-    icon: <GroupIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+    iconColor: "text-sky-600 dark:text-sky-400",
     name: "Khách hàng",
     path: "/khach-hang",
   },
   {
-    icon: <BoxCubeIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+      </svg>
+    ),
+    iconColor: "text-violet-600 dark:text-violet-400",
     name: "LadiWork",
     path: "/ladiwork",
   },
   {
-    icon: <BoltIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    ),
+    iconColor: "text-amber-600 dark:text-amber-400",
     name: "Automation",
     path: "/automation",
   },
   {
-    icon: <PieChartIcon className="w-5 h-5" />,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    ),
+    iconColor: "text-rose-600 dark:text-rose-400",
     name: "Báo cáo",
     path: "/bao-cao",
   },
@@ -66,45 +103,27 @@ const navItems: NavItem[] = [
 const othersItems: NavItem[] = [
   {
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
       </svg>
     ),
+    iconColor: "text-[#1877F2] dark:text-[#4299e1]",
     name: "Facebook Ads",
     path: "/facebook-ads/tai-khoan-qc",
   },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/>
+        <rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/>
+      </svg>
+    ),
+    iconColor: "text-teal-600 dark:text-teal-400",
+    name: "Kho ứng dụng",
+    path: "/kho-ung-dung",
+  },
 ];
 
-const managementItems: NavItem[] = [
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.68-.34-1.16-1.04-1.16-1.84V9.58c0-.8.48-1.5 1.16-1.84L15.34 5.9c1.03-.52 2.16.24 2.16 1.4v13.4c0 1.16-1.13 1.92-2.16 1.4l-5-2.66zM7.5 9.5h-1a2.5 2.5 0 00-2.5 2.5v1a2.5 2.5 0 002.5 2.5h1" />
-      </svg>
-    ),
-    name: "Tài khoản QC",
-    path: "/facebook-ads/tai-khoan-qc",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM16.5 10.5h-3v3" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18" />
-      </svg>
-    ),
-    name: "Tài khoản BM",
-    path: "/facebook-ads/tai-khoan-bm",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 8h6M9 12h6M9 16h6" />
-      </svg>
-    ),
-    name: "Fanpage",
-    path: "/facebook-ads/fanpage",
-  },
-];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
@@ -131,10 +150,10 @@ const AppSidebar: React.FC = () => {
               }`}
             >
               <span
-                className={`shrink-0 flex items-center ${
+                className={`shrink-0 flex items-center justify-center w-8 h-8 transition-colors ${
                   openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
+                    ? "text-white"
+                    : nav.iconColor || "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 {nav.icon}
@@ -147,7 +166,7 @@ const AppSidebar: React.FC = () => {
                   className={`ml-auto w-5 h-5 transition-transform duration-200  ${
                     openSubmenu?.type === menuType &&
                     openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
+                      ? "rotate-180 text-lime-600"
                       : ""
                   }`}
                 />
@@ -162,10 +181,10 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 <span
-                  className={`shrink-0 flex items-center ${
+                  className={`shrink-0 flex items-center justify-center w-8 h-8 transition-colors ${
                     isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
+                      ? "text-white"
+                      : nav.iconColor || "text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   {nav.icon}
@@ -326,7 +345,7 @@ const AppSidebar: React.FC = () => {
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex items-center gap-2 select-none">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white shadow-xs">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-500 text-white shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" />
                   <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -338,7 +357,7 @@ const AppSidebar: React.FC = () => {
               </span>
             </div>
           ) : (
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white shadow-xs select-none">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-lime-500 text-white shadow-xs select-none">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" />
                 <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -366,23 +385,6 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}
-            </div>
-
-            <div>
-              <h2
-                className={`mb-2 text-[10px] font-bold tracking-wider uppercase flex leading-[20px] text-slate-400/80 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "QUẢN LÝ"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(managementItems, "main")}
             </div>
 
             <div>
@@ -433,7 +435,7 @@ const AppSidebar: React.FC = () => {
       {/* Floating Toggle Button centered on the right edge */}
       <button
         onClick={toggleSidebar}
-        className="absolute -right-3 top-[260px] z-50 hidden lg:flex items-center justify-center w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 border border-blue-500"
+        className="absolute -right-3 top-[260px] z-50 hidden lg:flex items-center justify-center w-6 h-6 bg-lime-500 hover:bg-lime-600 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 border border-lime-400"
         title={isExpanded ? "Thu gọn" : "Mở rộng"}
       >
         {isExpanded ? (

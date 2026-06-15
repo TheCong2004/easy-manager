@@ -79,11 +79,11 @@ export const AutomationSidebar: React.FC<AutomationSidebarProps> = ({
               onClick={() => setActiveSubTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-semibold transition cursor-pointer relative group ${
                 isActive
-                  ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400"
+                  ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300"
                   : "text-slate-650 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-white/5"
               }`}
             >
-              <span className={`${isActive ? "text-[#1b53f4] dark:text-blue-400" : "text-slate-400 group-hover:text-slate-650 dark:group-hover:text-slate-350"}`}>
+              <span className={`${isActive ? "text-[#65a30d] dark:text-lime-300" : "text-slate-400 group-hover:text-slate-650 dark:group-hover:text-slate-350"}`}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
@@ -128,7 +128,7 @@ export const AutomationSidebar: React.FC<AutomationSidebarProps> = ({
                     onClick={() => setActiveSubTab(subItem.id)}
                     className={`w-full flex items-center px-4 py-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
                       isActive
-                        ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400"
+                        ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300"
                         : "text-slate-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-white/5"
                     }`}
                   >

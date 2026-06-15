@@ -71,7 +71,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
 
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
         >
           <span>+ Tạo Tag mới</span>
         </button>
@@ -88,7 +88,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
             placeholder="Tìm kiếm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                     type="checkbox" 
                     onChange={handleSelectAll}
                     checked={filteredTags.length > 0 && selectedIds.length === filteredTags.length}
-                    className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                    className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer" 
                   />
                 </th>
                 <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
@@ -153,7 +153,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                     <tr 
                       key={item.id}
                       className={`transition hover:bg-slate-50/50 dark:hover:bg-gray-800/10 ${
-                        isSelected ? "bg-[#f4f7ff] dark:bg-blue-950/10" : ""
+                        isSelected ? "bg-[#f4f7ff] dark:bg-lime-950/10" : ""
                       }`}
                     >
                       <td className="py-3.5 px-4 text-center">
@@ -161,7 +161,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(item.id, e.target.checked)}
-                          className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer"
                         />
                       </td>
                       <td className="py-3.5 px-4">
@@ -209,7 +209,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 dark:border-gray-800 p-4 bg-gray-50/20 dark:bg-gray-900/10">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer">
+              <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
                 <option>20</option>
               </select>
               <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none text-slate-400">
@@ -229,7 +229,7 @@ export const TagManagement: React.FC<TagManagementProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
-            <button className="flex items-center justify-center w-7 h-7 rounded-md bg-blue-600 text-white font-semibold text-xs shadow-xs cursor-pointer">
+            <button className="flex items-center justify-center w-7 h-7 rounded-md bg-lime-500 text-white font-semibold text-xs shadow-xs cursor-pointer">
               1
             </button>
             <button className="flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 dark:border-gray-800 text-slate-300 dark:text-slate-600 transition cursor-not-allowed" disabled>

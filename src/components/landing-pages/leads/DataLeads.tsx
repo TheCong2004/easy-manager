@@ -136,10 +136,10 @@ export const DataLeads: React.FC = () => {
               Tính năng Premium
             </h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium max-w-md">
-              Tính năng này chỉ dành cho tài khoản <strong className="text-slate-800 dark:text-gray-200">Core</strong> trở lên! Tham khảo bảng giá <a href="https://ladipage.vn/banggia" target="_blank" className="text-blue-600 underline">ladipage.vn/banggia</a> hoặc liên hệ hotline <strong className="text-slate-800 dark:text-gray-200">0972220777</strong> để được hỗ trợ nâng cấp.
+              Tính năng này chỉ dành cho tài khoản <strong className="text-slate-800 dark:text-gray-200">Core</strong> trở lên! Tham khảo bảng giá <a href="https://ladipage.vn/banggia" target="_blank" className="text-lime-500 underline">ladipage.vn/banggia</a> hoặc liên hệ hotline <strong className="text-slate-800 dark:text-gray-200">0972220777</strong> để được hỗ trợ nâng cấp.
             </p>
           </div>
-          <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5">
+          <button className="px-5 py-2.5 bg-lime-500 hover:bg-lime-600 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5">
             {/* Small Crown */}
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l3 6 6 .75-4.5 4.5 1.5 6.75-6-3.75-6 3.75 1.5-6.75-4.5-4.5 6-.75z" />
@@ -160,7 +160,7 @@ export const DataLeads: React.FC = () => {
                 Bạn đang chạy thử ở <strong className="text-slate-800 dark:text-white">Chế độ Test UI</strong>. Tính năng lưu trữ và đồng bộ thực tế yêu cầu nâng cấp gói Core.
               </span>
             </div>
-            <button className="text-blue-650 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold whitespace-nowrap inline-flex items-center gap-0.5 cursor-pointer">
+            <button className="text-lime-600 hover:text-lime-600 dark:text-lime-300 dark:hover:text-lime-200 font-bold whitespace-nowrap inline-flex items-center gap-0.5 cursor-pointer">
               <span>Nâng cấp ngay</span>
             </button>
           </div>
@@ -171,7 +171,7 @@ export const DataLeads: React.FC = () => {
               onClick={() => setActiveTab("leads")}
               className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-2 ${
                 activeTab === "leads"
-                  ? "font-bold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                  ? "font-bold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
                   : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-350"
               }`}
             >
@@ -185,7 +185,7 @@ export const DataLeads: React.FC = () => {
               onClick={() => setActiveTab("errors")}
               className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-2 ${
                 activeTab === "errors"
-                  ? "font-bold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                  ? "font-bold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
                   : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-350"
               }`}
             >
@@ -208,7 +208,7 @@ export const DataLeads: React.FC = () => {
                 placeholder="Tìm theo email, số điện thoại, landing ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-255 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-255 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
               />
             </div>
 
@@ -281,7 +281,7 @@ export const DataLeads: React.FC = () => {
                           <td className="py-3.5 px-4">
                             <span className={`px-2.5 py-0.5 text-[10px] font-black rounded-md tracking-wider ${
                               item.status === "Mới" 
-                                ? "text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/20" 
+                                ? "text-lime-600 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/20" 
                                 : "text-success-700 bg-success-50 dark:text-success-400 dark:bg-success-950/20"
                             }`}>
                               {item.status.toUpperCase()}

@@ -70,7 +70,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
         <div className="relative" ref={popoverRef}>
           <button 
             onClick={() => setIsUpgradePopoverOpen(!isUpgradePopoverOpen)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
           >
             <span>+ Tạo tên miền</span>
           </button>
@@ -96,10 +96,10 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
               </div>
 
               <div className="flex flex-col gap-2">
-                <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer flex items-center justify-center gap-1">
+                <button className="w-full py-2 bg-lime-500 hover:bg-lime-600 text-white text-xs font-bold rounded-lg transition shadow-xs cursor-pointer flex items-center justify-center gap-1">
                   <span>↗ Nâng cấp gói cao hơn</span>
                 </button>
-                <button className="w-full py-2 bg-white hover:bg-slate-50 text-blue-600 border border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-blue-400 dark:border-gray-800 dark:hover:bg-gray-850 text-xs font-bold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5">
+                <button className="w-full py-2 bg-white hover:bg-slate-50 text-lime-500 border border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-lime-300 dark:border-gray-800 dark:hover:bg-gray-850 text-xs font-bold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5">
                   <span>+ Mua thêm addon</span>
                 </button>
                 {/* Test mode button requested by user to allow UI testing */}
@@ -108,7 +108,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
                     setIsUpgradePopoverOpen(false);
                     setIsModalOpen(true);
                   }}
-                  className="w-full py-1.5 text-[11px] font-bold text-slate-450 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition cursor-pointer text-center underline border-t border-gray-100 dark:border-gray-800/80 pt-2.5 mt-1"
+                  className="w-full py-1.5 text-[11px] font-bold text-slate-450 hover:text-lime-500 dark:text-slate-500 dark:hover:text-lime-300 transition cursor-pointer text-center underline border-t border-gray-100 dark:border-gray-800/80 pt-2.5 mt-1"
                 >
                   Bỏ qua giới hạn (Chạy thử UI)
                 </button>
@@ -130,14 +130,14 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
             placeholder="Tìm kiếm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
           />
         </div>
 
         {/* Filters Selects */}
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">
-            <select className="w-full md:w-40 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer">
+            <select className="w-full md:w-40 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
               <option>Tất cả thành viên</option>
             </select>
             <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
@@ -151,7 +151,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
             <select 
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
-              className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer"
+              className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer"
             >
               <option value="ALL">Nền tảng</option>
               <option value="LadiPage">LadiPage</option>
@@ -179,7 +179,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
                       type="checkbox" 
                       onChange={handleSelectAll}
                       checked={filteredDomains.length > 0 && selectedIds.length === filteredDomains.length}
-                      className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                      className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer" 
                     />
                   </th>
                   <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
@@ -204,7 +204,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
                     <tr 
                       key={item.id}
                       className={`transition hover:bg-slate-50/50 dark:hover:bg-gray-800/10 ${
-                        isSelected ? "bg-[#f4f7ff] dark:bg-blue-950/10" : ""
+                        isSelected ? "bg-[#f4f7ff] dark:bg-lime-950/10" : ""
                       }`}
                     >
                       <td className="py-3.5 px-4 text-center">
@@ -212,7 +212,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(item.id, e.target.checked)}
-                          className="w-4.5 h-4.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="w-4.5 h-4.5 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-pointer"
                         />
                       </td>
                       <td className="py-3.5 px-4 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -234,7 +234,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
                       </td>
                       <td className="py-3.5 px-4">
                         {item.sslStatus === "ACTIVE" ? (
-                          <span className="px-2.5 py-0.5 text-[10px] font-black text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/40 rounded-md tracking-wider">
+                          <span className="px-2.5 py-0.5 text-[10px] font-black text-lime-600 bg-lime-50 dark:text-lime-200 dark:bg-lime-950/40 rounded-md tracking-wider">
                             ĐÃ BẬT
                           </span>
                         ) : (
@@ -260,7 +260,7 @@ export const DomainsConfig: React.FC<DomainsConfigProps> = ({
       ) : (
         /* Empty State */
         <div className="py-24 text-center border border-dashed border-gray-250 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-900 flex flex-col items-center justify-center space-y-4 select-none">
-          <div className="w-16 h-16 rounded-full border-2 border-dashed border-blue-500/40 dark:border-blue-400/30 flex items-center justify-center text-blue-500 dark:text-blue-400 animate-pulse">
+          <div className="w-16 h-16 rounded-full border-2 border-dashed border-lime-400/40 dark:border-lime-300/30 flex items-center justify-center text-lime-400 dark:text-lime-300 animate-pulse">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3" />
             </svg>

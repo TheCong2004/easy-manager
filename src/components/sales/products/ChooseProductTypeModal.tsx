@@ -14,9 +14,9 @@ const PhysicalIcon = () => (
 const DigitalIcon = () => (
   <svg className="w-7 h-7" viewBox="0 0 32 32" fill="none">
     <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
-    <path d="M8 20c0-3 2-5 4.5-5.5.5-3 3-5 5.5-5 3.5 0 6 2.5 6 6 0 .3 0 .6-.1.9C25.3 17 26 18 26 19c0 1.7-1.3 3-3 3H10c-1.1 0-2-.9-2-2z" stroke="#3B82F6" strokeWidth="1.8" strokeLinejoin="round"/>
-    <path d="M14 22l2 2 2-2" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    <line x1="16" y1="19" x2="16" y2="24" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round"/>
+    <path d="M8 20c0-3 2-5 4.5-5.5.5-3 3-5 5.5-5 3.5 0 6 2.5 6 6 0 .3 0 .6-.1.9C25.3 17 26 18 26 19c0 1.7-1.3 3-3 3H10c-1.1 0-2-.9-2-2z" stroke="#65a30d" strokeWidth="1.8" strokeLinejoin="round"/>
+    <path d="M14 22l2 2 2-2" stroke="#65a30d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    <line x1="16" y1="19" x2="16" y2="24" stroke="#65a30d" strokeWidth="1.8" strokeLinecap="round"/>
   </svg>
 );
 
@@ -133,7 +133,7 @@ export const ChooseProductTypeModal: React.FC<ChooseTypeModalProps> = ({
             <button
               key={type.id}
               onClick={() => onChoose(type.id, type.name)}
-              className={`flex items-start gap-3.5 p-4 rounded-xl border-2 text-left transition cursor-pointer hover:border-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 dark:hover:border-blue-700 ${
+              className={`flex items-start gap-3.5 p-4 rounded-xl border-2 text-left transition cursor-pointer hover:border-lime-300 hover:bg-lime-50/40 dark:hover:bg-lime-950/20 dark:hover:border-lime-600 ${
                 type.id === "combo"
                   ? "col-span-1"
                   : ""
@@ -141,7 +141,7 @@ export const ChooseProductTypeModal: React.FC<ChooseTypeModalProps> = ({
             >
               <div className="flex-shrink-0 mt-0.5">{type.icon}</div>
               <div className="space-y-1 min-w-0">
-                <p className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                <p className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-lime-500 dark:group-hover:text-lime-300 transition">
                   {type.name}
                 </p>
                 <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -167,7 +167,7 @@ export const ChooseProductTypeModal: React.FC<ChooseTypeModalProps> = ({
 
         {/* Tip footer */}
         <div className="px-6 pb-5">
-          <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
+          <p className="text-[11px] font-medium text-lime-500 dark:text-lime-300">
             <span className="font-bold">Mẹo:</span> chọn loại sát nhất với cách bạn vận hành — bạn sẽ thấy đúng các trường cần thiết cho loại đó.
           </p>
         </div>

@@ -89,7 +89,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
     switch (type) {
       case "Ecommerce":
         return (
-          <div className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-950/20 text-[#1b53f4] flex items-center justify-center flex-shrink-0">
+          <div className="w-5 h-5 rounded-full bg-lime-50 dark:bg-lime-950/20 text-[#65a30d] flex items-center justify-center flex-shrink-0">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582" />
             </svg>
@@ -97,7 +97,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
         );
       case "Zalo OA":
         return (
-          <div className="w-5 h-5 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px] flex-shrink-0 select-none">
+          <div className="w-5 h-5 rounded-full bg-lime-400 text-white font-black flex items-center justify-center text-[10px] flex-shrink-0 select-none">
             Z
           </div>
         );
@@ -126,7 +126,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
         </h1>
         <button
           onClick={handleAddLink}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1b53f4] hover:bg-[#1040cf] text-white rounded-lg text-xs font-bold shadow-2xs hover:shadow-xs transition cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#65a30d] hover:bg-[#1040cf] text-white rounded-lg text-xs font-bold shadow-2xs hover:shadow-xs transition cursor-pointer"
         >
           <IconPlus size={14} />
           <span>Thêm liên kết</span>
@@ -139,7 +139,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
           onClick={() => setSubTab("my-integrations")}
           className={`pb-2.5 text-xs font-bold border-b-2 cursor-pointer transition ${
             subTab === "my-integrations"
-              ? "border-[#1b53f4] text-[#1b53f4] dark:text-blue-400 dark:border-blue-400"
+              ? "border-[#65a30d] text-[#65a30d] dark:text-lime-300 dark:border-lime-300"
               : "border-transparent text-slate-450 hover:text-slate-800 dark:hover:text-white"
           }`}
         >
@@ -149,7 +149,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
           onClick={() => setSubTab("library")}
           className={`pb-2.5 text-xs font-bold border-b-2 cursor-pointer transition ${
             subTab === "library"
-              ? "border-[#1b53f4] text-[#1b53f4] dark:text-blue-400 dark:border-blue-400"
+              ? "border-[#65a30d] text-[#65a30d] dark:text-lime-300 dark:border-lime-300"
               : "border-transparent text-slate-450 hover:text-slate-800 dark:hover:text-white"
           }`}
         >
@@ -161,11 +161,11 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Mock integration options */}
           {[
-            { name: "Zalo OA", desc: "Gửi tin nhắn chăm sóc khách hàng bằng kênh Zalo ZNS chính thống.", icon: "Z", color: "bg-blue-500" },
+            { name: "Zalo OA", desc: "Gửi tin nhắn chăm sóc khách hàng bằng kênh Zalo ZNS chính thống.", icon: "Z", color: "bg-lime-400" },
             { name: "Gmail SMTP", desc: "Cấu hình tài khoản email cá nhân hoặc email tên miền để gửi mail tự động.", icon: "M", color: "bg-red-500" },
             { name: "SMS Brandname", desc: "Tích hợp cổng SMS: eSMS, VietGuys, SpeedSMS để gửi tin nhắn OTP.", icon: "S", color: "bg-purple-600" },
             { name: "Haravan", desc: "Đồng bộ đơn hàng, giỏ hàng từ Haravan để kích hoạt luồng tự động.", icon: "H", color: "bg-green-600" },
-            { name: "LadiSales", desc: "Kết nối trực tiếp với cổng bán hàng LadiPage để xử lý đơn hàng tức thì.", icon: "L", color: "bg-blue-600" },
+            { name: "LadiSales", desc: "Kết nối trực tiếp với cổng bán hàng LadiPage để xử lý đơn hàng tức thì.", icon: "L", color: "bg-lime-500" },
             { name: "Google Sheets", desc: "Ghi dữ liệu khách hàng đăng ký trực tiếp vào bảng tính trực tuyến.", icon: "G", color: "bg-emerald-600" },
           ].map((lib, idx) => (
             <div key={idx} className="p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl flex flex-col justify-between hover:shadow-2xs transition">
@@ -201,7 +201,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
                 placeholder="Tìm kiếm tích hợp"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-gray-50/50 dark:bg-gray-850 border border-gray-200 dark:border-gray-750 focus:border-blue-500 rounded-lg outline-hidden text-slate-800 dark:text-white"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-gray-50/50 dark:bg-gray-850 border border-gray-200 dark:border-gray-750 focus:border-lime-400 rounded-lg outline-hidden text-slate-800 dark:text-white"
               />
             </div>
 
@@ -240,7 +240,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
                       <input
                         type="checkbox"
                         disabled
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-not-allowed"
+                        className="w-4 h-4 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-not-allowed"
                       />
                     </th>
                     <th className="py-3 px-4 text-xs font-bold text-slate-855 dark:text-slate-200 tracking-wider">
@@ -263,7 +263,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
                           <input
                             type="checkbox"
                             disabled
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-not-allowed"
+                            className="w-4 h-4 rounded border-gray-300 text-lime-500 focus:ring-lime-400 cursor-not-allowed"
                           />
                         </td>
                         <td className="py-4 px-4">
@@ -340,7 +340,7 @@ export const IntegrationList: React.FC<IntegrationListProps> = ({ isSimulated })
                   </svg>
                 </button>
                 {/* Active page */}
-                <button className="w-6 h-6 rounded bg-[#1b53f4] text-white flex items-center justify-center text-[11px] font-bold shadow-2xs">
+                <button className="w-6 h-6 rounded bg-[#65a30d] text-white flex items-center justify-center text-[11px] font-bold shadow-2xs">
                   1
                 </button>
                 {/* Next page */}

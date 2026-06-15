@@ -65,18 +65,18 @@ export const SubSidebar: React.FC<SubSidebarProps> = ({
               onClick={() => setActiveSubTab(item.id)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer relative group ${
                 isActive 
-                  ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400 font-semibold" 
+                  ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300 font-semibold" 
                   : "text-slate-650 hover:bg-gray-200/50 dark:text-slate-400 dark:hover:bg-white/5"
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className={`${isActive ? "text-[#1b53f4] dark:text-blue-400" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"}`}>
+                <span className={`${isActive ? "text-[#65a30d] dark:text-lime-300" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"}`}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
               </div>
               {isActive && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-blue-600 dark:bg-blue-500 rounded-r-md" />
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-lime-500 dark:bg-lime-400 rounded-r-md" />
               )}
             </button>
           );
@@ -116,13 +116,13 @@ export const SubSidebar: React.FC<SubSidebarProps> = ({
             placeholder="Tìm kiếm"
             value={tagSearchQuery}
             onChange={(e) => setTagSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-[13px] rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500"
+            className="w-full pl-8 pr-3 py-1.5 text-[13px] rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
           />
         </div>
 
         {/* Tag active badge */}
         <div className="px-1.5">
-          <span className="inline-block px-2.5 py-0.5 text-xs font-semibold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/40 rounded-full border border-blue-200/40">
+          <span className="inline-block px-2.5 py-0.5 text-xs font-semibold text-lime-500 bg-lime-50 dark:text-lime-300 dark:bg-lime-950/40 rounded-full border border-lime-100/40">
             Tất cả
           </span>
         </div>

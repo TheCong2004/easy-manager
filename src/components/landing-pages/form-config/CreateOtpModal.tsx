@@ -64,13 +64,13 @@ export const CreateOtpModal: React.FC<CreateOtpModalProps> = ({
           <div className="flex items-start gap-3">
             <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all duration-300 ${
               step >= 1 
-                ? "bg-blue-600 text-white shadow-xs" 
+                ? "bg-lime-500 text-white shadow-xs" 
                 : "bg-gray-200 text-slate-400 dark:bg-gray-805"
             }`}>
               1
             </span>
             <div className="space-y-0.5">
-              <span className={`text-xs font-bold block ${step === 1 ? "text-blue-600 dark:text-blue-400" : "text-slate-800 dark:text-gray-200"}`}>
+              <span className={`text-xs font-bold block ${step === 1 ? "text-lime-500 dark:text-lime-300" : "text-slate-800 dark:text-gray-200"}`}>
                 Chọn tài khoản liên kết
               </span>
               <span className="text-[10px] text-slate-400 dark:text-slate-550 block font-medium leading-normal">
@@ -83,13 +83,13 @@ export const CreateOtpModal: React.FC<CreateOtpModalProps> = ({
           <div className="flex items-start gap-3">
             <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all duration-300 ${
               step === 2 
-                ? "bg-blue-600 text-white shadow-xs" 
+                ? "bg-lime-500 text-white shadow-xs" 
                 : "bg-gray-100 text-slate-400 dark:bg-gray-800/80 dark:text-slate-600"
             }`}>
               2
             </span>
             <div className="space-y-0.5">
-              <span className={`text-xs font-bold block ${step === 2 ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-550"}`}>
+              <span className={`text-xs font-bold block ${step === 2 ? "text-lime-500 dark:text-lime-300" : "text-slate-400 dark:text-slate-550"}`}>
                 Điền cấu hình OTP
               </span>
               <span className="text-[10px] text-slate-400 dark:text-slate-550 block font-medium leading-normal">
@@ -133,8 +133,8 @@ export const CreateOtpModal: React.FC<CreateOtpModalProps> = ({
                   <circle cx="75" cy="85" r="5" fill="#1e293b"/>
                   <circle cx="125" cy="85" r="5" fill="#1e293b"/>
                   {/* Crying tears */}
-                  <path d="M75 90V105" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round"/>
-                  <path d="M125 90V105" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round"/>
+                  <path d="M75 90V105" stroke="#65a30d" strokeWidth="3" strokeLinecap="round"/>
+                  <path d="M125 90V105" stroke="#65a30d" strokeWidth="3" strokeLinecap="round"/>
                   {/* Sad mouth */}
                   <path d="M92 100C95 96 105 96 108 100" stroke="#1e293b" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
                   
@@ -155,7 +155,7 @@ export const CreateOtpModal: React.FC<CreateOtpModalProps> = ({
 
               <button 
                 onClick={handleCreateMockLink}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
               >
                 <span>+ Tạo tài khoản liên kết</span>
               </button>
@@ -171,13 +171,13 @@ export const CreateOtpModal: React.FC<CreateOtpModalProps> = ({
                   placeholder="Ví dụ: Cấu hình SMS Brandname, OTP Zalo"
                   value={configName}
                   onChange={(e) => setConfigName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400 focus:ring-1 focus:ring-lime-400"
                   required
                   autoFocus
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/10 border border-blue-100/30 text-xs text-blue-700 dark:text-blue-400 space-y-1 leading-relaxed">
+              <div className="p-4 rounded-xl bg-lime-50/50 dark:bg-lime-950/10 border border-lime-50/30 text-xs text-lime-600 dark:text-lime-300 space-y-1 leading-relaxed">
                 <p className="font-bold">✓ Đã liên kết tài khoản OTP thành công</p>
                 <p className="opacity-90 font-medium">Cấu hình này sẽ được sử dụng để gửi mã xác thực giao dịch cho khách hàng. Vui lòng điền tên gợi nhớ và bấm Hoàn thành.</p>
               </div>
@@ -197,7 +197,7 @@ export const CreateOtpModal: React.FC<CreateOtpModalProps> = ({
           {step === 2 && (
             <button
               onClick={handleFormSubmit}
-              className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+              className="px-5 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
             >
               Hoàn thành
             </button>

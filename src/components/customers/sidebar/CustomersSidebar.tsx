@@ -53,12 +53,12 @@ export const CustomersSidebar: React.FC<CustomersSidebarProps> = ({
   return (
     <div className="w-full lg:w-60 bg-[#f4f4fa] dark:bg-[#13141f] border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0 h-full p-4 overflow-y-auto">
       {/* Title */}
-      <h2 className="text-[17px] font-bold text-slate-800 dark:text-white px-2 mb-4">
+      <h2 className="text-[17px] font-bold text-slate-800 dark:text-white px-2 mb-1">
         Khách hàng
       </h2>
 
       {/* Customer Group */}
-      <div className="space-y-1.5">
+      <div>
         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase px-3 select-none">
           Quản lý khách hàng
         </span>
@@ -71,7 +71,7 @@ export const CustomersSidebar: React.FC<CustomersSidebarProps> = ({
                 onClick={() => setActiveSubTab(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer relative group ${
                   isActive
-                    ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400 font-semibold"
+                    ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300 font-semibold"
                     : "text-slate-650 hover:bg-gray-200/50 dark:text-slate-400 dark:hover:bg-white/5"
                 }`}
               >
@@ -79,7 +79,7 @@ export const CustomersSidebar: React.FC<CustomersSidebarProps> = ({
                   <span
                     className={`${
                       isActive
-                        ? "text-[#1b53f4] dark:text-blue-400"
+                        ? "text-[#65a30d] dark:text-lime-300"
                         : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"
                     }`}
                   >
@@ -88,7 +88,7 @@ export const CustomersSidebar: React.FC<CustomersSidebarProps> = ({
                   <span>{item.label}</span>
                 </div>
                 {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-blue-600 dark:bg-blue-500 rounded-r-md" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-lime-500 dark:bg-lime-400 rounded-r-md" />
                 )}
               </button>
             );

@@ -19,7 +19,7 @@ export default function ThemePreferenceCard({ value, onChange }: ThemePreference
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as ThemePreference)}
-        className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-800 outline-none focus:border-blue-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200"
+        className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-800 outline-none focus:border-lime-400 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200"
       >
         <option value="system">Hệ thống</option>
         <option value="light">Sáng</option>

@@ -49,8 +49,8 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
         return (
           <div className="flex flex-col h-full bg-[#eef3f7] text-slate-800 text-[11px] font-sans">
             {/* Zalo Header */}
-            <div className="bg-[#1b53f4] text-white p-2.5 flex items-center gap-1.5 shadow-xs">
-              <div className="w-5 h-5 rounded-full bg-white text-[#1b53f4] flex items-center justify-center font-black text-[10px]">
+            <div className="bg-[#65a30d] text-white p-2.5 flex items-center gap-1.5 shadow-xs">
+              <div className="w-5 h-5 rounded-full bg-white text-[#65a30d] flex items-center justify-center font-black text-[10px]">
                 Z
               </div>
               <div>
@@ -69,7 +69,7 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
                 </div>
                 {/* CTA Button */}
                 <div className="pt-2">
-                  <button className="w-full bg-blue-50 text-blue-600 font-bold text-center py-1.5 rounded-lg text-[9px] hover:bg-blue-100 transition">
+                  <button className="w-full bg-lime-50 text-lime-500 font-bold text-center py-1.5 rounded-lg text-[9px] hover:bg-lime-50 transition">
                     Xem chi tiết / Nhấp vào đây
                   </button>
                 </div>
@@ -107,7 +107,7 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
           <div className="flex flex-col h-full bg-white text-slate-800 font-sans text-xs">
             {/* FB Messenger Header */}
             <div className="bg-white border-b border-gray-100 p-2.5 flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black">
+              <div className="w-5 h-5 rounded-full bg-lime-500 text-white flex items-center justify-center text-[10px] font-black">
                 f
               </div>
               <div>
@@ -134,7 +134,7 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-gray-150 dark:border-gray-800 px-6 py-4">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-bold uppercase">
+            <span className="px-2 py-0.5 bg-lime-50 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300 rounded text-xs font-bold uppercase">
               {template.category}
             </span>
             <span className="text-sm font-bold text-slate-450 dark:text-slate-400">
@@ -160,9 +160,9 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
               <p className="text-xs text-slate-550 dark:text-slate-450 leading-relaxed">
                 {template.description}
                 {" Bạn có thể cấu hình chi tiết, thêm nút hành động hoặc cài đặt lịch gửi tùy chỉnh thông qua "}
-                <a href="#doc" className="text-blue-600 dark:text-blue-450 font-bold hover:underline">tài liệu hướng dẫn LadiPage</a>
+                <a href="#doc" className="text-lime-500 dark:text-lime-400 font-bold hover:underline">tài liệu hướng dẫn LadiPage</a>
                 {" và "}
-                <a href="#connect" className="text-blue-600 dark:text-blue-450 font-bold hover:underline">kết nối kênh Zalo/Email</a>.
+                <a href="#connect" className="text-lime-500 dark:text-lime-400 font-bold hover:underline">kết nối kênh Zalo/Email</a>.
               </p>
 
               {/* Activation & Conditions */}
@@ -189,7 +189,7 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
             </div>
 
             {/* Consulting Advisory Box */}
-            <div className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-100/60 dark:border-blue-900/30 p-4.5 rounded-2xl space-y-3 shadow-2xs">
+            <div className="bg-linear-to-r from-lime-50 to-indigo-50 dark:from-lime-950/20 dark:to-indigo-950/20 border border-lime-50/60 dark:border-lime-900/30 p-4.5 rounded-2xl space-y-3 shadow-2xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
                 <h4 className="text-xs font-black text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">
@@ -254,7 +254,7 @@ export const TemplateDetailModal: React.FC<TemplateDetailModalProps> = ({
           </button>
           <button
             onClick={() => onUseTemplate(template)}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs hover:shadow-xs cursor-pointer"
+            className="px-5 py-2 bg-lime-500 hover:bg-lime-600 text-white rounded-lg text-xs font-bold transition shadow-2xs hover:shadow-xs cursor-pointer"
           >
             Sử dụng kịch bản này
           </button>

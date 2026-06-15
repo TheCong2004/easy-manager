@@ -14,7 +14,7 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCard
     switch (name) {
       case "website":
         return (
-          <div className="w-12 h-12 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+          <div className="w-12 h-12 text-lime-500 dark:text-lime-300 flex items-center justify-center">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582" />
             </svg>
@@ -78,7 +78,7 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCard
         );
       case "access":
         return (
-          <div className="w-12 h-12 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+          <div className="w-12 h-12 text-lime-500 dark:text-lime-300 flex items-center justify-center">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
             </svg>
@@ -86,8 +86,8 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCard
         );
       case "fbads":
         return (
-          <div className="w-12 h-12 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <svg className="w-8 h-8 fill-current text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
+          <div className="w-12 h-12 text-lime-500 dark:text-lime-300 flex items-center justify-center">
+            <svg className="w-8 h-8 fill-current text-lime-500 dark:text-lime-300" viewBox="0 0 24 24">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
           </div>
@@ -128,7 +128,7 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCard
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
                 isInstalled 
                   ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-150 dark:border-green-900/30" 
-                  : "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-150 dark:border-blue-900/30"
+                  : "bg-lime-50 text-lime-600 dark:bg-lime-950/30 dark:text-lime-300 border border-lime-100 dark:border-lime-900/30"
               }`}>
                 {isInstalled ? "Đã cài đặt" : app.price}
               </span>
@@ -188,7 +188,7 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCard
             <button
               type="button"
               onClick={() => onInstall(app.id)}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+              className="px-3 py-1.5 bg-lime-500 hover:bg-lime-600 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
             >
               + Cài đặt
             </button>

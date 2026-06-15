@@ -68,7 +68,7 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({ isOpen, onClose, onSave
                 onChange={(e) => setTagName(e.target.value)}
                 autoFocus
                 required
-                className="w-full px-3 py-2.5 text-xs rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 font-medium"
+                className="w-full px-3 py-2.5 text-xs rounded-lg border border-lime-300 dark:border-lime-500 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-100 font-medium"
               />
               <span className="absolute bottom-2 right-2.5 text-[10px] font-medium text-slate-400">{tagName.length}/60</span>
             </div>
@@ -131,7 +131,7 @@ export const ProductTags: React.FC = () => {
             Gắn thẻ cho sản phẩm để phân loại — Tag sản phẩm không phân màu.
           </p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer whitespace-nowrap">
+        <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer whitespace-nowrap">
           + Tạo Tag mới
         </button>
       </div>
@@ -142,7 +142,7 @@ export const ProductTags: React.FC = () => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </span>
         <input type="text" placeholder="Tìm kiếm tag..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium" />
+          className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 font-medium" />
       </div>
 
       {/* Table */}
@@ -150,16 +150,16 @@ export const ProductTags: React.FC = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-gray-150 dark:border-gray-850 bg-gray-50/50 dark:bg-gray-800/10">
-              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-blue-600 transition">
+              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-lime-500 transition">
                 Tên tag <SortIcon />
               </th>
-              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-blue-600 transition">
+              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-lime-500 transition">
                 Số sản phẩm <SortIcon />
               </th>
-              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-blue-600 transition">
+              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-lime-500 transition">
                 Ngày tạo <SortIcon />
               </th>
-              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-blue-600 transition">
+              <th className="py-3.5 px-5 text-xs font-bold text-slate-855 dark:text-slate-200 cursor-pointer select-none hover:text-lime-500 transition">
                 Ngày cập nhật <SortIcon />
               </th>
               <th className="py-3.5 px-5 w-12"></th>
@@ -189,8 +189,8 @@ export const ProductTags: React.FC = () => {
               <tr>
                 <td colSpan={5} className="py-24 text-center select-none">
                   <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
-                      <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <div className="w-16 h-16 rounded-full bg-lime-50 dark:bg-lime-950/30 flex items-center justify-center">
+                      <svg className="w-7 h-7 text-lime-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.592 0l4.318-4.318a1.125 1.125 0 000-1.591l-9.581-9.581A2.25 2.25 0 009.568 3z"/>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z"/>
                       </svg>
@@ -199,7 +199,7 @@ export const ProductTags: React.FC = () => {
                     <p className="text-xs font-medium text-slate-400 dark:text-slate-500 max-w-xs text-center">
                       Tạo Tag để gắn vào sản phẩm và lọc nhanh trong báo cáo, form.
                     </p>
-                    <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer">
+                    <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer">
                       + Tạo Tag mới
                     </button>
                   </div>

@@ -265,9 +265,9 @@ export default function AppStore() {
                 onClick={() => {
                   setActiveTab(tab.id);
                 }}
-                className={`pb-3 px-3 relative font-bold transition-all duration-150 flex items-center gap-1.5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 ${
+                className={`pb-3 px-3 relative font-bold transition-all duration-150 flex items-center gap-1.5 cursor-pointer hover:text-lime-500 dark:hover:text-lime-300 ${
                   isActive
-                    ? "text-blue-600 dark:text-blue-400"
+                    ? "text-lime-500 dark:text-lime-300"
                     : "text-gray-500 dark:text-gray-400"
                 }`}
               >
@@ -277,7 +277,7 @@ export default function AppStore() {
                   {tabCounts[tab.id]}
                 </span>
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 animate-fade-in" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-500 dark:bg-lime-300 animate-fade-in" />
                 )}
               </button>
             );
@@ -291,7 +291,7 @@ export default function AppStore() {
             placeholder="Tìm kiếm ứng dụng..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-64 bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-xl py-2 pl-9 pr-4 text-xs font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-theme-xs"
+            className="w-full sm:w-64 bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-xl py-2 pl-9 pr-4 text-xs font-semibold focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-all shadow-theme-xs"
           />
           <svg className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
@@ -302,7 +302,7 @@ export default function AppStore() {
       {/* Main Apps Grid Display */}
       {filteredApps.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 min-h-[350px] text-center bg-white dark:bg-[#11121e] border border-gray-150 dark:border-gray-800 rounded-2xl">
-          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-4 border border-blue-100 dark:border-blue-900/30">
+          <div className="w-16 h-16 bg-lime-50 dark:bg-lime-950/20 text-lime-500 dark:text-lime-300 rounded-full flex items-center justify-center mb-4 border border-lime-50 dark:border-lime-900/30">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
             </svg>

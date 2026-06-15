@@ -171,7 +171,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
 
   const getTagStyle = (tag: string) => {
     const t = tag.toLowerCase();
-    if (t.includes("zalo")) return "bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400";
+    if (t.includes("zalo")) return "bg-lime-50 text-lime-500 dark:bg-lime-950/20 dark:text-lime-300";
     if (t.includes("email")) return "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400";
     if (t.includes("sms") || t.includes("otp")) return "bg-purple-50 text-purple-600 dark:bg-purple-950/20 dark:text-purple-400";
     if (t.includes("facebook")) return "bg-sky-50 text-sky-600 dark:bg-sky-950/20 dark:text-sky-400";
@@ -183,7 +183,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
     const t = tag.toLowerCase();
     if (t.includes("zalo")) return <IconZalo size={16} className="inline mr-1" />;
     if (t.includes("email")) return <IconEmail size={16} className="inline mr-1" />;
-    if (t.includes("facebook")) return <IconFacebook size={16} className="inline mr-1 text-blue-650" />;
+    if (t.includes("facebook")) return <IconFacebook size={16} className="inline mr-1 text-lime-600" />;
     if (t.includes("sms")) return <IconSms size={16} className="inline mr-1 text-purple-500" />;
     return null;
   };
@@ -207,7 +207,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
             onClick={() => setSubTab("library")}
             className={`pb-3 text-sm font-bold border-b-2 cursor-pointer transition ${
               subTab === "library"
-                ? "border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400"
+                ? "border-lime-500 text-lime-500 dark:text-lime-300 dark:border-lime-300"
                 : "border-transparent text-slate-450 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
@@ -217,7 +217,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
             onClick={() => setSubTab("mine")}
             className={`pb-3 text-sm font-bold border-b-2 cursor-pointer transition ${
               subTab === "mine"
-                ? "border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400"
+                ? "border-lime-500 text-lime-500 dark:text-lime-300 dark:border-lime-300"
                 : "border-transparent text-slate-450 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
@@ -235,7 +235,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
             placeholder="Tìm mẫu kịch bản..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 text-xs bg-gray-50/50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-750 focus:border-blue-500 rounded-lg outline-hidden text-slate-800 dark:text-white"
+            className="w-full pl-9 pr-4 py-1.5 text-xs bg-gray-50/50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-750 focus:border-lime-400 rounded-lg outline-hidden text-slate-800 dark:text-white"
           />
         </div>
       </div>
@@ -260,7 +260,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
                   onClick={() => setActiveCategory(cat)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
                     isActive
-                      ? "bg-blue-600 text-white shadow-2xs"
+                      ? "bg-lime-500 text-white shadow-2xs"
                       : "bg-white dark:bg-gray-900 text-slate-650 dark:text-slate-450 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-850"
                   }`}
                 >
@@ -276,12 +276,12 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
               <div
                 key={item.id}
                 onClick={() => onSelectTemplate(item)}
-                className="group flex flex-col justify-between p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-theme-xs hover:shadow-md dark:hover:border-blue-900/50 hover:border-blue-500/50 transition duration-300 cursor-pointer"
+                className="group flex flex-col justify-between p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-theme-xs hover:shadow-md dark:hover:border-lime-900/50 hover:border-lime-400/50 transition duration-300 cursor-pointer"
               >
                 <div>
                   {/* Category & Recommends badge */}
                   <div className="flex items-center justify-between mb-3.5">
-                    <span className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 tracking-wider uppercase bg-blue-50 dark:bg-blue-950/20 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-extrabold text-lime-500 dark:text-lime-300 tracking-wider uppercase bg-lime-50 dark:bg-lime-950/20 px-2 py-0.5 rounded">
                       {item.category}
                     </span>
                     {item.recommends && (
@@ -292,7 +292,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-blue-650 dark:group-hover:text-blue-450 transition mb-2 line-clamp-2">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-lime-600 dark:group-hover:text-lime-400 transition mb-2 line-clamp-2">
                     {item.name}
                   </h3>
 

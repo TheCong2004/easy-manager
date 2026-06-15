@@ -92,7 +92,7 @@ export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSel
           {authorAvatar ? (
             <img src={authorAvatar} alt={authorName} className="w-10 h-10 rounded-full object-cover" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-lime-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
               {authorName.charAt(0).toUpperCase()}
             </div>
           )}

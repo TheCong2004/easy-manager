@@ -43,7 +43,7 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
               placeholder="Ví dụ: km-tet-2026, landing-gioithieu"
               value={newPageName}
               onChange={(e) => setNewPageName(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full px-3.5 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400 focus:ring-1 focus:ring-lime-400"
               required
               autoFocus
             />
@@ -59,7 +59,7 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
             >
               Tạo trang
             </button>

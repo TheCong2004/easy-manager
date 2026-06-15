@@ -206,7 +206,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       {/* Publish */}
       <button
         onClick={onPublish}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-md shadow-purple-600/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex-shrink-0"
+        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-lime-500 hover:from-purple-500 hover:to-lime-400 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-md shadow-purple-600/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex-shrink-0"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />

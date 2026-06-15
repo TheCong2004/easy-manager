@@ -62,7 +62,7 @@ export const ReportsSidebar: React.FC<ReportsSidebarProps> = ({
     <div className="w-full lg:w-60 bg-[#f4f4fa] dark:bg-[#13141f] border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0 h-full p-4 overflow-y-auto">
       {/* Title */}
       <h2 className="text-[17px] font-bold text-slate-800 dark:text-white px-2 mb-4 flex items-center gap-2">
-        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-lime-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
         </svg>
         <span>Analytics</span>
@@ -82,7 +82,7 @@ export const ReportsSidebar: React.FC<ReportsSidebarProps> = ({
                 onClick={() => setActiveSubTab(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer relative group ${
                   isActive
-                    ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400 font-semibold"
+                    ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300 font-semibold"
                     : "text-slate-650 hover:bg-gray-200/50 dark:text-slate-400 dark:hover:bg-white/5"
                 }`}
               >
@@ -90,7 +90,7 @@ export const ReportsSidebar: React.FC<ReportsSidebarProps> = ({
                   <span
                     className={`${
                       isActive
-                        ? "text-[#1b53f4] dark:text-blue-400"
+                        ? "text-[#65a30d] dark:text-lime-300"
                         : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"
                     }`}
                   >
@@ -99,7 +99,7 @@ export const ReportsSidebar: React.FC<ReportsSidebarProps> = ({
                   <span>{item.label}</span>
                 </div>
                 {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-blue-600 dark:bg-blue-500 rounded-r-md" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-lime-500 dark:bg-lime-400 rounded-r-md" />
                 )}
               </button>
             );
@@ -113,7 +113,7 @@ export const ReportsSidebar: React.FC<ReportsSidebarProps> = ({
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase select-none">
             Báo cáo tùy chỉnh
           </span>
-          <button className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer p-0.5 rounded hover:bg-gray-200/50 dark:hover:bg-white/5">
+          <button className="text-slate-400 hover:text-lime-500 dark:hover:text-lime-300 transition cursor-pointer p-0.5 rounded hover:bg-gray-200/50 dark:hover:bg-white/5">
             <IconPlus size={12} />
           </button>
         </div>

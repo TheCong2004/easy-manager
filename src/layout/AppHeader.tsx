@@ -78,7 +78,7 @@ const AppHeader: React.FC = () => {
 
           {/* Profile Selector (cong) */}
           <div className="hidden sm:flex items-center gap-1.5 px-2 h-7 text-gray-700 dark:text-gray-300 text-[13px] font-medium cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition select-none">
-            <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 text-[10px] font-bold">
+            <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-lime-50 dark:bg-lime-900/50 text-lime-600 dark:text-lime-300 text-[10px] font-bold">
               c
             </span>
             <span>cong</span>
@@ -112,7 +112,7 @@ const AppHeader: React.FC = () => {
                 ref={inputRef}
                 type="text"
                 placeholder="Tìm kiếm"
-                className="h-7 w-full rounded-lg border border-gray-200 bg-gray-50/50 py-0 pl-9 pr-10 text-[13px] text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-100 dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-blue-800"
+                className="h-7 w-full rounded-lg border border-gray-200 bg-gray-50/50 py-0 pl-9 pr-10 text-[13px] text-gray-800 placeholder:text-gray-400 focus:border-lime-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-lime-50 dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-lime-800"
               />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-0.5 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] text-gray-400 dark:border-gray-700 dark:bg-gray-800 leading-none">
                 <span>⌘</span>
@@ -130,7 +130,7 @@ const AppHeader: React.FC = () => {
           </button>
 
           {/* Action Button: Nâng cấp ngay */}
-          <button className="hidden sm:inline-flex items-center justify-center h-7 px-3.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition cursor-pointer select-none whitespace-nowrap">
+          <button className="hidden sm:inline-flex items-center justify-center h-7 px-3.5 text-xs font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-xs transition cursor-pointer select-none whitespace-nowrap">
             Nâng cấp ngay
           </button>
 

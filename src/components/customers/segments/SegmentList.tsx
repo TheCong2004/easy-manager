@@ -123,7 +123,7 @@ export const SegmentList: React.FC = () => {
         <div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
           >
             <span>Tạo Segment mới</span>
           </button>
@@ -141,7 +141,7 @@ export const SegmentList: React.FC = () => {
             placeholder="Tìm kiếm theo tên Segment..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-lime-400 font-medium"
           />
         </div>
         <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -183,7 +183,7 @@ export const SegmentList: React.FC = () => {
                           {item.name}
                         </span>
                         {item.isDefault && (
-                          <span className="px-2 py-0.5 text-[9px] font-black text-blue-600 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/40 rounded-sm uppercase tracking-wider">
+                          <span className="px-2 py-0.5 text-[9px] font-black text-lime-500 bg-lime-50 dark:text-lime-200 dark:bg-lime-950/40 rounded-sm uppercase tracking-wider">
                             Mặc định
                           </span>
                         )}
@@ -240,7 +240,7 @@ export const SegmentList: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-150 dark:border-gray-855 p-4 bg-gray-50/20 dark:bg-gray-900/10">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-855 rounded-lg px-3 py-1.5 pr-8 text-[13px] font-medium text-slate-750 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer">
+              <select className="appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-855 rounded-lg px-3 py-1.5 pr-8 text-[13px] font-medium text-slate-750 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
                 <option>20</option>
                 <option>50</option>
                 <option>100</option>
@@ -262,7 +262,7 @@ export const SegmentList: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
-            <button className="flex items-center justify-center w-7 h-7 rounded-md bg-blue-600 text-white font-semibold text-xs shadow-xs cursor-pointer">
+            <button className="flex items-center justify-center w-7 h-7 rounded-md bg-lime-500 text-white font-semibold text-xs shadow-xs cursor-pointer">
               1
             </button>
             <button className="flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 dark:border-gray-800 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition cursor-pointer">
@@ -300,7 +300,7 @@ export const SegmentList: React.FC = () => {
                   placeholder="Ví dụ: Khách hàng mua nhiều"
                   value={newSegmentName}
                   onChange={(e) => setNewSegmentName(e.target.value)}
-                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full border border-gray-250 dark:border-gray-800 rounded-lg px-3.5 py-2 text-xs bg-white dark:bg-gray-900 text-slate-800 dark:text-white focus:outline-hidden focus:border-lime-400 font-medium"
                 />
               </div>
 
@@ -314,7 +314,7 @@ export const SegmentList: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg shadow-sm transition cursor-pointer"
+                  className="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-xs font-bold text-white rounded-lg shadow-sm transition cursor-pointer"
                 >
                   Lưu
                 </button>

@@ -44,7 +44,7 @@ export const BusinessReport: React.FC<BusinessReportProps> = ({ isSimulated }) =
             <select
               value={pipeline}
               onChange={(e) => setPipeline(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer shadow-2xs"
             >
               <option>Tất cả pipeline</option>
               <option>Bán sỉ</option>
@@ -63,7 +63,7 @@ export const BusinessReport: React.FC<BusinessReportProps> = ({ isSimulated }) =
             <select
               value={employee}
               onChange={(e) => setEmployee(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer shadow-2xs"
             >
               <option>Nhân viên</option>
               <option>Nguyễn Văn An</option>
@@ -85,7 +85,7 @@ export const BusinessReport: React.FC<BusinessReportProps> = ({ isSimulated }) =
           onClick={() => setActiveTab("overview")}
           className={`px-4 py-2.5 text-xs font-bold transition-all relative border-b-2 cursor-pointer ${
             activeTab === "overview"
-              ? "border-blue-600 text-blue-600 font-extrabold"
+              ? "border-lime-500 text-lime-500 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
@@ -95,7 +95,7 @@ export const BusinessReport: React.FC<BusinessReportProps> = ({ isSimulated }) =
           onClick={() => setActiveTab("performance")}
           className={`px-4 py-2.5 text-xs font-bold transition-all relative border-b-2 cursor-pointer ${
             activeTab === "performance"
-              ? "border-blue-600 text-blue-600 font-extrabold"
+              ? "border-lime-500 text-lime-500 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
@@ -151,7 +151,7 @@ export const BusinessReport: React.FC<BusinessReportProps> = ({ isSimulated }) =
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                    className="bg-lime-500 h-full rounded-full transition-all duration-500"
                     style={{ width: isSimulated ? "59.5%" : "0%" }}
                   />
                 </div>
@@ -230,7 +230,7 @@ export const BusinessReport: React.FC<BusinessReportProps> = ({ isSimulated }) =
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white">Cơ hội theo giai đoạn (Pipeline: Bán sỉ)</h3>
                 <div className="grid grid-cols-5 gap-4">
                   {[
-                    { stage: "Mới (Lead)", count: 15, color: "bg-blue-500" },
+                    { stage: "Mới (Lead)", count: 15, color: "bg-lime-400" },
                     { stage: "Liên hệ", count: 12, color: "bg-indigo-500" },
                     { stage: "Đề xuất", count: 8, color: "bg-purple-500" },
                     { stage: "Thương lượng", count: 5, color: "bg-amber-500" },

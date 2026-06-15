@@ -43,7 +43,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
           </p>
         </div>
 
-        <button className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold text-blue-600 bg-white border border-gray-200 hover:border-gray-300 rounded-lg shadow-2xs transition dark:bg-gray-800 dark:text-blue-400 dark:border-gray-800 cursor-pointer">
+        <button className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold text-lime-500 bg-white border border-gray-200 hover:border-gray-300 rounded-lg shadow-2xs transition dark:bg-gray-800 dark:text-lime-300 dark:border-gray-800 cursor-pointer">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3" />
           </svg>
@@ -101,7 +101,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
           onClick={() => setActiveCategory("all")}
           className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 ${
             activeCategory === "all"
-              ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
               : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
           }`}
         >
@@ -111,7 +111,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
           onClick={() => setActiveCategory("ecommerce")}
           className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-1 ${
             activeCategory === "ecommerce"
-              ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
               : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
           }`}
         >
@@ -124,7 +124,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
           onClick={() => setActiveCategory("service")}
           className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-1 ${
             activeCategory === "service"
-              ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
               : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
           }`}
         >
@@ -137,7 +137,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
           onClick={() => setActiveCategory("others")}
           className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-1 ${
             activeCategory === "others"
-              ? "font-semibold border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
               : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
           }`}
         >
@@ -167,14 +167,14 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
             placeholder="Tìm kiếm"
             value={templateSearchQuery}
             onChange={(e) => setTemplateSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
           />
         </div>
 
         {/* Mocks select filter boxes */}
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">
-            <select className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer">
+            <select className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
               <option>Tất cả</option>
             </select>
             <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
@@ -184,7 +184,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
             </span>
           </div>
           <div className="relative flex-1 md:flex-none">
-            <select className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer">
+            <select className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
               <option>Tất cả</option>
             </select>
             <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
@@ -244,7 +244,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                   </button>
                   <button 
                     onClick={() => handleUseTemplate(item)}
-                    className="flex-1 py-1.5 bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-bold rounded-lg shadow-sm transition cursor-pointer flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 bg-lime-500 text-white hover:bg-lime-600 text-[11px] font-bold rounded-lg shadow-sm transition cursor-pointer flex items-center justify-center gap-1"
                   >
                     <IconPlus size={12} />
                     <span>Sử dụng</span>
@@ -254,7 +254,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
 
               {/* Footer Info details */}
               <div className="mt-3.5 space-y-1">
-                <span className="text-[12px] font-bold text-slate-800 dark:text-gray-200 truncate block hover:text-blue-600 cursor-pointer">
+                <span className="text-[12px] font-bold text-slate-800 dark:text-gray-200 truncate block hover:text-lime-500 cursor-pointer">
                   {item.name}
                 </span>
                 <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-semibold">

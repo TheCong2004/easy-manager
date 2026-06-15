@@ -108,7 +108,7 @@ const CreateFieldModal: React.FC<CreateFieldModalProps> = ({ isOpen, onClose, on
               placeholder="Ví dụ: Mã vận đơn phụ"
               value={displayName}
               onChange={(e) => handleDisplayNameChange(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-900 font-medium"
+              className="w-full px-3 py-2.5 text-xs rounded-lg border border-lime-300 dark:border-lime-500 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-100 dark:focus:ring-lime-900 font-medium"
               autoFocus
               required
             />
@@ -124,10 +124,10 @@ const CreateFieldModal: React.FC<CreateFieldModalProps> = ({ isOpen, onClose, on
               placeholder="vi_du_ten_truong"
               value={fieldName}
               onChange={(e) => handleFieldNameChange(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium font-mono"
+              className="w-full px-3 py-2.5 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 font-medium font-mono"
               required
             />
-            <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400">
+            <p className="text-[10px] font-medium text-lime-500 dark:text-lime-300">
               Dùng để lưu trữ — chỉ chữ thường, số và dấu gạch dưới.
             </p>
           </div>
@@ -141,7 +141,7 @@ const CreateFieldModal: React.FC<CreateFieldModalProps> = ({ isOpen, onClose, on
               <select
                 value={dataType}
                 onChange={(e) => setDataType(e.target.value)}
-                className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-800 rounded-lg px-3 py-2.5 pr-8 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-none focus:border-blue-500 cursor-pointer"
+                className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-800 rounded-lg px-3 py-2.5 pr-8 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-none focus:border-lime-400 cursor-pointer"
               >
                 {DATA_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -234,7 +234,7 @@ export const OrderCustomFields: React.FC = () => {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer whitespace-nowrap"
         >
           + Tạo trường mới
         </button>
@@ -252,7 +252,7 @@ export const OrderCustomFields: React.FC = () => {
           placeholder="Tìm theo tên hiển thị hoặc tên trường..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium"
+          className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-lime-400 font-medium"
         />
       </div>
 
@@ -287,7 +287,7 @@ export const OrderCustomFields: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-4 px-5">
-                      <code className="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 rounded">
+                      <code className="text-[11px] font-mono font-bold text-lime-500 dark:text-lime-300 bg-lime-50 dark:bg-lime-950/30 px-2 py-0.5 rounded">
                         {field.fieldName}
                       </code>
                     </td>
@@ -317,8 +317,8 @@ export const OrderCustomFields: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="py-24 text-center select-none">
                     <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
-                        <svg className="w-7 h-7 text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <div className="w-16 h-16 rounded-full bg-lime-50 dark:bg-lime-950/30 flex items-center justify-center">
+                        <svg className="w-7 h-7 text-lime-300 dark:text-lime-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"/>
                         </svg>
                       </div>
@@ -328,7 +328,7 @@ export const OrderCustomFields: React.FC = () => {
                       </p>
                       <button
                         onClick={() => setIsModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
                       >
                         + Tạo trường mới
                       </button>

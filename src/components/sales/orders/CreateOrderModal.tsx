@@ -132,7 +132,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                   <button 
                     type="button"
                     onClick={() => setShowProductDropdown(!showProductDropdown)}
-                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    className="text-xs font-bold text-lime-500 dark:text-lime-300 hover:underline cursor-pointer"
                   >
                     Chọn sản phẩm và điều chỉnh số lượng/giá
                   </button>
@@ -232,13 +232,13 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 </div>
                 <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
                   <span>Mã khuyến mãi</span>
-                  <button type="button" className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+                  <button type="button" className="text-lime-500 dark:text-lime-300 font-bold hover:underline cursor-pointer">
                     + Áp dụng mã
                   </button>
                 </div>
                 <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
                   <span>Giảm giá</span>
-                  <button type="button" className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+                  <button type="button" className="text-lime-500 dark:text-lime-300 font-bold hover:underline cursor-pointer">
                     + Thêm giảm giá
                   </button>
                 </div>
@@ -248,7 +248,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 </div>
                 <div className="pt-3.5 border-t border-gray-100 dark:border-gray-800 flex justify-between text-sm font-bold text-slate-800 dark:text-white">
                   <span>Tổng tiền</span>
-                  <span className="text-blue-600 dark:text-blue-400 text-base">
+                  <span className="text-lime-500 dark:text-lime-300 text-base">
                     {getSubtotal().toLocaleString()}đ
                   </span>
                 </div>
@@ -264,7 +264,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 <select 
                   value={staff}
                   onChange={(e) => setStaff(e.target.value)}
-                  className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-850 rounded-lg px-4 py-2.5 pr-8 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer"
+                  className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-850 rounded-lg px-4 py-2.5 pr-8 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer"
                 >
                   <option value="Chưa có người phụ trách">Chưa có người phụ trách</option>
                   <option value="Nguyễn Văn A">Nguyễn Văn A</option>
@@ -287,7 +287,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 placeholder="Nhập ghi chú chỉ nhân viên xem được..."
                 value={internalNote}
                 onChange={(e) => setInternalNote(e.target.value)}
-                className="w-full min-h-[80px] p-3 text-xs rounded-lg border border-gray-250 dark:border-gray-850 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-blue-500"
+                className="w-full min-h-[80px] p-3 text-xs rounded-lg border border-gray-250 dark:border-gray-850 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-lime-400"
               />
             </div>
           </div>
@@ -309,7 +309,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     placeholder="Họ tên khách hàng..."
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:outline-hidden focus:border-blue-500"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:outline-hidden focus:border-lime-400"
                     required
                   />
                 </div>
@@ -322,7 +322,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     placeholder="Số điện thoại liên hệ..."
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:outline-hidden focus:border-blue-500"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:outline-hidden focus:border-lime-400"
                     required
                   />
                 </div>
@@ -335,7 +335,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     placeholder="Email (không bắt buộc)..."
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:outline-hidden focus:border-blue-500"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:outline-hidden focus:border-lime-400"
                   />
                 </div>
               </div>
@@ -355,7 +355,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     <select 
                       value={salesChannel}
                       onChange={(e) => setSalesChannel(e.target.value)}
-                      className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-850 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer"
+                      className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-850 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer"
                     >
                       <option value="Landing Page">Landing Page</option>
                       <option value="Website">Website</option>
@@ -377,7 +377,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     <select 
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-855 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer"
+                      className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-250 dark:border-gray-855 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer"
                     >
                       <option value="COD (Thu hộ khi giao)">COD (Thu hộ khi giao)</option>
                       <option value="Chuyển khoản ngân hàng">Chuyển khoản ngân hàng</option>
@@ -421,8 +421,8 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             disabled={selectedProducts.length === 0 || !customerName.trim() || !customerPhone.trim()}
             className={`px-5 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition ${
               selectedProducts.length === 0 || !customerName.trim() || !customerPhone.trim()
-                ? "bg-blue-400 opacity-50 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                ? "bg-lime-300 opacity-50 cursor-not-allowed"
+                : "bg-lime-500 hover:bg-lime-600 cursor-pointer"
             }`}
           >
             Tạo đơn

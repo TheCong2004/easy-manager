@@ -61,7 +61,7 @@ function buildInitialData(page: LandingPageItem): EditorData {
       bgColor: "#ffffff",
       maxWidth: 1280,
       fontFamily: "Inter, sans-serif",
-      primaryColor: "#2563eb",
+      primaryColor: "#65a30d",
     },
   };
 }
@@ -70,7 +70,7 @@ function buildInitialData(page: LandingPageItem): EditorData {
 const Toast: React.FC<{ message: string; type: "success" | "info" }> = ({ message, type }) => (
   <div
     className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all animate-bounce-in ${
-      type === "success" ? "bg-green-600" : "bg-blue-600"
+      type === "success" ? "bg-green-600" : "bg-lime-500"
     }`}
   >
     {type === "success" ? (

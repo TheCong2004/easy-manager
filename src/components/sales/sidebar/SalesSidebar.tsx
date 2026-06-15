@@ -93,18 +93,18 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({
                 onClick={() => setActiveSubTab(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer relative group ${
                   isActive 
-                    ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400 font-semibold" 
+                    ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300 font-semibold" 
                     : "text-slate-650 hover:bg-gray-200/50 dark:text-slate-400 dark:hover:bg-white/5"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className={`${isActive ? "text-[#1b53f4] dark:text-blue-400" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"}`}>
+                  <span className={`${isActive ? "text-[#65a30d] dark:text-lime-300" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"}`}>
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
                 </div>
                 {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-blue-600 dark:bg-blue-500 rounded-r-md" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-lime-500 dark:bg-lime-400 rounded-r-md" />
                 )}
               </button>
             );
@@ -126,18 +126,18 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({
                 onClick={() => setActiveSubTab(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer relative group ${
                   isActive 
-                    ? "bg-[#e5ecff] text-[#1b53f4] dark:bg-blue-950/40 dark:text-blue-400 font-semibold" 
+                    ? "bg-[#e5ecff] text-[#65a30d] dark:bg-lime-950/40 dark:text-lime-300 font-semibold" 
                     : "text-slate-650 hover:bg-gray-200/50 dark:text-slate-400 dark:hover:bg-white/5"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className={`${isActive ? "text-[#1b53f4] dark:text-blue-400" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"}`}>
+                  <span className={`${isActive ? "text-[#65a30d] dark:text-lime-300" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-350"}`}>
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
                 </div>
                 {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-blue-600 dark:bg-blue-500 rounded-r-md" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-lime-500 dark:bg-lime-400 rounded-r-md" />
                 )}
               </button>
             );

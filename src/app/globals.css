@@ -41,18 +41,18 @@
   --color-white: #ffffff;
   --color-black: #101828;
 
-  --color-brand-25: #f2f7ff;
-  --color-brand-50: #ecf3ff;
-  --color-brand-100: #dde9ff;
-  --color-brand-200: #c2d6ff;
-  --color-brand-300: #9cb9ff;
-  --color-brand-400: #7592ff;
-  --color-brand-500: #465fff;
-  --color-brand-600: #3641f5;
-  --color-brand-700: #2a31d8;
-  --color-brand-800: #252dae;
-  --color-brand-900: #262e89;
-  --color-brand-950: #161950;
+  --color-brand-25: #f7fee7;
+  --color-brand-50: #ecfccb;
+  --color-brand-100: #d9f99d;
+  --color-brand-200: #bef264;
+  --color-brand-300: #a3e635;
+  --color-brand-400: #84cc16;
+  --color-brand-500: #65a30d;
+  --color-brand-600: #4d7c0f;
+  --color-brand-700: #3f6212;
+  --color-brand-800: #365314;
+  --color-brand-900: #1a2e05;
+  --color-brand-950: #0f1a02;
 
   --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
@@ -200,7 +200,7 @@
 }
 
 @utility menu-item-active {
-  @apply bg-blue-600 text-white! dark:bg-blue-600 dark:text-white!;
+  @apply bg-lime-500 text-white! dark:bg-lime-500 dark:text-white!;
 }
 
 @utility menu-item-inactive {
@@ -224,7 +224,7 @@
 }
 
 @utility menu-item-arrow-active {
-  @apply rotate-180 text-brand-500 dark:text-brand-400;
+  @apply rotate-180 text-lime-600 dark:text-lime-500;
 }
 
 @utility menu-item-arrow-inactive {
@@ -236,7 +236,7 @@
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply bg-lime-50 text-lime-600 dark:bg-lime-500/[0.12] dark:text-lime-500;
 }
 
 @utility menu-dropdown-item-inactive {
@@ -244,15 +244,15 @@
 }
 
 @utility menu-dropdown-badge {
-  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-brand-500 dark:text-brand-400;
+  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-lime-600 dark:text-lime-500;
 }
 
 @utility menu-dropdown-badge-active {
-  @apply bg-brand-100 dark:bg-brand-500/20;
+  @apply bg-lime-100 dark:bg-lime-500/20;
 }
 
 @utility menu-dropdown-badge-inactive {
-  @apply bg-brand-50 group-hover:bg-brand-100 dark:bg-brand-500/15 dark:group-hover:bg-brand-500/20;
+  @apply bg-lime-50 group-hover:bg-lime-100 dark:bg-lime-500/15 dark:group-hover:bg-lime-500/20;
 }
 
 @utility no-scrollbar {
@@ -479,7 +479,7 @@ span.flatpickr-weekday,
 .flatpickr-day.startRange.nextMonthDay,
 .flatpickr-day.endRange.nextMonthDay {
   background: #465fff;
-  @apply !border-brand-500 !bg-brand-500 hover:!border-brand-50 hover:!bg-brand-500;
+  @apply !border-brand-500 !bg-lime-500 hover:!border-brand-50 hover:!bg-lime-500;
 }
 .flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n + 1)),
 .flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n + 1)),
@@ -543,7 +543,7 @@ span.flatpickr-weekday,
   @apply hidden;
 }
 .fc-addEventButton-button {
-  @apply !rounded-lg !border-0 !bg-brand-500 !px-4 !py-2.5 !text-sm !font-medium hover:!bg-brand-600 focus:!shadow-none;
+  @apply !rounded-lg !border-0 !bg-lime-500 !px-4 !py-2.5 !text-sm !font-medium hover:!bg-brand-600 focus:!shadow-none;
 }
 .fc-toolbar-title {
   @apply !text-lg !font-medium text-gray-800 dark:text-white/90;
@@ -612,7 +612,7 @@ span.flatpickr-weekday,
   @apply border-error-50 bg-error-50;
 }
 .event-fc-color.fc-bg-primary {
-  @apply border-brand-50 bg-brand-50;
+  @apply border-brand-50 bg-lime-50;
 }
 .event-fc-color.fc-bg-warning {
   @apply border-orange-50 bg-orange-50;
@@ -624,7 +624,7 @@ span.flatpickr-weekday,
   @apply bg-error-500;
 }
 .event-fc-color.fc-bg-primary .fc-daygrid-event-dot {
-  @apply bg-brand-500;
+  @apply bg-lime-500;
 }
 .event-fc-color.fc-bg-warning .fc-daygrid-event-dot {
   @apply bg-orange-500;
@@ -729,7 +729,7 @@ span.flatpickr-weekday,
   @apply !stroke-gray-200 dark:!stroke-gray-800;
 }
 .jvectormap-tip {
-  @apply !bg-brand-500 !border-none !px-2 !py-1;
+  @apply !bg-lime-500 !border-none !px-2 !py-1;
 }
 .jvectormap-zoomin,
 .jvectormap-zoomout {
@@ -737,17 +737,17 @@ span.flatpickr-weekday,
 }
 
 .form-check-input:checked ~ span {
-  @apply border-[6px] border-brand-500 bg-brand-500 dark:border-brand-500;
+  @apply border-[6px] border-brand-500 bg-lime-500 dark:border-brand-500;
 }
 
 .taskCheckbox:checked ~ .box span {
-  @apply opacity-100 bg-brand-500;
+  @apply opacity-100 bg-lime-500;
 }
 .taskCheckbox:checked ~ p {
   @apply text-gray-400 line-through;
 }
 .taskCheckbox:checked ~ .box {
-  @apply border-brand-500 bg-brand-500 dark:border-brand-500;
+  @apply border-brand-500 bg-lime-500 dark:border-brand-500;
 }
 
 .task {

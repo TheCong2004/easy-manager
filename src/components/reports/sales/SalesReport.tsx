@@ -41,7 +41,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ isSimulated }) => {
             <select
               value={selectedShop}
               onChange={(e) => setSelectedShop(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-bold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 pr-10 text-xs font-bold text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer shadow-2xs"
             >
               <option>Tất cả cửa hàng</option>
               <option>Cửa hàng chính</option>
@@ -82,7 +82,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ isSimulated }) => {
             <span className="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">
               Doanh thu
             </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-lime-50 dark:bg-lime-950/40 text-lime-500 dark:text-lime-300 flex items-center justify-center">
               <IconDollar size={18} />
             </div>
           </div>

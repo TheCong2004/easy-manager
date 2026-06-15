@@ -107,17 +107,17 @@ export const ErrorLog: React.FC = () => {
             placeholder="Tìm kiếm mã lỗi, khách hàng, nội dung..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-gray-250 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-405 focus:outline-hidden focus:border-lime-400 font-medium"
           />
         </div>
 
         {/* Date Filter */}
         {showDateRange && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-150 dark:border-blue-900/50 rounded-lg text-xs font-bold">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-lime-50 dark:bg-lime-950/30 text-lime-600 dark:text-lime-200 border border-lime-100 dark:border-lime-900/50 rounded-lg text-xs font-bold">
             <span>📅 Khoảng thời gian: 14/05/2026 – 13/06/2026</span>
             <button
               onClick={() => setShowDateRange(false)}
-              className="text-blue-500 hover:text-blue-700 p-0.5 hover:bg-blue-105 dark:hover:bg-blue-900 rounded-full transition cursor-pointer"
+              className="text-lime-400 hover:text-lime-600 p-0.5 hover:bg-lime-50 dark:hover:bg-lime-900 rounded-full transition cursor-pointer"
             >
               <IconX size={12} />
             </button>
