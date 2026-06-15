@@ -1,20 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { FanpageItem, UtilityItem } from "@/components/quan-ly/fanpage/types";
-import ToolbarHeader from "@/components/quan-ly/fanpage/ToolbarHeader";
+import React, { useEffect, useMemo, useState } from "react";
+import ConfigModal from "@/components/quan-ly/fanpage/ConfigModal";
 import PagesTable from "@/components/quan-ly/fanpage/PagesTable";
+import ToolbarHeader from "@/components/quan-ly/fanpage/ToolbarHeader";
 import UserProfileCard from "@/components/quan-ly/fanpage/UserProfileCard";
 import UtilitiesPanel from "@/components/quan-ly/fanpage/UtilitiesPanel";
-import ConfigModal from "@/components/quan-ly/fanpage/ConfigModal";
-
-import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
-import { facebookApiClient } from "@/lib/facebook/facebook-api.client";
+import type { FanpageItem, UtilityItem } from "@/components/quan-ly/fanpage/types";
+import { fanpagesService } from "@/features/facebook-ads/page/fanpages.service";
+import { hideClientLoading, showClientLoading, showClientToast } from "@/features/facebook-ads/shared/client-feedback";
 
 const initialUtilities: UtilityItem[] = [
   { id: "1", name: "Thêm vào nhóm tài sản", enabled: true, color: "bg-orange-500" },
   { id: "2", name: "Chỉ định Page BM", enabled: true, color: "bg-teal-500" },
-  { id: "3", name: "Đổi Avatar & Cover", enabled: true, color: "bg-blue-500" },
+  { id: "3", name: "Đổi Avatar & Cover", enabled: true, color: "bg-lime-500" },
   { id: "4", name: "Đổi thông tin Page", enabled: true, color: "bg-amber-500" },
   { id: "5", name: "Xóa bài viết", enabled: true, color: "bg-purple-500" },
   { id: "6", name: "Xóa QTV Page", enabled: true, color: "bg-red-500" },
@@ -23,82 +22,22 @@ const initialUtilities: UtilityItem[] = [
   { id: "9", name: "Share Page", enabled: true, color: "bg-sky-500" },
 ];
 
-const mockPages: FanpageItem[] = [
-  {
-    id: "1",
-    name: "Võ Thế Công - Shop Mỹ Phẩm Mỹ",
-    pageId: "109283749501834",
-    status: "ACTIVE",
-    followers: "15.420",
-    postsCount: 24,
-    verification: "BLUE",
-    distribution: "Bình thường",
-    monetization: "Đủ điều kiện",
-  },
-  {
-    id: "2",
-    name: "Thời Trang Nam LadiStyle",
-    pageId: "305849603928173",
-    status: "ACTIVE",
-    followers: "3.250",
-    postsCount: 12,
-    verification: "NONE",
-    distribution: "Bình thường",
-    monetization: "Đang xem xét",
-  },
-  {
-    id: "3",
-    name: "Trà Thảo Mộc Gia Truyền",
-    pageId: "102834748596023",
-    status: "DISABLED",
-    followers: "1.200",
-    postsCount: 5,
-    verification: "NONE",
-    distribution: "Hạn chế phân phối",
-    monetization: "Không đủ điều kiện",
-  },
-  {
-    id: "4",
-    name: "EzTool Hỗ Trợ Kỹ Thuật",
-    pageId: "203948273619283",
-    status: "ACTIVE",
-    followers: "8.900",
-    postsCount: 42,
-    verification: "GRAY",
-    distribution: "Bình thường",
-    monetization: "Đủ điều kiện",
-  },
-  {
-    id: "5",
-    name: "Wedding Planner & Decor",
-    pageId: "102938475610293",
-    status: "PENDING_REVIEW",
-    followers: "540",
-    postsCount: 2,
-    verification: "NONE",
-    distribution: "Bình thường",
-    monetization: "Chưa kích hoạt",
-  },
-];
-
 export default function Fanpage() {
-  const [pages, setPages] = useState<FanpageItem[]>(mockPages);
+  const [pages, setPages] = useState<FanpageItem[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [loadMessage, setLoadMessage] = useState("");
 
-  // Filters & Settings
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceType, setSourceType] = useState<"all" | "mine" | "by-bm" | "by-id">("all");
-  const [pageFilter, setPageFilter] = useState<"all" | "active" | "disabled">("all");
+  const [pageFilter] = useState<"all" | "active" | "disabled">("all");
   const [limitApi, setLimitApi] = useState(100);
 
-  // Threads & Delay from screenshot toolbar
   const [threads, setThreads] = useState(3);
   const [delay, setDelay] = useState(0);
 
-  // Data Options (Checkboxes)
   const [dataOptions, setDataOptions] = useState({
     status: true,
     badge: true,
@@ -108,67 +47,86 @@ export default function Fanpage() {
     monetize: true,
   });
 
-  // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedRegion, setSelectedRegion] = useState(0);
 
-  // Utilities list
   const [utilities, setUtilities] = useState<UtilityItem[]>(initialUtilities);
   const [newUtilityName, setNewUtilityName] = useState("");
   const [isAddUtilityOpen, setIsAddUtilityOpen] = useState(false);
 
-  // Simulated Loader connecting to facebookAuthService & facebookApiClient
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCachedPages = async () => {
+      const cachedPages = await fanpagesService.getCachedPages().catch(() => []);
+      if (!isMounted) return;
+
+      setPages(cachedPages);
+      setDataLoaded(cachedPages.length > 0);
+    };
+
+    void loadCachedPages();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleLoadData = async () => {
     setIsConfigModalOpen(false);
     setIsLoading(true);
     setLoadingProgress(0);
     setSelectedIds([]);
+    setLoadMessage("");
+    showClientLoading("Đang tải danh sách Fanpage...", "fanpages");
 
-    const interval = setInterval(() => {
-      setLoadingProgress((prev) => (prev >= 90 ? 90 : prev + 15));
-    }, 100);
+    const interval = window.setInterval(() => {
+      setLoadingProgress((currentProgress) => (currentProgress >= 90 ? 90 : currentProgress + 15));
+    }, 120);
 
     try {
-      // Refresh Facebook tokens
-      await facebookAuthService.refreshFullTokens();
-      // Fetch Pages using Api Client
-      const res = await facebookApiClient.getMyPages();
-      if (res?.data && Array.isArray(res.data)) {
-        const mapped: FanpageItem[] = res.data.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          pageId: p.id,
-          status: "ACTIVE",
-          followers: p.followers_count ? p.followers_count.toLocaleString() : "0",
-          postsCount: 0,
-          verification: "NONE",
-          distribution: "Bình thường",
-          monetization: "Đủ điều kiện",
-        }));
-        setPages(mapped);
-      } else {
-        setPages(mockPages);
-      }
+      const refreshedPages = await fanpagesService.refreshPages({
+        sourceType,
+        pageFilter,
+        limit: limitApi,
+        dataOptions,
+      });
+
+      const message = refreshedPages.length
+        ? `Đã tải ${refreshedPages.length} Fanpage.`
+        : "Không có Fanpage trong dữ liệu trả về.";
+
+      setPages(refreshedPages);
+      setDataLoaded(true);
+      setLoadMessage(message);
+      showClientToast(message, refreshedPages.length ? "success" : "info");
       setLoadingProgress(100);
-    } catch (err) {
-      console.warn("[Fanpage] API call failed, falling back to mocks:", err);
-      setPages(mockPages);
+    } catch (error) {
+      console.warn("[Fanpage] Cannot load pages:", error);
+      const cachedPages = await fanpagesService.getCachedPages().catch(() => []);
+      const message = cachedPages.length
+        ? "Không tải được dữ liệu mới, đang hiển thị dữ liệu cache."
+        : "Chưa có dữ liệu thật. Kiểm tra cookie/token hoặc extension/bridge Facebook.";
+
+      setPages(cachedPages);
+      setDataLoaded(cachedPages.length > 0);
+      setLoadMessage(message);
+      showClientToast(message, cachedPages.length ? "warning" : "error");
       setLoadingProgress(100);
     } finally {
-      clearInterval(interval);
-      setTimeout(() => {
-        setIsLoading(false);
-        setDataLoaded(true);
-      }, 300);
+      window.clearInterval(interval);
+      hideClientLoading("fanpages");
+      window.setTimeout(() => setIsLoading(false), 300);
     }
   };
 
-  // Filtered Pages
   const filteredPages = useMemo(() => {
+    const normalizedSearch = searchQuery.toLowerCase().trim();
+
     return pages.filter((page) => {
       const matchesSearch =
-        page.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        page.pageId.includes(searchQuery);
+        !normalizedSearch ||
+        page.name.toLowerCase().includes(normalizedSearch) ||
+        page.pageId.includes(normalizedSearch);
 
       const matchesStatus =
         pageFilter === "all" ||
@@ -179,78 +137,74 @@ export default function Fanpage() {
     });
   }, [pages, searchQuery, pageFilter]);
 
-  // Select all checkbox
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
       setSelectedIds(filteredPages.map((page) => page.id));
       setSelectedRegion(filteredPages.length > 0 ? 1 : 0);
-    } else {
-      setSelectedIds([]);
-      setSelectedRegion(0);
+      return;
     }
+
+    setSelectedIds([]);
+    setSelectedRegion(0);
   };
 
-  // Select row
   const handleSelectRow = (id: string, checked: boolean) => {
     if (checked) {
-      setSelectedIds((prev) => [...prev, id]);
+      setSelectedIds((currentIds) => [...currentIds, id]);
       if (selectedRegion === 0) setSelectedRegion(1);
-    } else {
-      const updated = selectedIds.filter((item) => item !== id);
-      setSelectedIds(updated);
-      if (updated.length === 0) setSelectedRegion(0);
+      return;
     }
+
+    const updatedIds = selectedIds.filter((item) => item !== id);
+    setSelectedIds(updatedIds);
+    if (updatedIds.length === 0) setSelectedRegion(0);
   };
 
-  // Toggle utility status
   const handleToggleUtility = (id: string) => {
-    setUtilities((prev) =>
-      prev.map((ut) => (ut.id === id ? { ...ut, enabled: !ut.enabled } : ut))
+    setUtilities((currentUtilities) =>
+      currentUtilities.map((utility) => (utility.id === id ? { ...utility, enabled: !utility.enabled } : utility))
     );
   };
 
-  // Delete utility
   const handleDeleteUtility = (id: string) => {
-    setUtilities((prev) => prev.filter((ut) => ut.id !== id));
+    setUtilities((currentUtilities) => currentUtilities.filter((utility) => utility.id !== id));
   };
 
-  // Add utility
-  const handleAddUtility = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddUtility = (event: React.FormEvent) => {
+    event.preventDefault();
     if (!newUtilityName.trim()) return;
 
-    const colors = ["bg-orange-500", "bg-teal-500", "bg-blue-500", "bg-amber-500", "bg-purple-500"];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const colors = ["bg-orange-500", "bg-teal-500", "bg-lime-500", "bg-amber-500", "bg-purple-500"];
+    const nextColor = colors[utilities.length % colors.length];
 
-    const newUt: UtilityItem = {
-      id: String(Date.now()),
-      name: newUtilityName.trim(),
-      enabled: true,
-      color: randomColor,
-    };
-
-    setUtilities((prev) => [...prev, newUt]);
+    setUtilities((currentUtilities) => [
+      ...currentUtilities,
+      {
+        id: String(Date.now()),
+        name: newUtilityName.trim(),
+        enabled: true,
+        color: nextColor,
+      },
+    ]);
     setNewUtilityName("");
     setIsAddUtilityOpen(false);
   };
 
-  // Move Utility Up/Down for order sorting
   const handleMoveUtility = (index: number, direction: "up" | "down") => {
-    const updated = [...utilities];
+    const updatedUtilities = [...utilities];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= updated.length) return;
+    if (targetIndex < 0 || targetIndex >= updatedUtilities.length) return;
 
-    const temp = updated[index];
-    updated[index] = updated[targetIndex];
-    updated[targetIndex] = temp;
-    setUtilities(updated);
+    const currentUtility = updatedUtilities[index];
+    updatedUtilities[index] = updatedUtilities[targetIndex];
+    updatedUtilities[targetIndex] = currentUtility;
+    setUtilities(updatedUtilities);
   };
 
   return (
-    <div className="flex flex-col text-gray-800 dark:text-gray-200 w-full min-h-[calc(100vh-46px)]">
-      {/* Row 1: Unified Header Toolbar Card (Toolbar + User Profile) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full shrink-0">
-        <div className="flex-1 min-w-0">
+    <div className="flex min-h-[calc(100vh-46px)] w-full flex-col text-gray-800 dark:text-gray-200">
+      <div className="flex w-full shrink-0 flex-col justify-between sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
           <ToolbarHeader
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -269,10 +223,14 @@ export default function Fanpage() {
         </div>
       </div>
 
-      {/* Row 2: Table and Utilities Panel */}
-      <div className="flex-1 flex flex-col lg:flex-row w-full min-w-0 h-full">
-        {/* Left Column: Table Card */}
-        <div className="flex-1 w-full flex flex-col min-w-0 min-h-[550px] border border-gray-150 dark:border-gray-800 rounded-xl overflow-hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col lg:flex-row">
+        <div className="flex min-h-[550px] min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-150 dark:border-gray-800">
+          {loadMessage && (
+            <div className="border-b border-gray-150 bg-lime-50 px-4 py-2 text-xs font-semibold text-lime-700 dark:border-gray-800 dark:bg-lime-950/20 dark:text-lime-200">
+              {loadMessage}
+            </div>
+          )}
+
           <PagesTable
             isLoading={isLoading}
             loadingProgress={loadingProgress}
@@ -287,8 +245,7 @@ export default function Fanpage() {
           />
         </div>
 
-        {/* Right Column: Utilities Card */}
-        <div className="w-full lg:w-[320px] shrink-0 bg-gray-50/20 dark:bg-gray-950/10 flex flex-col">
+        <div className="flex w-full shrink-0 flex-col bg-gray-50/20 dark:bg-gray-950/10 lg:w-[320px]">
           <UtilitiesPanel
             utilities={utilities}
             onToggleUtility={handleToggleUtility}

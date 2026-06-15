@@ -29,7 +29,7 @@ export default function UtilitiesPanel({
       {/* Header Panel */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
+          <div className="w-8 h-8 rounded-xl bg-lime-50 dark:bg-lime-950/20 text-lime-500 dark:text-lime-300 flex items-center justify-center border border-lime-50 dark:border-lime-900/30">
             <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l8.904-4.473L21 9l-3.487-3.487-7.7 7.7a2.25 2.25 0 00-.513.793l-.487 1.904z" />
             </svg>
@@ -39,7 +39,7 @@ export default function UtilitiesPanel({
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsAddUtilityOpen(!isAddUtilityOpen)}
-            className="p-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg transition border border-blue-100/60 dark:border-blue-900/40 text-[10px] sm:text-xs font-bold cursor-pointer"
+            className="p-1.5 bg-lime-50 hover:bg-lime-50 dark:bg-lime-950/30 dark:hover:bg-lime-900/50 text-lime-500 dark:text-lime-300 rounded-lg transition border border-lime-50/60 dark:border-lime-900/40 text-[10px] sm:text-xs font-bold cursor-pointer"
           >
             + Thêm
           </button>
@@ -60,11 +60,11 @@ export default function UtilitiesPanel({
             placeholder="Tên tiện ích..."
             value={newUtilityName}
             onChange={(e) => setNewUtilityName(e.target.value)}
-            className="flex-1 bg-white dark:bg-gray-850 border border-gray-150 dark:border-gray-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-blue-500 transition"
+            className="flex-1 bg-white dark:bg-gray-850 border border-gray-150 dark:border-gray-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-lime-400 transition"
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white rounded-lg px-3 py-1 text-xs font-bold hover:bg-blue-700 transition cursor-pointer"
+            className="bg-lime-500 text-white rounded-lg px-3 py-1 text-xs font-bold hover:bg-lime-600 transition cursor-pointer"
           >
             Lưu
           </button>
@@ -128,7 +128,7 @@ export default function UtilitiesPanel({
                 type="button"
                 onClick={() => onToggleUtility(ut.id)}
                 className={`relative inline-flex h-5.5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                  ut.enabled ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-800"
+                  ut.enabled ? "bg-lime-500" : "bg-gray-200 dark:bg-gray-800"
                 }`}
               >
                 <span

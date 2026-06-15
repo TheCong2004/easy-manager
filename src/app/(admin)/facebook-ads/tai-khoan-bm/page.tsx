@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { BusinessManager, UtilityItem } from "@/components/quan-ly/tai-khoan-bm/types";
-import ToolbarHeader from "@/components/quan-ly/tai-khoan-bm/ToolbarHeader";
+import React, { useEffect, useMemo, useState } from "react";
 import BMsTable from "@/components/quan-ly/tai-khoan-bm/BMsTable";
+import ConfigModal from "@/components/quan-ly/tai-khoan-bm/ConfigModal";
+import ToolbarHeader from "@/components/quan-ly/tai-khoan-bm/ToolbarHeader";
 import UserProfileCard from "@/components/quan-ly/tai-khoan-bm/UserProfileCard";
 import UtilitiesPanel from "@/components/quan-ly/tai-khoan-bm/UtilitiesPanel";
-import ConfigModal from "@/components/quan-ly/tai-khoan-bm/ConfigModal";
-
-import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
-import { facebookApiClient } from "@/lib/facebook/facebook-api.client";
+import type { BusinessManager, UtilityItem } from "@/components/quan-ly/tai-khoan-bm/types";
+import { businessManagersService } from "@/features/facebook-ads/bm/business-managers.service";
+import { hideClientLoading, showClientLoading, showClientToast } from "@/features/facebook-ads/shared/client-feedback";
 
 const initialUtilities: UtilityItem[] = [
-  { id: "1", name: "Kích Bm3", enabled: true, color: "bg-orange-500" },
-  { id: "2", name: "Thêm tài sản cho user", enabled: true, color: "bg-blue-500" },
+  { id: "1", name: "Kích BM3", enabled: true, color: "bg-orange-500" },
+  { id: "2", name: "Thêm tài sản cho user", enabled: true, color: "bg-lime-500" },
   { id: "3", name: "Backup BM", enabled: true, color: "bg-emerald-500" },
   { id: "4", name: "Nhóm tài sản BM", enabled: true, color: "bg-purple-500" },
   { id: "5", name: "Hủy lời mời", enabled: true, color: "bg-red-500" },
@@ -22,63 +21,20 @@ const initialUtilities: UtilityItem[] = [
   { id: "8", name: "Tạo ứng dụng", enabled: true, color: "bg-teal-500" },
 ];
 
-const mockBMs: BusinessManager[] = [
-  {
-    id: "1",
-    name: "Võ Thế Công Agency BM 01",
-    bmId: "102938475610293",
-    status: "ACTIVE",
-    limit: "Không giới hạn",
-    pagesCount: 5,
-    partnersCount: 2,
-    adminsCount: 3,
-    instagramCount: 1,
-    whatsappCount: 0,
-    paymentMethod: "Visa *4321",
-  },
-  {
-    id: "2",
-    name: "Nguyễn Văn A Business BM 02",
-    bmId: "305849603928173",
-    status: "ACTIVE",
-    limit: "5.000.000đ/ngày",
-    pagesCount: 2,
-    partnersCount: 1,
-    adminsCount: 2,
-    instagramCount: 0,
-    whatsappCount: 0,
-    paymentMethod: "Momo Wallet",
-  },
-  {
-    id: "3",
-    name: "Lê Hoàng B Personal BM 03",
-    bmId: "109283749501834",
-    status: "DISABLED",
-    limit: "1.100.000đ/ngày",
-    pagesCount: 1,
-    partnersCount: 0,
-    adminsCount: 1,
-    instagramCount: 0,
-    whatsappCount: 0,
-    paymentMethod: "N/A",
-  },
-];
-
 export default function TaiKhoanBM() {
-  const [bms, setBms] = useState<BusinessManager[]>(mockBMs);
+  const [bms, setBms] = useState<BusinessManager[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [loadMessage, setLoadMessage] = useState("");
 
-  // Filters & Settings
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceType, setSourceType] = useState<"all" | "by-id">("all");
   const [bmFilter, setBmFilter] = useState<"all" | "active" | "disabled">("all");
   const [limitApi, setLimitApi] = useState(50);
   const [advancedConfig, setAdvancedConfig] = useState(true);
 
-  // Data Options (Checkboxes)
   const [dataOptions, setDataOptions] = useState({
     status: true,
     page: true,
@@ -91,69 +47,86 @@ export default function TaiKhoanBM() {
     share: true,
   });
 
-  // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedRegion, setSelectedRegion] = useState(0);
 
-  // Utilities list
   const [utilities, setUtilities] = useState<UtilityItem[]>(initialUtilities);
   const [newUtilityName, setNewUtilityName] = useState("");
   const [isAddUtilityOpen, setIsAddUtilityOpen] = useState(false);
 
-  // Simulated Loader connecting to facebookAuthService & facebookApiClient
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCachedBms = async () => {
+      const cachedBms = await businessManagersService.getCachedManagers().catch(() => []);
+      if (!isMounted) return;
+
+      setBms(cachedBms);
+      setDataLoaded(cachedBms.length > 0);
+    };
+
+    void loadCachedBms();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleLoadData = async () => {
     setIsConfigModalOpen(false);
     setIsLoading(true);
     setLoadingProgress(0);
     setSelectedIds([]);
+    setLoadMessage("");
+    showClientLoading("Đang tải Business Manager...", "business-managers");
 
-    const interval = setInterval(() => {
-      setLoadingProgress((prev) => (prev >= 90 ? 90 : prev + 15));
-    }, 100);
+    const interval = window.setInterval(() => {
+      setLoadingProgress((currentProgress) => (currentProgress >= 90 ? 90 : currentProgress + 15));
+    }, 120);
 
     try {
-      // Refresh Facebook tokens
-      await facebookAuthService.refreshFullTokens();
-      // Fetch Businesses using Api Client
-      const res = await facebookApiClient.getMyBusinesses();
-      if (res?.data && Array.isArray(res.data)) {
-        const mapped: BusinessManager[] = res.data.map((bm: any) => ({
-          id: bm.id,
-          name: bm.name,
-          bmId: bm.id,
-          status: "ACTIVE",
-          limit: "Không giới hạn",
-          pagesCount: 1,
-          partnersCount: 0,
-          adminsCount: 1,
-          instagramCount: 0,
-          whatsappCount: 0,
-          paymentMethod: "N/A",
-        }));
-        setBms(mapped);
-      } else {
-        setBms(mockBMs);
-      }
+      const refreshedBms = await businessManagersService.refreshManagers({
+        sourceType,
+        bmFilter,
+        limit: limitApi,
+        dataOptions,
+      });
+
+      const message = refreshedBms.length
+        ? `Đã tải ${refreshedBms.length} Business Manager.`
+        : "Không có Business Manager trong dữ liệu trả về.";
+
+      setBms(refreshedBms);
+      setDataLoaded(true);
+      setLoadMessage(message);
+      showClientToast(message, refreshedBms.length ? "success" : "info");
       setLoadingProgress(100);
-    } catch (err) {
-      console.warn("[TaiKhoanBM] API call failed, falling back to mocks:", err);
-      setBms(mockBMs);
+    } catch (error) {
+      console.warn("[TaiKhoanBM] Cannot load business managers:", error);
+      const cachedBms = await businessManagersService.getCachedManagers().catch(() => []);
+      const message = cachedBms.length
+        ? "Không tải được dữ liệu mới, đang hiển thị dữ liệu cache."
+        : "Chưa có dữ liệu thật. Kiểm tra cookie/token hoặc extension/bridge Facebook.";
+
+      setBms(cachedBms);
+      setDataLoaded(cachedBms.length > 0);
+      setLoadMessage(message);
+      showClientToast(message, cachedBms.length ? "warning" : "error");
       setLoadingProgress(100);
     } finally {
-      clearInterval(interval);
-      setTimeout(() => {
-        setIsLoading(false);
-        setDataLoaded(true);
-      }, 300);
+      window.clearInterval(interval);
+      hideClientLoading("business-managers");
+      window.setTimeout(() => setIsLoading(false), 300);
     }
   };
 
-  // Filtered BMs
   const filteredBMs = useMemo(() => {
+    const normalizedSearch = searchQuery.toLowerCase().trim();
+
     return bms.filter((bm) => {
       const matchesSearch =
-        bm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        bm.bmId.includes(searchQuery);
+        !normalizedSearch ||
+        bm.name.toLowerCase().includes(normalizedSearch) ||
+        bm.bmId.includes(normalizedSearch);
 
       const matchesStatus =
         bmFilter === "all" ||
@@ -164,78 +137,74 @@ export default function TaiKhoanBM() {
     });
   }, [bms, searchQuery, bmFilter]);
 
-  // Select all checkbox
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
       setSelectedIds(filteredBMs.map((bm) => bm.id));
       setSelectedRegion(filteredBMs.length > 0 ? 1 : 0);
-    } else {
-      setSelectedIds([]);
-      setSelectedRegion(0);
+      return;
     }
+
+    setSelectedIds([]);
+    setSelectedRegion(0);
   };
 
-  // Select row
   const handleSelectRow = (id: string, checked: boolean) => {
     if (checked) {
-      setSelectedIds((prev) => [...prev, id]);
+      setSelectedIds((currentIds) => [...currentIds, id]);
       if (selectedRegion === 0) setSelectedRegion(1);
-    } else {
-      const updated = selectedIds.filter((item) => item !== id);
-      setSelectedIds(updated);
-      if (updated.length === 0) setSelectedRegion(0);
+      return;
     }
+
+    const updatedIds = selectedIds.filter((item) => item !== id);
+    setSelectedIds(updatedIds);
+    if (updatedIds.length === 0) setSelectedRegion(0);
   };
 
-  // Toggle utility status
   const handleToggleUtility = (id: string) => {
-    setUtilities((prev) =>
-      prev.map((ut) => (ut.id === id ? { ...ut, enabled: !ut.enabled } : ut))
+    setUtilities((currentUtilities) =>
+      currentUtilities.map((utility) => (utility.id === id ? { ...utility, enabled: !utility.enabled } : utility))
     );
   };
 
-  // Delete utility
   const handleDeleteUtility = (id: string) => {
-    setUtilities((prev) => prev.filter((ut) => ut.id !== id));
+    setUtilities((currentUtilities) => currentUtilities.filter((utility) => utility.id !== id));
   };
 
-  // Add utility
-  const handleAddUtility = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddUtility = (event: React.FormEvent) => {
+    event.preventDefault();
     if (!newUtilityName.trim()) return;
 
-    const colors = ["bg-orange-500", "bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-red-500"];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const colors = ["bg-orange-500", "bg-lime-500", "bg-emerald-500", "bg-purple-500", "bg-red-500"];
+    const nextColor = colors[utilities.length % colors.length];
 
-    const newUt: UtilityItem = {
-      id: String(Date.now()),
-      name: newUtilityName.trim(),
-      enabled: true,
-      color: randomColor,
-    };
-
-    setUtilities((prev) => [...prev, newUt]);
+    setUtilities((currentUtilities) => [
+      ...currentUtilities,
+      {
+        id: String(Date.now()),
+        name: newUtilityName.trim(),
+        enabled: true,
+        color: nextColor,
+      },
+    ]);
     setNewUtilityName("");
     setIsAddUtilityOpen(false);
   };
 
-  // Move Utility Up/Down for order sorting
   const handleMoveUtility = (index: number, direction: "up" | "down") => {
-    const updated = [...utilities];
+    const updatedUtilities = [...utilities];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= updated.length) return;
+    if (targetIndex < 0 || targetIndex >= updatedUtilities.length) return;
 
-    const temp = updated[index];
-    updated[index] = updated[targetIndex];
-    updated[targetIndex] = temp;
-    setUtilities(updated);
+    const currentUtility = updatedUtilities[index];
+    updatedUtilities[index] = updatedUtilities[targetIndex];
+    updatedUtilities[targetIndex] = currentUtility;
+    setUtilities(updatedUtilities);
   };
 
   return (
-    <div className="flex flex-col text-gray-800 dark:text-gray-200 w-full min-h-[calc(100vh-46px)]">
-      {/* Row 1: Unified Header Toolbar Card (Toolbar + User Profile) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full shrink-0">
-        <div className="flex-1 min-w-0">
+    <div className="flex min-h-[calc(100vh-46px)] w-full flex-col text-gray-800 dark:text-gray-200">
+      <div className="flex w-full shrink-0 flex-col justify-between sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
           <ToolbarHeader
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -252,10 +221,14 @@ export default function TaiKhoanBM() {
         </div>
       </div>
 
-      {/* Row 2: Table and Utilities Panel */}
-      <div className="flex-1 flex flex-col lg:flex-row w-full min-w-0 h-full">
-        {/* Left Column: Table Card */}
-        <div className="flex-1 w-full flex flex-col min-w-0 min-h-[550px] border border-gray-150 dark:border-gray-800 rounded-xl overflow-hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col lg:flex-row">
+        <div className="flex min-h-[550px] min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-150 dark:border-gray-800">
+          {loadMessage && (
+            <div className="border-b border-gray-150 bg-lime-50 px-4 py-2 text-xs font-semibold text-lime-700 dark:border-gray-800 dark:bg-lime-950/20 dark:text-lime-200">
+              {loadMessage}
+            </div>
+          )}
+
           <BMsTable
             isLoading={isLoading}
             loadingProgress={loadingProgress}
@@ -270,8 +243,7 @@ export default function TaiKhoanBM() {
           />
         </div>
 
-        {/* Right Column: Utilities Card */}
-        <div className="w-full lg:w-[320px] shrink-0 bg-gray-50/20 dark:bg-gray-950/10 flex flex-col">
+        <div className="flex w-full shrink-0 flex-col bg-gray-50/20 dark:bg-gray-950/10 lg:w-[320px]">
           <UtilitiesPanel
             utilities={utilities}
             onToggleUtility={handleToggleUtility}
