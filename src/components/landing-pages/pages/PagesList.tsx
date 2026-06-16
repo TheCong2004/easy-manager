@@ -175,9 +175,13 @@ export const PagesList: React.FC<PagesListProps> = ({
                         />
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-lime-500 transition cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() => onEdit?.(item)}
+                          className="text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-lime-500 transition cursor-pointer"
+                        >
                           {item.name}
-                        </span>
+                        </button>
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col items-start gap-1">

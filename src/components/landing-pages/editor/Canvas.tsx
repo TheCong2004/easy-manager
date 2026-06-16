@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import { useDrop, useDrag } from "react-dnd";
 import {
   EditorBlock, BlockType, DND_TYPES, PaletteDragItem, CanvasDragItem,
-  DeviceMode, DEVICE_WIDTHS,
+  DeviceMode, DEVICE_WIDTHS, ONLOOK_ATTRIBUTES, ensureOnlookBlockMeta,
 } from "./types";
 import { HeroBlock } from "./blocks/HeroBlock";
 import { TextBlock } from "./blocks/TextBlock";
@@ -18,12 +18,15 @@ const BlockRenderer: React.FC<{
   block: EditorBlock;
   isSelected: boolean;
   onSelect: () => void;
-}> = ({ block, isSelected, onSelect }) => {
+  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+}> = ({ block, isSelected, onSelect, onUpdateBlock }) => {
+  const update = (nextProps: Record<string, unknown>) => onUpdateBlock(block.id, nextProps);
+
   switch (block.type) {
-    case "hero": return <HeroBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "text": return <TextBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "hero": return <HeroBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "text": return <TextBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "image": return <ImageBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "button": return <ButtonBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "button": return <ButtonBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "spacer": return <SpacerBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "divider": return <DividerBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "feature_card": return <FeatureCardBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
@@ -75,10 +78,12 @@ const SortableBlock: React.FC<{
   onDuplicate: (id: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
   isFirst: boolean;
   isLast: boolean;
-}> = ({ block, index, isSelected, onSelect, onMove, onDelete, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }) => {
+}> = ({ block, index, isSelected, onSelect, onMove, onDelete, onDuplicate, onMoveUp, onMoveDown, onUpdateBlock, isFirst, isLast }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const metaBlock = ensureOnlookBlockMeta(block);
 
   const [{ isDragging }, drag] = useDrag<CanvasDragItem, unknown, { isDragging: boolean }>({
     type: DND_TYPES.CANVAS_BLOCK,
@@ -106,6 +111,12 @@ const SortableBlock: React.FC<{
       ref={ref}
       className="relative group"
       style={{ opacity: isDragging ? 0.4 : 1 }}
+      {...{
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_ID]: metaBlock.oid,
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_INSTANCE_ID]: metaBlock.instanceId,
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_DOM_ID]: metaBlock.domId,
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_COMPONENT_NAME]: metaBlock.componentName,
+      }}
     >
       {/* Drop indicator top */}
       {isOver && canDrop && (
@@ -113,7 +124,7 @@ const SortableBlock: React.FC<{
       )}
 
       {/* Block content */}
-      <BlockRenderer block={block} isSelected={isSelected} onSelect={onSelect} />
+      <BlockRenderer block={block} isSelected={isSelected} onSelect={onSelect} onUpdateBlock={onUpdateBlock} />
 
       {/* Hover toolbar — shows on hover or selected */}
       <div
@@ -243,6 +254,7 @@ interface CanvasProps {
   onDuplicateBlock: (id: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -258,8 +270,12 @@ export const Canvas: React.FC<CanvasProps> = ({
   onDuplicateBlock,
   onMoveUp,
   onMoveDown,
+  onUpdateBlock,
 }) => {
   const canvasWidth = DEVICE_WIDTHS[deviceMode];
+  const scaledWidth = canvasWidth * zoom;
+  const minPageHeight = 720;
+  const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
 
   // Click on canvas bg deselects
   const handleCanvasBgClick = (e: React.MouseEvent) => {
@@ -268,63 +284,100 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   return (
     <div
-      className="flex-1 overflow-auto flex items-start justify-center"
+      className="flex-1 overflow-auto"
       style={{
-        background: "radial-gradient(circle at 50% 50%, #1a1a2e 0%, #0a0a0f 100%)",
-        backgroundImage: `radial-gradient(#1d1d2e 1px, transparent 1px)`,
-        backgroundSize: "24px 24px",
+        backgroundColor: "#07070d",
+        backgroundImage: "radial-gradient(circle, rgba(129, 140, 248, 0.16) 1px, transparent 1px)",
+        backgroundSize: "32px 32px",
       }}
       onClick={handleCanvasBgClick}
     >
-      {/* Device frame */}
-      <div
-        className="relative shadow-2xl my-8 transition-all duration-300"
-        style={{
-          width: canvasWidth * zoom,
-          minHeight: 600 * zoom,
-          transform: `scale(${zoom})`,
-          transformOrigin: "top center",
-          marginBottom: `calc(2rem + ${(600 * zoom - 600)}px)`,
-        }}
-      >
-        {/* Page background */}
+      <div className="flex min-h-full items-start justify-center px-10 py-8">
         <div
-          className="w-full min-h-full"
+          className="relative transition-all duration-300"
           style={{
-            width: canvasWidth,
-            backgroundColor: pageBgColor,
-            transform: `scale(${zoom})`,
-            transformOrigin: "top left",
+            width: scaledWidth,
+            minHeight: (minPageHeight + 34) * zoom,
           }}
-          onClick={handleCanvasBgClick}
         >
-          {blocks.length === 0 ? (
-            <DropZone onDrop={(bt) => onDropFromPalette(bt, 0)} />
-          ) : (
-            <>
-              {blocks.map((block, index) => (
-                <React.Fragment key={block.id}>
-                  {/* Inter-block drop zone (compact) */}
-                  <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, index)} />
-                  <SortableBlock
-                    block={block}
-                    index={index}
-                    isSelected={selectedId === block.id}
-                    onSelect={() => onSelectBlock(block.id)}
-                    onMove={onMoveBlock}
-                    onDelete={onDeleteBlock}
-                    onDuplicate={onDuplicateBlock}
-                    onMoveUp={onMoveUp}
-                    onMoveDown={onMoveDown}
-                    isFirst={index === 0}
-                    isLast={index === blocks.length - 1}
-                  />
-                </React.Fragment>
-              ))}
-              {/* Drop zone at the end */}
-              <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, blocks.length)} />
-            </>
-          )}
+          <div
+            className="origin-top-left overflow-hidden rounded-[10px] border border-[#2a2a38] bg-[#101018] shadow-2xl shadow-black/60"
+            style={{
+              width: canvasWidth,
+              transform: `scale(${zoom})`,
+            }}
+          >
+            <div className="flex h-8 items-center justify-between border-b border-[#262636] bg-[#11111a] px-3 text-[10px] text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-red-500/70" />
+                <span className="h-2 w-2 rounded-full bg-amber-500/70" />
+                <span className="h-2 w-2 rounded-full bg-emerald-500/70" />
+              </div>
+              <div className="font-mono uppercase tracking-wider">
+                {deviceLabel} / {canvasWidth}px / {Math.round(zoom * 100)}%
+              </div>
+            </div>
+
+            {/* Page background */}
+            <div
+              className="w-full"
+              style={{
+                width: canvasWidth,
+                minHeight: minPageHeight,
+                backgroundColor: pageBgColor,
+              }}
+              onClick={handleCanvasBgClick}
+            >
+              {blocks.length === 0 ? (
+                <DropZone onDrop={(bt) => onDropFromPalette(bt, 0)} />
+              ) : (
+                <>
+                  {blocks.map((block, index) => (
+                    <React.Fragment key={block.id}>
+                      {/* Inter-block drop zone (compact) */}
+                      <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, index)} />
+                      <SortableBlock
+                        block={block}
+                        index={index}
+                        isSelected={selectedId === block.id}
+                        onSelect={() => onSelectBlock(block.id)}
+                        onMove={onMoveBlock}
+                        onDelete={onDeleteBlock}
+                        onDuplicate={onDuplicateBlock}
+                        onMoveUp={onMoveUp}
+                        onMoveDown={onMoveDown}
+                        onUpdateBlock={onUpdateBlock}
+                        isFirst={index === 0}
+                        isLast={index === blocks.length - 1}
+                      />
+                    </React.Fragment>
+                  ))}
+                  {/* Drop zone at the end */}
+                  <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, blocks.length)} />
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="pointer-events-auto absolute left-1/2 top-full z-40 mt-5 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-[#2b2b3b] bg-[#08080d]/95 p-1.5 shadow-2xl shadow-black/50 backdrop-blur">
+            {[
+              { title: "Select", path: "M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" },
+              { title: "Pan", path: "M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" },
+              { title: "Frame", path: "M4.5 4.5h15v15h-15z" },
+              { title: "Text", path: "M6 4.5h12M12 4.5v15m-3 0h6" },
+              { title: "Code", path: "M8.25 9.75 4.5 13.5l3.75 3.75m7.5-7.5 3.75 3.75-3.75 3.75" },
+            ].map((tool) => (
+              <button
+                key={tool.title}
+                title={tool.title}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-300 transition hover:bg-white/10 hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d={tool.path} />
+                </svg>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

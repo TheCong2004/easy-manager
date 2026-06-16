@@ -6,9 +6,10 @@ interface TextBlockProps {
   props: TextProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
-export const TextBlock: React.FC<TextBlockProps> = ({ props, isSelected, onSelect }) => {
+export const TextBlock: React.FC<TextBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { content, fontSize, color, textAlign, lineHeight, paddingX, paddingY } = props;
 
   return (
@@ -21,7 +22,15 @@ export const TextBlock: React.FC<TextBlockProps> = ({ props, isSelected, onSelec
       }`}
       style={{ paddingLeft: paddingX, paddingRight: paddingX, paddingTop: paddingY, paddingBottom: paddingY }}
     >
-      <p style={{ fontSize, color, textAlign, lineHeight, margin: 0 }}>
+      <p
+        contentEditable={isSelected}
+        suppressContentEditableWarning
+        onBlur={(e) => onUpdate?.({ ...props, content: e.currentTarget.textContent || "" })}
+        onClick={(e) => {
+          if (isSelected) e.stopPropagation();
+        }}
+        style={{ fontSize, color, textAlign, lineHeight, margin: 0, outline: "none" }}
+      >
         {content}
       </p>
       {isSelected && (

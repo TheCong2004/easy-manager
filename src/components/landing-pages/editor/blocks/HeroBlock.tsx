@@ -6,9 +6,10 @@ interface HeroBlockProps {
   props: HeroProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
-export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelect }) => {
+export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const {
     headline, subheadline, ctaText, ctaUrl, ctaColor,
     bgColor, bgImage, textAlign, minHeight, overlayOpacity,
@@ -41,27 +42,47 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelec
       {/* Content */}
       <div className={`relative z-10 w-full max-w-4xl mx-auto px-8 py-16 flex flex-col gap-5 ${alignClass}`}>
         <h1
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, headline: e.currentTarget.textContent || "" })}
+          onClick={(e) => {
+            if (isSelected) e.stopPropagation();
+          }}
           className="font-extrabold leading-tight"
           style={{
             fontSize: "clamp(2rem, 5vw, 3.5rem)",
             color: bgImage || bgColor !== "#ffffff" ? "#fff" : "#0f172a",
+            outline: "none",
           }}
         >
           {headline}
         </h1>
         <p
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, subheadline: e.currentTarget.textContent || "" })}
+          onClick={(e) => {
+            if (isSelected) e.stopPropagation();
+          }}
           className="max-w-2xl leading-relaxed text-lg"
           style={{
             color: bgImage || bgColor !== "#ffffff" ? "rgba(255,255,255,0.85)" : "#475569",
+            outline: "none",
           }}
         >
           {subheadline}
         </p>
         <a
           href={ctaUrl}
-          onClick={(e) => e.preventDefault()}
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, ctaText: e.currentTarget.textContent || "" })}
+          onClick={(e) => {
+            e.preventDefault();
+            if (isSelected) e.stopPropagation();
+          }}
           className="inline-flex items-center gap-2 font-bold px-7 py-3 rounded-xl text-white shadow-lg transition hover:opacity-90 active:scale-95"
-          style={{ backgroundColor: ctaColor, width: "fit-content" }}
+          style={{ backgroundColor: ctaColor, width: "fit-content", outline: "none" }}
         >
           {ctaText}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

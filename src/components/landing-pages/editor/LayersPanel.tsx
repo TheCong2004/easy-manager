@@ -84,6 +84,19 @@ const BLOCK_LABELS: Record<BlockType, string> = {
 };
 
 // ── Draggable Palette Item ────────────────────────────────────
+const LAYER_CHILDREN: Partial<Record<BlockType, string[]>> = {
+  hero: ["Headline", "Subheadline", "CTA Button"],
+  text: ["Text"],
+  image: ["Image", "Caption"],
+  button: ["Button Label"],
+  columns: ["Column 1", "Column 2"],
+  feature_card: ["Icon", "Title", "Description"],
+  testimonial: ["Quote", "Author", "Rating"],
+  countdown: ["Title", "Timer Units"],
+  video: ["Embed"],
+  form_capture: ["Title", "Fields", "Submit Button"],
+};
+
 const PaletteItem: React.FC<{
   blockType: BlockType;
   onClickAdd: (bt: BlockType) => void;
@@ -99,13 +112,13 @@ const PaletteItem: React.FC<{
       ref={drag as unknown as React.Ref<HTMLDivElement>}
       onClick={() => onClickAdd(blockType)}
       title={`Kéo hoặc click để thêm ${BLOCK_LABELS[blockType]}`}
-      className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-grab active:cursor-grabbing transition-all select-none ${
+      className={`group flex items-center gap-2.5 rounded-md border px-2.5 py-2.5 cursor-grab active:cursor-grabbing transition-all select-none ${
         isDragging
           ? "border-purple-500 bg-purple-900/30 opacity-50"
-          : "border-gray-700/50 hover:border-purple-500/60 hover:bg-purple-600/10"
+          : "border-[#242433] bg-[#0d0d14] hover:border-purple-500/60 hover:bg-purple-600/10"
       }`}
     >
-      <span className="text-gray-400 flex-shrink-0">{BLOCK_ICONS[blockType]}</span>
+      <span className="text-gray-500 flex-shrink-0 transition group-hover:text-purple-300">{BLOCK_ICONS[blockType]}</span>
       <span className="text-xs font-medium text-gray-300 truncate">{BLOCK_LABELS[blockType]}</span>
     </div>
   );
@@ -118,30 +131,54 @@ const LayerItem: React.FC<{
   index: number;
   onSelect: () => void;
   onDelete: (id: string) => void;
-}> = ({ block, isSelected, index, onSelect, onDelete }) => (
-  <button
-    onClick={onSelect}
-    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition group ${
-      isSelected
-        ? "bg-purple-600/20 text-purple-300 border border-purple-500/40"
-        : "text-gray-400 hover:bg-white/5 border border-transparent"
-    }`}
-  >
-    <span className="text-gray-500 flex-shrink-0 w-4 h-4">{BLOCK_ICONS[block.type]}</span>
-    <span className="flex-1 truncate text-xs">
-      {block.label || BLOCK_LABELS[block.type]}
-    </span>
-    <span className="text-[10px] text-gray-600 font-mono">{index + 1}</span>
-    <button
-      onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
-      className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition ml-1"
-    >
-      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  </button>
-);
+}> = ({ block, isSelected, index, onSelect, onDelete }) => {
+  const children = LAYER_CHILDREN[block.type] ?? [];
+
+  return (
+    <div>
+      <button
+        onClick={onSelect}
+        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-left transition group ${
+          isSelected
+            ? "bg-purple-600 text-white border border-purple-400/70"
+            : "text-gray-400 hover:bg-white/5 border border-transparent"
+        }`}
+      >
+        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${isSelected ? "border-white/70" : "border-gray-600"}`} />
+        <span className="text-gray-500 flex-shrink-0 w-4 h-4">{BLOCK_ICONS[block.type]}</span>
+        <span className="flex-1 truncate text-xs">
+          {block.label || BLOCK_LABELS[block.type]}
+        </span>
+        <span className="text-[10px] text-gray-500 font-mono">{index + 1}</span>
+        <span
+          onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
+          className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition ml-1"
+          role="button"
+          tabIndex={0}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </span>
+      </button>
+
+      {children.length > 0 && (
+        <div className="ml-7 mt-1 space-y-1 border-l border-gray-800/80 pl-3">
+          {children.map((child) => (
+            <button
+              key={`${block.id}-${child}`}
+              onClick={onSelect}
+              className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[11px] text-gray-500 transition hover:bg-white/5 hover:text-gray-300"
+            >
+              <span className="h-3 w-3 rounded-[3px] border border-gray-700" />
+              <span className="truncate">{child}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ── Main Left Panel ───────────────────────────────────────────
 interface LayersPanelProps {
@@ -183,16 +220,16 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   };
 
   return (
-    <div className="w-60 flex-shrink-0 flex flex-col bg-[#111118] border-r border-gray-800/80 h-full overflow-hidden">
+    <div className="w-full flex flex-col bg-[#101016] h-full overflow-hidden">
       {/* Tabs */}
-      <div className="flex border-b border-gray-800/80 flex-shrink-0">
+      <div className="flex border-b border-[#252535] bg-[#0b0b11] flex-shrink-0 px-3 pt-2">
         {(["components", "layers"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2.5 text-[11px] font-semibold tracking-wide transition uppercase ${
+            className={`flex-1 rounded-t-md py-2 text-[11px] font-semibold tracking-wide transition uppercase ${
               tab === t
-                ? "text-purple-400 border-b-2 border-purple-500"
+                ? "bg-[#151522] text-purple-300 shadow-[inset_0_-2px_0_#a855f7]"
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -201,7 +238,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
         {tab === "components" ? (
           <>
             {/* Search */}
@@ -214,7 +251,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                 placeholder="Tìm component..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white/5 border border-gray-700/50 rounded-lg text-gray-300 placeholder-gray-600 focus:outline-none focus:border-purple-500"
+                className="w-full rounded-md border border-[#242433] bg-[#0d0d14] py-2 pl-8 pr-3 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none"
               />
             </div>
 
@@ -232,7 +269,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                 <div key={cat.id}>
                   <button
                     onClick={() => toggleCategory(cat.id)}
-                    className="w-full flex items-center justify-between px-1 py-1.5 mb-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase hover:text-gray-400 transition"
+                    className="w-full flex items-center justify-between px-1 py-2 mb-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase hover:text-gray-300 transition"
                   >
                     <div className="flex items-center gap-1.5">
                       <span className="text-gray-600">{categoryIcons[cat.id]}</span>

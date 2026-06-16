@@ -272,9 +272,28 @@ export default function LandingPagesManagement() {
       {/* Visual Editor — full screen overlay */}
       {editingPage && (
         <VisualEditor
+          key={editingPage.id}
           page={editingPage}
+          pages={pages}
           onClose={() => setEditingPage(null)}
           onPublish={handlePublishFromEditor}
+          onSwitchPage={(page) => setEditingPage(page)}
+          onCreatePage={(name) => {
+            const newPg: LandingPageItem = {
+              id: String(Date.now()),
+              name: name.toLowerCase(),
+              status: "UNPUBLISHED",
+              updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+              views: 0,
+              conversions: 0,
+              revenue: 0,
+            };
+            setPages(prev => [newPg, ...prev]);
+            return newPg;
+          }}
+          onDeletePage={(id) => {
+            setPages(prev => prev.filter(p => p.id !== id));
+          }}
         />
       )}
 

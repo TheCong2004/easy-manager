@@ -5,6 +5,15 @@
 
 // ── Device Preview Modes ────────────────────────────────────
 export type DeviceMode = "desktop" | "tablet" | "mobile";
+export type EditorViewMode = "design" | "preview" | "code";
+
+export const ONLOOK_ATTRIBUTES = {
+  DATA_ONLOOK_ID: "data-oid",
+  DATA_ONLOOK_INSTANCE_ID: "data-oiid",
+  DATA_ONLOOK_DOM_ID: "data-odid",
+  DATA_ONLOOK_COMPONENT_NAME: "data-ocname",
+  DATA_ONLOOK_INSERTED: "data-onlook-inserted",
+} as const;
 
 export const DEVICE_WIDTHS: Record<DeviceMode, number> = {
   desktop: 1280,
@@ -210,6 +219,10 @@ export interface EditorBlock {
   label?: string;
   locked?: boolean;
   hidden?: boolean;
+  oid?: string;
+  instanceId?: string;
+  domId?: string;
+  componentName?: string;
 }
 
 // ── Root editor data (serialisable state) ───────────────────
@@ -217,11 +230,48 @@ export interface EditorData {
   pageId: string;
   pageName: string;
   blocks: EditorBlock[];
-  pageSettings: {
-    bgColor: string;
-    maxWidth: number;
-    fontFamily: string;
-    primaryColor: string;
+  pageSettings: EditorPageSettings;
+}
+
+export interface EditorPageSettings {
+  bgColor: string;
+  maxWidth: number;
+  fontFamily: string;
+  primaryColor: string;
+  seoTitle: string;
+  seoDescription: string;
+  canonicalUrl: string;
+  slug: string;
+  customDomain: string;
+  pixelId: string;
+  sandboxProvider: "local" | "codesandbox" | "vercel";
+  sandboxId: string;
+  sandboxPort: number;
+  sandboxStatus: "local" | "connecting" | "ready" | "error";
+  sandboxUrl: string;
+  previewPath: string;
+}
+
+export function createDefaultPageSettings(pageName = ""): EditorPageSettings {
+  const slug = pageName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "landing-page";
+
+  return {
+    bgColor: "#ffffff",
+    maxWidth: 1280,
+    fontFamily: "Inter, sans-serif",
+    primaryColor: "#65a30d",
+    seoTitle: pageName || "Landing Page",
+    seoDescription: "Landing page duoc tao bang visual editor.",
+    canonicalUrl: "",
+    slug,
+    customDomain: "",
+    pixelId: "",
+    sandboxProvider: "local",
+    sandboxId: "",
+    sandboxPort: 3000,
+    sandboxStatus: "local",
+    sandboxUrl: "",
+    previewPath: `/${slug}`,
   };
 }
 
@@ -370,5 +420,35 @@ export function createDefaultBlock(blockType: BlockType): EditorBlock {
     form_capture: "Form thu thập",
   };
 
-  return { id, type: blockType, props: defaults[blockType], label: label[blockType] };
+  return ensureOnlookBlockMeta({ id, type: blockType, props: defaults[blockType], label: label[blockType] });
+}
+
+export function ensureOnlookBlockMeta(block: EditorBlock): EditorBlock {
+  const suffix = block.id.replace(/^block_/, "");
+  return {
+    ...block,
+    oid: block.oid ?? `lp_${block.type}_${suffix}`,
+    instanceId: block.instanceId ?? `oiid_${suffix}`,
+    domId: block.domId ?? block.id,
+    componentName: block.componentName ?? labelFromBlockType(block.type),
+  };
+}
+
+function labelFromBlockType(blockType: BlockType): string {
+  const componentNames: Record<BlockType, string> = {
+    hero: "HeroBlock",
+    text: "TextBlock",
+    image: "ImageBlock",
+    button: "ButtonBlock",
+    spacer: "SpacerBlock",
+    divider: "DividerBlock",
+    columns: "ColumnsBlock",
+    feature_card: "FeatureCardBlock",
+    testimonial: "TestimonialBlock",
+    countdown: "CountdownBlock",
+    video: "VideoBlock",
+    form_capture: "FormCaptureBlock",
+  };
+
+  return componentNames[blockType];
 }

@@ -369,7 +369,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
 };
 
 // ── Page settings ─────────────────────────────────────────────
-const PageSettingsPanel: React.FC<{
+export const PageSettingsPanel: React.FC<{
   settings: EditorData["pageSettings"];
   onUpdateSettings: (key: string, value: string | number) => void;
 }> = ({ settings, onUpdateSettings }) => (
@@ -434,7 +434,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const InspectorComponent = selectedBlock ? INSPECTOR_MAP[selectedBlock.type] : null;
 
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col bg-[#111118] border-l border-gray-800/80 h-full overflow-hidden">
+    <div className="w-full flex flex-col bg-[#111118] h-full overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-800/80 flex-shrink-0">
         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Inspector</p>

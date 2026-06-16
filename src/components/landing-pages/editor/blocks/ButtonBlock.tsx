@@ -6,6 +6,7 @@ interface ButtonBlockProps {
   props: ButtonProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
 const sizeStyles: Record<string, string> = {
@@ -14,7 +15,7 @@ const sizeStyles: Record<string, string> = {
   lg: "px-8 py-4 text-lg",
 };
 
-export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onSelect }) => {
+export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { label, style, color, textColor, size, fullWidth, borderRadius, align } = props;
 
   const alignStyle: React.CSSProperties = {
@@ -49,9 +50,19 @@ export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onS
       <button
         className={`${sizeStyles[size]}`}
         style={buttonStyle}
-        onClick={(e) => e.preventDefault()}
+        onClick={(e) => {
+          e.preventDefault();
+          if (isSelected) e.stopPropagation();
+        }}
       >
-        {label}
+        <span
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, label: e.currentTarget.textContent || "" })}
+          style={{ outline: "none" }}
+        >
+          {label}
+        </span>
       </button>
       {isSelected && (
         <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
