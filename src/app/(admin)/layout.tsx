@@ -15,6 +15,7 @@ export default function AdminLayout({
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const pathname = usePathname();
   const isFacebookAds = pathname?.startsWith("/facebook-ads");
+  const isOffice = pathname?.startsWith("/office");
 
   // Dynamic class for main content margin based on sidebar state
   const mainContentMargin = isMobileOpen
@@ -30,12 +31,12 @@ export default function AdminLayout({
       <Backdrop />
       {/* Main Content Area */}
       <div
-        className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
+        className={`min-w-0 flex-1 overflow-x-hidden transition-all  duration-300 ease-in-out ${mainContentMargin}`}
       >
         {/* Header */}
         <AppHeader />
         {/* Page Content */}
-        <div className={isFacebookAds ? "w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
+        <div className={isFacebookAds || isOffice ? "min-w-0 w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
       </div>
     </div>
   );
