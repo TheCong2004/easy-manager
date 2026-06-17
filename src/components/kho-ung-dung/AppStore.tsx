@@ -113,6 +113,18 @@ const initialApps: AppItem[] = [
     isPinned: true,
   },
   {
+    id: "14",
+    name: "CloudPhone",
+    description: "Cua hang thue cloud phone, quan ly thiet bi va dieu khien dong bo nhieu may theo nhom cho automation.",
+    iconName: "cloudphone",
+    status: "INSTALLED",
+    category: "marketing",
+    price: "Da cai dat",
+    downloads: "2.048",
+    tags: ["Thue may", "Dong bo", "Remote"],
+    isPinned: true,
+  },
+  {
     id: "11",
     name: "LadiFlow Pro",
     description: "Hệ thống tự động hóa chăm sóc khách hàng đa kênh theo kịch bản thông minh.",
@@ -170,6 +182,8 @@ export default function AppStore() {
     const app = apps.find((a) => a.id === id);
     if (id === "10") {
       router.push("/facebook-ads/tai-khoan-qc");
+    } else if (id === "14") {
+      router.push("/cloudphone/cua-hang-cho-thue");
     } else if (id === "1") {
       router.push("/landing-pages");
     } else if (id === "2") {

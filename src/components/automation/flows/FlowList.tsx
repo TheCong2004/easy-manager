@@ -58,20 +58,71 @@ export const FlowList: React.FC<FlowListProps> = ({
     setActiveSubTab("builder");
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Bạn có chắc chắn muốn xóa Flow này?")) {
-      setFlows((prev) => prev.filter((flow) => flow.id !== id));
+      try {
+        const savedUrl = localStorage.getItem("flowise_url") || "http://localhost:3100";
+        const res = await fetch(`/api/flowise/chatflows/${id}`, {
+          method: "DELETE",
+          headers: {
+            "x-flowise-url": savedUrl,
+          },
+        });
+        if (res.ok) {
+          setFlows((prev) => prev.filter((flow) => flow.id !== id));
+          setTimeout(() => {
+            const updated = flows.filter((flow) => flow.id !== id);
+            localStorage.setItem("local_flows", JSON.stringify(updated));
+          }, 100);
+        } else {
+          throw new Error("Failed to delete from Flowise");
+        }
+      } catch (e) {
+        // Fallback local delete
+        setFlows((prev) => prev.filter((flow) => flow.id !== id));
+        setTimeout(() => {
+          const updated = flows.filter((flow) => flow.id !== id);
+          localStorage.setItem("local_flows", JSON.stringify(updated));
+        }, 100);
+      }
     }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setFlows((prev) =>
-      prev.map((flow) =>
-        flow.id === id
-          ? { ...flow, status: flow.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }
-          : flow
-      )
-    );
+  const handleToggleStatus = async (id: string) => {
+    const targetFlow = flows.find(f => f.id === id);
+    if (!targetFlow) return;
+    const newStatus = targetFlow.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+    try {
+      const savedUrl = localStorage.getItem("flowise_url") || "http://localhost:3100";
+      const res = await fetch(`/api/flowise/chatflows/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-flowise-url": savedUrl,
+        },
+        body: JSON.stringify({
+          name: targetFlow.name,
+          deployed: newStatus === "ACTIVE",
+        }),
+      });
+      if (res.ok) {
+        setFlows((prev) =>
+          prev.map((flow) =>
+            flow.id === id ? { ...flow, status: newStatus } : flow
+          )
+        );
+      } else {
+        throw new Error("Failed to toggle status");
+      }
+    } catch (e) {
+      // Fallback local toggle
+      setFlows((prev) =>
+        prev.map((flow) =>
+          flow.id === id ? { ...flow, status: newStatus } : flow
+        )
+      );
+    }
   };
 
   const handleImportFlow = (e: React.ChangeEvent<HTMLInputElement>) => {

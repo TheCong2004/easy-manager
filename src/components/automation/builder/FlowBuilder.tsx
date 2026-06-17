@@ -11,17 +11,18 @@ interface FlowBuilderProps {
 
 const TRIGGER_OPTIONS = [
   { id: "register", name: "Đăng ký mới", desc: "Kích hoạt khi khách hàng điền form đăng ký mới từ Landing Page." },
+  { id: "webhook_n8n", name: "n8n Webhook Listener", desc: "Lắng nghe payload JSON đẩy từ n8n workflow tự động." },
   { id: "tag_added", name: "Được gắn Tag", desc: "Kích hoạt khi khách hàng được gắn một Tag phân loại cụ thể." },
   { id: "tag_removed", name: "Bị xóa Tag", desc: "Kích hoạt khi khách hàng bị xóa khỏi một Tag phân loại." },
   { id: "sequence_join", name: "Đăng ký Sequence", desc: "Kích hoạt khi khách hàng bắt đầu chuỗi chăm sóc tự động." },
-  { id: "sequence_leave", name: "Hủy đăng ký Sequence", desc: "Kích hoạt khi khách hàng hủy nhận chuỗi chăm sóc." },
-  { id: "field_changed", name: "Trường tùy chỉnh thay đổi", desc: "Kích hoạt khi một thuộc tính trường thông tin tùy chỉnh của KH thay đổi." },
 ];
 
 const ACTION_OPTIONS = [
   { id: "send_zalo", name: "Gửi tin nhắn Zalo ZNS", desc: "Gửi tin nhắn OA chính thống chăm sóc khách hàng tự động.", icon: "Z", color: "bg-lime-400", previewType: "zalo" },
   { id: "send_email", name: "Gửi Email tự động", desc: "Gửi email HTML chào mừng, xác nhận thông tin hay nuôi dưỡng.", icon: "E", color: "bg-indigo-500", previewType: "email" },
   { id: "send_sms", name: "Gửi SMS Brandname", desc: "Gửi tin nhắn SMS Brandname viễn thông nhanh, xác thực OTP.", icon: "S", color: "bg-purple-600", previewType: "sms" },
+  { id: "chatgpt_node", name: "ChatGPT (OpenAI AI)", desc: "Gọi OpenAI GPT-4o xử lý, tóm tắt hoặc phản hồi khách hàng tự động.", icon: "AI", color: "bg-emerald-500", previewType: "chatgpt" },
+  { id: "telegram_node", name: "Gửi thông báo Telegram", desc: "Đẩy tin nhắn cảnh báo hoặc báo cáo tức thì vào Telegram.", icon: "TG", color: "bg-[#229ED9]", previewType: "telegram" },
   { id: "add_tag", name: "Tự động gắn Tag", desc: "Thêm thẻ Tag phân loại khách hàng tự động vào cơ sở dữ liệu.", icon: "T", color: "bg-amber-500", previewType: "tag" },
   { id: "sync_sheet", name: "Đồng bộ Google Sheet", desc: "Ghi thêm thông tin khách hàng sang bảng tính Google Sheet trực tuyến.", icon: "G", color: "bg-emerald-600", previewType: "sheet" },
 ];
@@ -40,24 +41,117 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
   const [panelMode, setPanelMode] = useState<"none" | "trigger" | "action">("none");
   const [isSaved, setIsSaved] = useState(true);
 
+  // Custom node parameter states
+  const [actionParams, setActionParams] = useState<any>({
+    model: "gpt-4o",
+    systemPrompt: "Bạn là trợ lý chăm sóc khách hàng thân thiện của LadiPage.",
+    userPrompt: "Hãy tạo lời chào mừng gửi tới khách hàng mới: {{customer_name}}",
+    botToken: "",
+    chatId: ""
+  });
+
   // Load flow if editing
   useEffect(() => {
-    if (flowId) {
+    const loadFlowData = async () => {
+      if (!flowId) return;
+
+      // Try fetching from Flowise
+      try {
+        const savedUrl = localStorage.getItem("flowise_url") || "http://localhost:3100";
+        const res = await fetch(`/api/flowise/chatflows/${flowId}`, {
+          headers: {
+            "x-flowise-url": savedUrl,
+          },
+        });
+        if (res.ok) {
+          const cf = await res.json();
+          setFlowName(cf.name);
+          if (cf.flowData) {
+            const parsed = JSON.parse(cf.flowData);
+            const triggerNode = parsed.nodes?.find((n: any) => n.type === "trigger");
+            const actionNode = parsed.nodes?.find((n: any) => n.type === "action");
+
+            if (triggerNode) {
+              const matchedTrigger = TRIGGER_OPTIONS.find((t) => t.id === triggerNode.data.id);
+              if (matchedTrigger) setSelectedTrigger(matchedTrigger || null);
+            }
+            if (actionNode) {
+              const matchedAction = ACTION_OPTIONS.find((a) => a.id === actionNode.data.id);
+              if (matchedAction) {
+                setSelectedAction(matchedAction || null);
+                if (actionNode.params) {
+                  setActionParams(actionNode.params);
+                }
+              }
+            }
+          }
+          return; // Skip fallback
+        }
+      } catch (e) {
+        console.warn("Failed to load flow from Flowise, using local fallback", e);
+      }
+
+      // Fallback local load
       const existing = flows.find((f) => f.id === flowId);
       if (existing) {
         setFlowName(existing.name);
         const matchedTrigger = TRIGGER_OPTIONS.find((t) => t.name === existing.triggerType);
         if (matchedTrigger) setSelectedTrigger(matchedTrigger);
-        // Default to a send_zalo action to populate details nicely
         setSelectedAction(ACTION_OPTIONS[0]);
       }
-    }
+    };
+
+    loadFlowData();
   }, [flowId, flows]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaved(true);
+
+    const flowDataObj = {
+      nodes: [
+        ...(selectedTrigger ? [{ id: "trigger", type: "trigger", data: selectedTrigger }] : []),
+        ...(selectedAction ? [{ id: "action", type: "action", data: selectedAction, params: actionParams }] : [])
+      ],
+      edges: selectedTrigger && selectedAction ? [
+        { id: "e1-2", source: "trigger", target: "action" }
+      ] : []
+    };
+
+    const flowBody = {
+      name: flowName,
+      flowData: JSON.stringify(flowDataObj),
+      deployed: false,
+    };
+
+    let savedId = flowId;
+    let success = false;
+
+    try {
+      const savedUrl = localStorage.getItem("flowise_url") || "http://localhost:3100";
+      const isEdit = !!flowId;
+      const url = isEdit ? `/api/flowise/chatflows/${flowId}` : `/api/flowise/chatflows`;
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "x-flowise-url": savedUrl,
+        },
+        body: JSON.stringify(flowBody),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        savedId = data.id || flowId;
+        success = true;
+      }
+    } catch (e) {
+      console.error("Failed to save to Flowise:", e);
+    }
+
     const flowItem: FlowItem = {
-      id: flowId || `flow-${Date.now()}`,
+      id: savedId || `flow-${Date.now()}`,
       name: flowName,
       status: "INACTIVE",
       createdAt: new Date().toLocaleString("vi-VN"),
@@ -71,6 +165,16 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
       }
       return [flowItem, ...prev];
     });
+
+    // Save to local storage for persistent fallback
+    setTimeout(() => {
+      const updated = flows.some(f => f.id === flowItem.id)
+        ? flows.map(f => f.id === flowItem.id ? flowItem : f)
+        : [flowItem, ...flows];
+      localStorage.setItem("local_flows", JSON.stringify(updated));
+    }, 100);
+
+    alert(success ? "Đã lưu kịch bản vào Flowise thành công!" : "Không kết nối được Flowise. Đã lưu kịch bản vào bộ nhớ trình duyệt tạm thời.");
   };
 
   const handleSelectTrigger = (trigger: typeof TRIGGER_OPTIONS[0]) => {
@@ -149,6 +253,62 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                   Kết nối OA ngay
                 </button>
               </div>
+            </div>
+          </div>
+        );
+      case "chatgpt":
+        return (
+          <div className="flex flex-col h-full bg-[#1e1e24] text-white font-sans text-[9px] select-none">
+            {/* ChatGPT Header */}
+            <div className="bg-[#2a2b36] p-2 flex items-center gap-1.5 border-b border-white/5">
+              <span className="w-4 h-4 rounded-full bg-[#10a37f] text-white flex items-center justify-center font-bold text-[8px]">
+                🤖
+              </span>
+              <div>
+                <div className="font-bold text-[8.5px] text-[#10a37f]">GPT-4o Agent</div>
+                <div className="text-[6px] text-slate-400 leading-none">Đang xử lý prompt...</div>
+              </div>
+            </div>
+            
+            {/* Chat Body */}
+            <div className="flex-1 p-2 space-y-2 overflow-y-auto bg-[#343541] text-left">
+              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                <span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Prompt gửi đi</span>
+                <span className="text-slate-355 leading-normal block text-[8px]">
+                  {actionParams.userPrompt || "Tạo lời chào mừng gửi tới khách hàng..."}
+                </span>
+              </div>
+              <div className="bg-[#10a37f]/10 p-2 rounded-lg border border-[#10a37f]/20">
+                <span className="text-[6.5px] font-bold text-[#10a37f] uppercase tracking-wider block mb-1">AI Phản hồi</span>
+                <span className="text-[#a7f3d0] leading-normal block text-[8px] font-medium animate-pulse">
+                  {"[AI] Xin chào! Rất vui được hỗ trợ bạn..."}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      case "telegram":
+        return (
+          <div className="flex flex-col h-full bg-[#549cce]/10 text-slate-800 dark:text-slate-200 font-sans text-[9px] relative select-none">
+            {/* Telegram Header */}
+            <div className="bg-[#549cce] text-white p-2 flex items-center gap-1.5 shadow-3xs">
+              <span className="w-4 h-4 rounded-full bg-white text-[#549cce] flex items-center justify-center font-black text-[9px]">
+                TG
+              </span>
+              <div>
+                <div className="font-bold text-[9px]">Telegram Notify Bot</div>
+                <div className="text-[6.5px] opacity-75 leading-none">bot công việc</div>
+              </div>
+            </div>
+            {/* Chat Message Box */}
+            <div className="flex-1 p-2 flex flex-col justify-end text-left">
+              <div className="max-w-[90%] bg-white dark:bg-gray-850 p-2.5 rounded-xl rounded-bl-none text-[8px] leading-relaxed border border-gray-150 dark:border-gray-800/80 shadow-3xs">
+                <span className="text-[7px] text-[#549cce] font-bold block mb-0.5">🔔 BÁO CÁO AUTOMATION</span>
+                Hành động kích hoạt: <strong>{selectedTrigger?.name || "Đăng ký mới"}</strong>.
+                <br />
+                Đang xử lý tiếp theo trong chuỗi kịch bản.
+              </div>
+              <span className="text-[6px] text-slate-400 mt-0.5 ml-1">Vừa xong</span>
             </div>
           </div>
         );
@@ -323,22 +483,69 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                     ⚡ TRIGGER
                   </div>
                   {selectedTrigger ? (
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-800 dark:text-white">
-                          {selectedTrigger.name}
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          {selectedTrigger.desc}
-                        </p>
+                    <div className="space-y-3 text-left">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            {selectedTrigger.name}
+                          </h3>
+                          <p className="text-[10px] text-slate-450 mt-0.5 leading-normal">
+                            {selectedTrigger.desc}
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleClearTrigger}
+                          className="text-slate-400 hover:text-red-500 font-bold text-lg leading-none p-1 cursor-pointer"
+                          title="Xóa"
+                        >
+                          ×
+                        </button>
                       </div>
-                      <button
-                        onClick={handleClearTrigger}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                        title="Xóa"
-                      >
-                        ×
-                      </button>
+                      
+                      <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2.5">
+                        {selectedTrigger.id === "webhook_n8n" && (
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Webhook URL (n8n)</label>
+                            <div className="flex gap-1.5">
+                              <input 
+                                type="text" 
+                                readOnly 
+                                value={`http://localhost:3000/api/webhook/n8n-${flowId || "new"}`} 
+                                className="w-full text-[9px] bg-slate-50 dark:bg-slate-850 border border-gray-200 dark:border-gray-700 text-slate-500 p-2 rounded-lg outline-hidden font-mono select-all" 
+                              />
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`http://localhost:3000/api/webhook/n8n-${flowId || "new"}`);
+                                  alert("Đã sao chép Webhook URL vào Clipboard!");
+                                }}
+                                className="px-3 py-1 bg-lime-500 hover:bg-lime-600 text-white text-[10px] font-bold rounded-lg transition shrink-0 cursor-pointer"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {selectedTrigger.id === "register" && (
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chọn Landing Page</label>
+                            <select className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-700 dark:text-slate-350 outline-hidden">
+                              <option>Landing Page - Tuyển dụng Đại lý CloudPhone</option>
+                              <option>Landing Page - Đăng ký Gói Phần Mềm Dùng Thử</option>
+                            </select>
+                          </div>
+                        )}
+                        {selectedTrigger.id === "tag_added" && (
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chọn Thẻ Tag Phân Loại</label>
+                            <select className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-700 dark:text-slate-350 outline-hidden">
+                              <option>VIP_CUSTOMER</option>
+                              <option>LEAD_HOT</option>
+                              <option>ZALO_MEMBER</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <button
@@ -350,41 +557,142 @@ export const FlowBuilder: React.FC<FlowBuilderProps> = ({
                     </button>
                   )}
                 </div>
-
+ 
                 {/* Flow connector arrow */}
                 <div className="w-7 h-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-750 rounded-full flex items-center justify-center shadow-3xs z-10">
                   <svg className="w-4 h-4 text-slate-450" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
                 </div>
-
+ 
                 {/* 2. Action Block */}
                 <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs relative">
                   <div className="absolute -top-3.5 left-6 bg-lime-500 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs">
                     ⚙ HÀNH ĐỘNG
                   </div>
                   {selectedAction ? (
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-3">
-                        <div className={`w-8 h-8 rounded-lg ${selectedAction.color} text-white font-black flex items-center justify-center text-sm shadow-sm flex-shrink-0`}>
-                          {selectedAction.icon}
+                    <div className="space-y-3 text-left">
+                      <div className="flex items-start justify-between">
+                        <div className="flex gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg ${selectedAction.color} text-white font-black flex items-center justify-center text-xs shadow-xs shrink-0`}>
+                            {selectedAction.icon}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                              {selectedAction.name}
+                            </h3>
+                            <p className="text-[10px] text-slate-450 mt-0.5 leading-normal">
+                              {selectedAction.desc}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-800 dark:text-white">
-                            {selectedAction.name}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {selectedAction.desc}
-                          </p>
-                        </div>
+                        <button
+                          onClick={handleClearAction}
+                          className="text-slate-400 hover:text-red-500 font-bold text-lg leading-none p-1 cursor-pointer"
+                          title="Xóa"
+                        >
+                          ×
+                        </button>
                       </div>
-                      <button
-                        onClick={handleClearAction}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                        title="Xóa"
-                      >
-                        ×
-                      </button>
+
+                      <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-3">
+                        {selectedAction.id === "chatgpt_node" && (
+                          <>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">OpenAI Model</label>
+                              <select 
+                                value={actionParams.model} 
+                                onChange={(e) => {
+                                  setActionParams({ ...actionParams, model: e.target.value });
+                                  setIsSaved(false);
+                                }}
+                                className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-700 dark:text-slate-355 outline-hidden focus:border-lime-450 cursor-pointer"
+                              >
+                                <option value="gpt-4o">gpt-4o (Khuyên dùng)</option>
+                                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                <option value="o1-mini">o1-mini</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">System Instructions (Prompt hệ thống)</label>
+                              <textarea 
+                                value={actionParams.systemPrompt}
+                                onChange={(e) => {
+                                  setActionParams({ ...actionParams, systemPrompt: e.target.value });
+                                  setIsSaved(false);
+                                }}
+                                rows={2}
+                                className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-750 dark:text-slate-300 outline-hidden resize-none focus:border-lime-450 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">User Prompt (Nội dung phân tích)</label>
+                              <textarea 
+                                value={actionParams.userPrompt}
+                                onChange={(e) => {
+                                  setActionParams({ ...actionParams, userPrompt: e.target.value });
+                                  setIsSaved(false);
+                                }}
+                                rows={2}
+                                className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-750 dark:text-slate-300 outline-hidden resize-none focus:border-lime-450 font-medium"
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {selectedAction.id === "telegram_node" && (
+                          <>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Telegram Bot Token</label>
+                              <input 
+                                type="password" 
+                                value={actionParams.botToken || ""}
+                                onChange={(e) => {
+                                  setActionParams({ ...actionParams, botToken: e.target.value });
+                                  setIsSaved(false);
+                                }}
+                                placeholder="5830219502:AAFvU..." 
+                                className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-750 dark:text-slate-300 outline-hidden focus:border-lime-450" 
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chat ID (Nhóm hoặc Kênh)</label>
+                              <input 
+                                type="text" 
+                                value={actionParams.chatId || ""}
+                                onChange={(e) => {
+                                  setActionParams({ ...actionParams, chatId: e.target.value });
+                                  setIsSaved(false);
+                                }}
+                                placeholder="-100192837465" 
+                                className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-750 dark:text-slate-300 outline-hidden focus:border-lime-450" 
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {selectedAction.id === "send_zalo" && (
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mẫu ZNS OA</label>
+                            <textarea 
+                              defaultValue="Xin chào Quý khách,\nTài khoản của bạn đã được tích hợp thành công..." 
+                              rows={2}
+                              className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-750 dark:text-slate-300 outline-hidden resize-none focus:border-lime-450 font-medium"
+                            />
+                          </div>
+                        )}
+
+                        {selectedAction.id === "send_email" && (
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tiêu đề Email</label>
+                            <input 
+                              type="text" 
+                              defaultValue="Xác nhận thông tin đăng ký kịch bản tự động" 
+                              className="w-full text-xs bg-gray-50 border border-gray-200 dark:bg-gray-850 dark:border-gray-700 p-2.5 rounded-lg text-slate-750 dark:text-slate-300 outline-hidden focus:border-lime-450"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <button

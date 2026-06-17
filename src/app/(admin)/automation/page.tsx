@@ -19,6 +19,10 @@ export default function AutomationPage() {
   const [bounceSearchQuery, setBounceSearchQuery] = useState("");
   const [bounceStatusFilter, setBounceStatusFilter] = useState("ALL");
   
+  // Connection states
+  const [flowiseUrl, setFlowiseUrl] = useState("http://localhost:3100");
+  const [connectionStatus, setConnectionStatus] = useState<"connected" | "disconnected" | "loading">("loading");
+
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" } | null>(null);
 
@@ -29,6 +33,55 @@ export default function AutomationPage() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // Load saved Flowise URL from localStorage
+  useEffect(() => {
+    const savedUrl = localStorage.getItem("flowise_url");
+    if (savedUrl) {
+      setFlowiseUrl(savedUrl);
+    }
+  }, []);
+
+  // Fetch flows from API proxy
+  const fetchFlows = async (urlToUse = flowiseUrl) => {
+    setConnectionStatus("loading");
+    try {
+      const res = await fetch(`/api/flowise/chatflows`, {
+        headers: {
+          "x-flowise-url": urlToUse,
+        },
+      });
+      if (!res.ok) throw new Error("Connection failed");
+      const data = await res.json();
+      
+      if (Array.isArray(data)) {
+        // Map to FlowItem structure
+        const mapped = data.map((cf: any) => ({
+          id: cf.id,
+          name: cf.name,
+          status: (cf.deployed ? "ACTIVE" : "INACTIVE") as FlowItem["status"],
+          createdAt: new Date(cf.updatedAt || cf.createdAt).toLocaleString("vi-VN"),
+          triggerType: "Kịch bản Chatflow",
+        }));
+        setCustomFlows(mapped);
+        setConnectionStatus("connected");
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (e) {
+      console.warn("Failed to fetch flows from Flowise:", e);
+      setConnectionStatus("disconnected");
+      // Fallback: load local flows if saved in localStorage
+      const savedLocal = localStorage.getItem("local_flows");
+      if (savedLocal) {
+        setCustomFlows(JSON.parse(savedLocal));
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchFlows();
+  }, [flowiseUrl]);
 
   // Simulated flows database
   const simulatedFlows: FlowItem[] = [
@@ -57,23 +110,79 @@ export default function AutomationPage() {
 
   const allFlows = isSimulated ? [...customFlows, ...simulatedFlows] : customFlows;
 
-  const handleUseTemplate = (template: TemplateItem) => {
-    // Create new flow based on template
+  const handleUseTemplate = async (template: TemplateItem) => {
+    // Apply template and attempt to save to Flowise
+    const newFlowName = `Tự động: ${template.name}`;
+    const flowDataObj = {
+      nodes: [
+        {
+          id: "trigger",
+          type: "trigger",
+          data: { id: "register", name: template.triggerEvent || "Đăng ký mới", desc: "Kích hoạt tự động từ kịch bản mẫu" }
+        },
+        {
+          id: "action",
+          type: "action",
+          data: { id: "send_zalo", name: "Gửi tin nhắn Zalo ZNS", desc: "Gửi thông báo chăm sóc", color: "bg-lime-400", icon: "Z", previewType: "zalo" }
+        }
+      ],
+      edges: [
+        { id: "e1-2", source: "trigger", target: "action" }
+      ]
+    };
+
+    let newId = `flow-${Date.now()}`;
+    let success = false;
+
+    try {
+      const res = await fetch(`/api/flowise/chatflows`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-flowise-url": flowiseUrl,
+        },
+        body: JSON.stringify({
+          name: newFlowName,
+          flowData: JSON.stringify(flowDataObj),
+          deployed: false,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.id) {
+          newId = data.id;
+          success = true;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to create chatflow in Flowise for template:", e);
+    }
+
     const newFlow: FlowItem = {
-      id: `flow-${Date.now()}`,
-      name: `Tự động: ${template.name}`,
+      id: newId,
+      name: newFlowName,
       status: "INACTIVE",
       createdAt: new Date().toLocaleString("vi-VN"),
       triggerType: template.triggerEvent?.replace("⚡ ", "") || "Chưa thiết lập",
     };
 
     setCustomFlows((prev) => [newFlow, ...prev]);
+    
+    // Save to local storage cache
+    setTimeout(() => {
+      const savedLocal = localStorage.getItem("local_flows");
+      const currentLocal = savedLocal ? JSON.parse(savedLocal) : [];
+      localStorage.setItem("local_flows", JSON.stringify([newFlow, ...currentLocal]));
+    }, 100);
+
     setSelectedTemplate(null);
     setActiveSubTab("flows");
     
-    // Show toast
     setToast({
-      message: `Đã áp dụng kịch bản mẫu "${template.name}" thành công!`,
+      message: success 
+        ? `Đã tạo kịch bản mẫu "${template.name}" trên Flowise!` 
+        : `Đã áp dụng kịch bản mẫu "${template.name}" vào bộ nhớ tạm!`,
       type: "success",
     });
   };
@@ -167,9 +276,26 @@ export default function AutomationPage() {
                 <input type="number" defaultValue="3" className="bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-slate-700 dark:text-slate-300 p-2.5 rounded-lg text-sm w-full" />
                 <p className="text-[10px] text-slate-400">Số lượng tin nhắn tự động tối đa gửi cho cùng một khách hàng trong vòng 24 giờ.</p>
               </div>
+              <div className="space-y-2 col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Địa chỉ máy chủ Flowise API</label>
+                <input 
+                  type="text" 
+                  value={flowiseUrl} 
+                  onChange={(e) => {
+                    setFlowiseUrl(e.target.value);
+                    localStorage.setItem("flowise_url", e.target.value);
+                  }}
+                  placeholder="http://localhost:3100" 
+                  className="bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-slate-700 dark:text-slate-300 p-2.5 rounded-lg text-sm w-full outline-hidden focus:border-lime-400" 
+                />
+                <p className="text-[10px] text-slate-450">Nhập địa chỉ cổng của máy chủ Flowise (mặc định là http://localhost:3100 hoặc http://localhost:3001 nếu cổng 3000 bị chiếm).</p>
+              </div>
             </div>
             <button
-              onClick={() => alert("Đã lưu các thiết lập cài đặt chung.")}
+              onClick={() => {
+                fetchFlows();
+                alert("Đã lưu các thiết lập cài đặt chung và cập nhật cấu hình kết nối Flowise.");
+              }}
               className="px-5 py-2.5 bg-lime-500 hover:bg-lime-600 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
             >
               Lưu thay đổi
@@ -483,7 +609,38 @@ export default function AutomationPage() {
             }}
           />
         ) : (
-          renderTabContent()
+          <>
+            {/* Connection status banner */}
+            <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-2xl shadow-3xs select-none gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${
+                  connectionStatus === "connected" ? "bg-emerald-500 animate-pulse" :
+                  connectionStatus === "loading" ? "bg-amber-500 animate-bounce" : "bg-rose-500"
+                }`} />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-350">
+                  Trạng thái kết nối Flowise:
+                </span>
+                <span className={`text-xs font-black uppercase ${
+                  connectionStatus === "connected" ? "text-emerald-650 dark:text-emerald-500" :
+                  connectionStatus === "loading" ? "text-amber-500" : "text-rose-600 dark:text-rose-500"
+                }`}>
+                  {connectionStatus === "connected" ? `Đã kết nối (${flowiseUrl})` :
+                   connectionStatus === "loading" ? "Đang kết nối..." : "Chưa kết nối (Chế độ mô phỏng)"}
+                </span>
+              </div>
+              {connectionStatus === "disconnected" ? (
+                <span className="text-[10px] text-slate-450 max-w-sm md:text-right">
+                  Mẹo: Chạy Flowise trên máy của bạn (ví dụ: cổng 3100) để lưu kịch bản thời gian thực.
+                </span>
+              ) : connectionStatus === "connected" ? (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-450 font-bold">
+                  Sẵn sàng đồng bộ hóa dữ liệu thời gian thực!
+                </span>
+              ) : null}
+            </div>
+
+            {renderTabContent()}
+          </>
         )}
       </div>
 

@@ -250,6 +250,14 @@ export interface EditorPageSettings {
   sandboxStatus: "local" | "connecting" | "ready" | "error";
   sandboxUrl: string;
   previewPath: string;
+  funnelEnabled: boolean;
+  funnelFeatureFlag: string;
+  funnelTrigger: "immediate" | "time_on_page" | "scroll_progress" | "exit_intent" | "inactivity";
+  funnelTriggerThreshold: number;
+  funnelFrequency: "once" | "session" | "always";
+  posthogEnabled: boolean;
+  posthogProjectKey: string;
+  sessionReplayEnabled: boolean;
 }
 
 export function createDefaultPageSettings(pageName = ""): EditorPageSettings {
@@ -272,6 +280,14 @@ export function createDefaultPageSettings(pageName = ""): EditorPageSettings {
     sandboxStatus: "local",
     sandboxUrl: "",
     previewPath: `/${slug}`,
+    funnelEnabled: false,
+    funnelFeatureFlag: "funnelx.welcome_popup",
+    funnelTrigger: "immediate",
+    funnelTriggerThreshold: 5000,
+    funnelFrequency: "session",
+    posthogEnabled: false,
+    posthogProjectKey: "",
+    sessionReplayEnabled: false,
   };
 }
 

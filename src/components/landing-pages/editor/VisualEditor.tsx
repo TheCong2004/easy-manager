@@ -18,6 +18,7 @@ import { LayersPanel } from "./LayersPanel";
 import { Canvas } from "./Canvas";
 import { InspectorPanel, PageSettingsPanel } from "./InspectorPanel";
 import { LandingPageItem } from "../dung-chung/types";
+import { FUNNELX_EVENTS, FUNNELX_FLAGS } from "@onlook/funnel";
 
 // ── Undo/Redo stack ──────────────────────────────────────────
 const MAX_HISTORY = 60;
@@ -165,7 +166,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const storageKey = `landing-page-editor:${page.id}`;
   const revisionsKey = `landing-page-editor-revisions:${page.id}`;
 
-  const [activeTab, setActiveTab] = useState<"layers" | "brand" | "pages" | "images" | "sandbox" | "history" | "branches">("layers");
+  const [activeTab, setActiveTab] = useState<"layers" | "brand" | "pages" | "images" | "funnel" | "sandbox" | "history" | "branches">("layers");
 
   const sidebarTabs = [
     {
@@ -204,6 +205,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: "funnel",
+      label: "Funnel",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h15l-6 7.125v4.875l-3 1.5v-6.375L4.5 5.25z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h3m-1.5-1.5v3" />
         </svg>
       ),
     },
@@ -405,7 +416,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   }, [data, push, recordAction]);
 
-  const handleUpdatePageSettings = useCallback((key: string, value: string | number) => {
+  const handleUpdatePageSettings = useCallback((key: string, value: string | number | boolean) => {
     push({ ...data, pageSettings: { ...data.pageSettings, [key]: value } });
     recordAction({ type: "update-page-settings", key, timestamp: Date.now() });
   }, [data, push, recordAction]);
@@ -884,6 +895,116 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+              {activeTab === "funnel" && (
+                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h15l-6 7.125v4.875l-3 1.5v-6.375L4.5 5.25z" />
+                    </svg>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Funnel / Logic</h3>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-4">
+                    <div className="rounded-lg border border-purple-500/20 bg-purple-950/10 p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300">GrowthBook Feature</div>
+                          <div className="mt-1 text-[11px] leading-relaxed text-gray-500">Bind a flag to this page or selected funnel component.</div>
+                        </div>
+                        <button
+                          onClick={() => handleUpdatePageSettings("funnelEnabled", !data.pageSettings.funnelEnabled)}
+                          className={`relative h-5 w-9 rounded-full transition ${data.pageSettings.funnelEnabled ? "bg-purple-600" : "bg-gray-700"}`}
+                        >
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${data.pageSettings.funnelEnabled ? "left-4" : "left-0.5"}`} />
+                        </button>
+                      </div>
+
+                      <select
+                        value={data.pageSettings.funnelFeatureFlag}
+                        onChange={(e) => handleUpdatePageSettings("funnelFeatureFlag", e.target.value)}
+                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                      >
+                        {FUNNELX_FLAGS.map((flag) => (
+                          <option key={flag} value={flag}>{flag}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3 space-y-3">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Behavior Trigger</div>
+                      <select
+                        value={data.pageSettings.funnelTrigger}
+                        onChange={(e) => handleUpdatePageSettings("funnelTrigger", e.target.value)}
+                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="immediate">Immediate</option>
+                        <option value="time_on_page">Time on page</option>
+                        <option value="scroll_progress">Scroll progress</option>
+                        <option value="exit_intent">Exit intent</option>
+                        <option value="inactivity">Inactivity</option>
+                      </select>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Threshold</label>
+                        <input
+                          type="number"
+                          value={data.pageSettings.funnelTriggerThreshold}
+                          onChange={(e) => handleUpdatePageSettings("funnelTriggerThreshold", Number(e.target.value))}
+                          className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <select
+                        value={data.pageSettings.funnelFrequency}
+                        onChange={(e) => handleUpdatePageSettings("funnelFrequency", e.target.value)}
+                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="once">Once</option>
+                        <option value="session">Once per session</option>
+                        <option value="always">Always</option>
+                      </select>
+                    </div>
+
+                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3 space-y-3">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">PostHog Tracking</div>
+                      <label className="flex items-center justify-between gap-3 text-xs text-gray-300">
+                        Capture funnel events
+                        <input
+                          type="checkbox"
+                          checked={data.pageSettings.posthogEnabled}
+                          onChange={(e) => handleUpdatePageSettings("posthogEnabled", e.target.checked)}
+                          className="h-4 w-4 accent-purple-500"
+                        />
+                      </label>
+                      <input
+                        type="text"
+                        value={data.pageSettings.posthogProjectKey}
+                        onChange={(e) => handleUpdatePageSettings("posthogProjectKey", e.target.value)}
+                        placeholder="PostHog project key"
+                        className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
+                      />
+                      <label className="flex items-center justify-between gap-3 text-xs text-gray-300">
+                        Session replay
+                        <input
+                          type="checkbox"
+                          checked={data.pageSettings.sessionReplayEnabled}
+                          onChange={(e) => handleUpdatePageSettings("sessionReplayEnabled", e.target.checked)}
+                          className="h-4 w-4 accent-purple-500"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3">
+                      <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Event taxonomy</div>
+                      <div className="space-y-1.5">
+                        {Object.values(FUNNELX_EVENTS).slice(0, 7).map((eventName) => (
+                          <div key={eventName} className="rounded-md bg-black/20 px-2 py-1 font-mono text-[10px] text-gray-500">
+                            {eventName}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

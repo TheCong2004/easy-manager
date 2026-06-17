@@ -371,7 +371,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
 // ── Page settings ─────────────────────────────────────────────
 export const PageSettingsPanel: React.FC<{
   settings: EditorData["pageSettings"];
-  onUpdateSettings: (key: string, value: string | number) => void;
+  onUpdateSettings: (key: string, value: string | number | boolean) => void;
 }> = ({ settings, onUpdateSettings }) => (
   <div className="space-y-4">
     <SectionHeader title="Cài đặt trang" />
@@ -414,7 +414,7 @@ interface InspectorPanelProps {
   selectedBlock: EditorBlock | null;
   pageSettings: EditorData["pageSettings"];
   onUpdateBlock: (id: string, newProps: Record<string, unknown>) => void;
-  onUpdatePageSettings: (key: string, value: string | number) => void;
+  onUpdatePageSettings: (key: string, value: string | number | boolean) => void;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({

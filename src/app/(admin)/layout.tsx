@@ -15,6 +15,7 @@ export default function AdminLayout({
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const pathname = usePathname();
   const isFacebookAds = pathname?.startsWith("/facebook-ads");
+  const isCloudPhone = pathname?.startsWith("/cloudphone");
   const isOffice = pathname?.startsWith("/office");
 
   // Dynamic class for main content margin based on sidebar state
@@ -36,7 +37,7 @@ export default function AdminLayout({
         {/* Header */}
         <AppHeader />
         {/* Page Content */}
-        <div className={isFacebookAds || isOffice ? "min-w-0 w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
+        <div className={isFacebookAds || isCloudPhone || isOffice ? "min-w-0 w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
       </div>
     </div>
   );
