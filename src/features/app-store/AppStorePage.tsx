@@ -87,7 +87,7 @@ export default function AppStorePage() {
     } else if (id === "2") {
       router.push("/ban-hang");
     } else if (id === "6") {
-      router.push("/education");
+      router.push("/e-learning");
     } else {
       alert(`Mở ứng dụng: ${app?.name}`);
     }

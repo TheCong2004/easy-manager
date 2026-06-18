@@ -11,12 +11,12 @@ import { authLogin } from "@/features/education/api/auth";
 import CherryBlossoms from "../animations/CherryBlossoms";
 
 const quickRoles = [
-  { label: "Admin", role: "admin", path: "/education/dashboard/admin" },
-  { label: "Giảng viên", role: "lecturer", path: "/education/dashboard/lecturer" },
-  { label: "Sinh viên", role: "student", path: "/education/dashboard/student" },
-  { label: "Phụ huynh", role: "parents", path: "/education/dashboard/parents" },
-  { label: "Tư vấn", role: "consultant", path: "/education/dashboard/consultant" },
-  { label: "Cơ sở", role: "branch-management", path: "/education/dashboard/branch-management" },
+  { label: "Admin", role: "admin", path: "/e-learning/tong-quan" },
+  { label: "Giảng viên", role: "lecturer", path: "/e-learning/lecturer" },
+  { label: "Sinh viên", role: "student", path: "/e-learning/student/notifications" },
+  { label: "Phụ huynh", role: "parents", path: "/e-learning/parents" },
+  { label: "Tư vấn", role: "consultant", path: "/e-learning/consultant" },
+  { label: "Cơ sở", role: "branch-management", path: "/e-learning/branch-management" },
 ];
 
 function getLoginErrorMessage(err: any) {
