@@ -1,4 +1,4 @@
-import SocialAccounts from "@/components/cloudphone/SocialAccounts";
+import SocialAccounts from "@/features/cloudphone/SocialAccounts";
 
 export default function CloudPhoneSocialAccountsPage() {
   return <SocialAccounts />;

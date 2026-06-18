@@ -1,4 +1,4 @@
-import type { BusinessManager } from "@/components/quan-ly/tai-khoan-bm/types";
+import type { BusinessManager } from "@/features/facebook-ads/components/tai-khoan-bm/types";
 import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { clientIndexedDb } from "@/lib/client-storage/indexed-db";

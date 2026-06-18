@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import AppStore from "@/components/kho-ung-dung/AppStore";
+import AppStorePage from "@/features/app-store/AppStorePage";
 
 export default function Page() {
-  return <AppStore />;
+  return <AppStorePage />;
 }

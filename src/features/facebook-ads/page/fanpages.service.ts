@@ -1,4 +1,4 @@
-import type { FanpageItem } from "@/components/quan-ly/fanpage/types";
+import type { FanpageItem } from "@/features/facebook-ads/components/fanpage/types";
 import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { clientIndexedDb } from "@/lib/client-storage/indexed-db";

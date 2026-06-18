@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState,useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import { Inter } from "next/font/google";
+import { APP_INSTALLATION_EVENT, readInstalledAppIds } from "@/features/app-store/storage/app-installation";
 
 const inter = Inter({ subsets: ["latin"] });
 import {
@@ -16,6 +17,7 @@ type NavItem = {
   icon: React.ReactNode;
   iconColor?: string;
   path?: string;
+  appId?: string;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
@@ -116,16 +118,6 @@ const navItems: NavItem[] = [
 const othersItems: NavItem[] = [
   {
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-      </svg>
-    ),
-    iconColor: "text-[#1877F2] dark:text-[#4299e1]",
-    name: "Facebook Ads",
-    path: "/facebook-ads/tai-khoan-qc",
-  },
-  {
-    icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/>
         <rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/>
@@ -134,6 +126,127 @@ const othersItems: NavItem[] = [
     iconColor: "text-teal-600 dark:text-teal-400",
     name: "Kho ứng dụng",
     path: "/kho-ung-dung",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 21a9 9 0 0 0 8.72-6.75M12 21a9 9 0 0 1-8.72-6.75M12 21c2.49 0 4.5-4.03 4.5-9S14.49 3 12 3m0 18c-2.49 0-4.5-4.03-4.5-9S9.51 3 12 3m0 0a9 9 0 0 1 7.84 4.58M12 3a9 9 0 0 0-7.84 4.58" />
+      </svg>
+    ),
+    iconColor: "text-lime-600 dark:text-lime-400",
+    name: "Website Builder",
+    path: "/landing-pages",
+    appId: "1",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+    ),
+    iconColor: "text-orange-600 dark:text-orange-400",
+    name: "Ecom Store",
+    path: "/ban-hang",
+    appId: "2",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13.19 8.69a4.5 4.5 0 0 1 1.24 7.24l-4.5 4.5a4.5 4.5 0 0 1-6.36-6.36l1.76-1.76"/>
+        <path d="m18.67 11.69 1.76-1.76a4.5 4.5 0 0 0-6.36-6.36l-4.5 4.5a4.5 4.5 0 0 0 1.24 7.24"/>
+      </svg>
+    ),
+    iconColor: "text-teal-600 dark:text-teal-400",
+    name: "Short Links",
+    path: "/kho-ung-dung?app=3",
+    appId: "3",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>
+        <path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>
+      </svg>
+    ),
+    iconColor: "text-purple-600 dark:text-purple-400",
+    name: "Blog",
+    path: "/kho-ung-dung?app=4",
+    appId: "4",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58A14.98 14.98 0 0 0 21.75 2.25 14.98 14.98 0 0 0 9.63 8.41a6 6 0 0 1 5.96 5.96Z"/>
+        <path d="m9.63 8.41-5.84-2.58"/>
+      </svg>
+    ),
+    iconColor: "text-pink-600 dark:text-pink-400",
+    name: "Dynamic",
+    path: "/automation",
+    appId: "5",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 5.25 3.75 9.75 12 14.25l8.25-4.5L12 5.25Z"/>
+        <path d="M4.26 10.15a60 60 0 0 0-.49 6.34A48.62 48.62 0 0 1 12 20.9c2.79 0 5.43-.22 8.01-.64a60 60 0 0 0-.49-6.35"/>
+        <path d="M12 14.25v6.5"/>
+      </svg>
+    ),
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    name: "E-Learning",
+    path: "/kho-ung-dung?app=6",
+    appId: "6",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 18.72a9.1 9.1 0 0 0 3.74-.48 3 3 0 0 0-4.68-2.72"/>
+        <path d="M6 18.72a9.1 9.1 0 0 1-3.74-.48 3 3 0 0 1 4.68-2.72"/>
+        <path d="M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+        <path d="M17.06 15.52A6 6 0 0 0 12 12.75a6 6 0 0 0-5.06 2.77"/>
+      </svg>
+    ),
+    iconColor: "text-indigo-600 dark:text-indigo-400",
+    name: "Affiliate Center",
+    path: "/kho-ung-dung?app=7",
+    appId: "7",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4.5" width="18" height="15" rx="2"/>
+        <path d="M9 4.5v15M15 4.5v15M4.5 12h15"/>
+      </svg>
+    ),
+    iconColor: "text-sky-600 dark:text-sky-400",
+    name: "PopupX",
+    path: "/kho-ung-dung?app=8",
+    appId: "8",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2.75A12 12 0 0 1 20.4 6 12 12 0 0 1 21 9.75c0 5.59-3.82 10.29-9 11.62-5.18-1.33-9-6.03-9-11.62A12 12 0 0 1 3.6 6 12 12 0 0 1 12 2.75Z"/>
+        <path d="m9 12.75 2.25 2.25L15 9.75"/>
+      </svg>
+    ),
+    iconColor: "text-lime-600 dark:text-lime-400",
+    name: "Page Access",
+    path: "/kho-ung-dung?app=9",
+    appId: "9",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+    ),
+    iconColor: "text-[#1877F2] dark:text-[#4299e1]",
+    name: "Facebook Ads",
+    path: "/facebook-ads/tai-khoan-qc",
+    appId: "10",
   },
   {
     icon: (
@@ -147,13 +260,72 @@ const othersItems: NavItem[] = [
     iconColor: "text-cyan-600 dark:text-cyan-400",
     name: "CloudPhone",
     path: "/cloudphone/cua-hang-cho-thue",
+    appId: "14",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58A14.98 14.98 0 0 0 21.75 2.25 14.98 14.98 0 0 0 9.63 8.41a6 6 0 0 1 5.96 5.96Z"/>
+        <path d="m9.63 8.41-5.84-2.58"/>
+      </svg>
+    ),
+    iconColor: "text-pink-600 dark:text-pink-400",
+    name: "LadiFlow Pro",
+    path: "/kho-ung-dung?app=11",
+    appId: "11",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>
+        <path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>
+      </svg>
+    ),
+    iconColor: "text-purple-600 dark:text-purple-400",
+    name: "AI Content Generator",
+    path: "/kho-ung-dung?app=12",
+    appId: "12",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z"/>
+        <path d="m5 7 7 5 7-5"/>
+      </svg>
+    ),
+    iconColor: "text-lime-600 dark:text-lime-400",
+    name: "Email Template Builder",
+    path: "/kho-ung-dung?app=13",
+    appId: "13",
   },
 ];
 
+const defaultInstalledApplicationIds = ["1", "2", "3", "4", "5", "10", "14"];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
   const pathname = usePathname();
+  const [installedAppIds, setInstalledAppIds] = useState<string[]>(defaultInstalledApplicationIds);
+
+  useEffect(() => {
+    const syncInstalledApps = () => {
+      setInstalledAppIds(readInstalledAppIds(defaultInstalledApplicationIds));
+    };
+
+    syncInstalledApps();
+    window.addEventListener(APP_INSTALLATION_EVENT, syncInstalledApps);
+    window.addEventListener("storage", syncInstalledApps);
+
+    return () => {
+      window.removeEventListener(APP_INSTALLATION_EVENT, syncInstalledApps);
+      window.removeEventListener("storage", syncInstalledApps);
+    };
+  }, []);
+
+  const visibleOthersItems = useMemo(() => {
+    const installedIds = new Set(installedAppIds);
+    return othersItems.filter((item) => !item.appId || installedIds.has(item.appId));
+  }, [installedAppIds]);
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -297,7 +469,7 @@ const AppSidebar: React.FC = () => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
+      const items = menuType === "main" ? navItems : visibleOthersItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -317,7 +489,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [pathname,isActive]);
+  }, [pathname,isActive, visibleOthersItems]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened
@@ -427,7 +599,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots />
                 )}
               </h2>
-              {renderMenuItems(othersItems, "others")}
+              {renderMenuItems(visibleOthersItems, "others")}
             </div>
           </div>
         </nav>

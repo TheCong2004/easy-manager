@@ -1,14 +1,15 @@
 import React from "react";
-import { AppItem } from "./types";
+import type { AppItem } from "../types";
 
 interface AppCardProps {
   app: AppItem;
   onInstall: (id: string) => void;
   onUninstall: (id: string) => void;
   onOpen: (id: string) => void;
+  onDetails: (id: string) => void;
 }
 
-export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCardProps) {
+export default function AppCard({ app, onInstall, onUninstall, onOpen, onDetails }: AppCardProps) {
   // SVG Icon Map
   const renderIcon = (name: string) => {
     switch (name) {
@@ -176,23 +177,32 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen }: AppCard
         </div>
 
         {/* Right Buttons */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center justify-end gap-1.5 flex-shrink-0 flex-wrap">
           <button 
             type="button"
-            onClick={() => alert(`Chi tiết ứng dụng: ${app.name}`)}
+            onClick={() => onDetails(app.id)}
             className="px-3 py-1.5 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-850 hover:text-gray-900 dark:hover:text-white transition cursor-pointer"
           >
             Chi tiết
           </button>
 
           {isInstalled ? (
-            <button
-              type="button"
-              onClick={() => onOpen(app.id)}
-              className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-bold rounded-xl transition cursor-pointer"
-            >
-              Mở app
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onOpen(app.id)}
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Mở app
+              </button>
+              <button
+                type="button"
+                onClick={() => onUninstall(app.id)}
+                className="px-3 py-1.5 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300 dark:hover:bg-red-950/35 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Gỡ
+              </button>
+            </>
           ) : (
             <button
               type="button"

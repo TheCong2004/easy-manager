@@ -1,4 +1,4 @@
-import type { AdsAccount } from "@/components/quan-ly/tai-khoan-qc/types";
+import type { AdsAccount } from "@/features/facebook-ads/components/tai-khoan-qc/types";
 import { facebookAuthService } from "@/features/auth/services/facebook-auth.service";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { clientIndexedDb } from "@/lib/client-storage/indexed-db";
