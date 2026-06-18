@@ -63,10 +63,11 @@ export const initialApps: AppItem[] = [
     name: "E-Learning",
     description: "Số hoá kiến thức thành khoá học online — đào tạo nội bộ hoặc bán khoá học kiếm tiền.",
     iconName: "elearning",
-    status: "NOT_INSTALLED",
+    status: "INSTALLED",
     category: "sales",
-    price: "Từ 1.200.000 đ/năm",
+    price: "Đã cài đặt",
     downloads: "4.218",
+    isPinned: true,
   },
   {
     id: "7",
@@ -218,4 +219,3 @@ export const appDetailContent: Record<string, {
     integrations: ["Automation", "Facebook Ads", "Website Builder", "LadiSales"],
   },
 };
-

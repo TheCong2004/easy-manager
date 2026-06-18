@@ -196,7 +196,7 @@ const othersItems: NavItem[] = [
     ),
     iconColor: "text-emerald-600 dark:text-emerald-400",
     name: "E-Learning",
-    path: "/kho-ung-dung?app=6",
+    path: "/education",
     appId: "6",
   },
   {
@@ -300,7 +300,7 @@ const othersItems: NavItem[] = [
   },
 ];
 
-const defaultInstalledApplicationIds = ["1", "2", "3", "4", "5", "10", "14"];
+const defaultInstalledApplicationIds = ["1", "2", "3", "4", "5", "6", "10", "14"];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
@@ -463,7 +463,10 @@ const AppSidebar: React.FC = () => {
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  const isActive = useCallback(
+    (path: string) => path === pathname || (path !== "/" && Boolean(pathname?.startsWith(path))),
+    [pathname]
+  );
 
   useEffect(() => {
     // Check if the current path matches any submenu item

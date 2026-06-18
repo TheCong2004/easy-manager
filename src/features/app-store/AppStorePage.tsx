@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { AppItem } from "./types";
 import AppCard from "./components/AppCard";
-import { readInstalledAppIds, saveInstalledAppIds } from "./storage/app-installation";
+import { markUninstalledAppId, readInstalledAppIds, saveInstalledAppIds } from "./storage/app-installation";
 
 import { appDetailContent, initialApps } from "./data/app-catalog";
 
@@ -61,6 +61,7 @@ export default function AppStorePage() {
 
   // Handler for uninstalling an app
   const handleUninstall = (id: string) => {
+    markUninstalledAppId(id);
     const installedIds = syncInstalledApps((ids) => ids.filter((installedId) => installedId !== id));
 
     setApps((prev) =>
@@ -85,6 +86,8 @@ export default function AppStorePage() {
       router.push("/landing-pages");
     } else if (id === "2") {
       router.push("/ban-hang");
+    } else if (id === "6") {
+      router.push("/education");
     } else {
       alert(`Mở ứng dụng: ${app?.name}`);
     }
