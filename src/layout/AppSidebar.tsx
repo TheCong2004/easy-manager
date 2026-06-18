@@ -196,7 +196,7 @@ const othersItems: NavItem[] = [
     ),
     iconColor: "text-emerald-600 dark:text-emerald-400",
     name: "E-Learning",
-    path: "/education",
+    path: "/e-learning",
     appId: "6",
   },
   {
