@@ -4,9 +4,36 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { Modal } from "../ui/modal";
+
+const upgradePlans = [
+  {
+    name: "Cơ bản",
+    price: "199.000đ",
+    period: "/tháng",
+    description: "Cho cá nhân và nhóm nhỏ bắt đầu vận hành.",
+    features: ["5 landing page", "10.000 lượt xem", "Kho mẫu tiêu chuẩn", "Hỗ trợ email"],
+  },
+  {
+    name: "Pro",
+    price: "499.000đ",
+    period: "/tháng",
+    description: "Tối ưu cho đội marketing cần tăng trưởng nhanh.",
+    features: ["Không giới hạn landing page", "100.000 lượt xem", "A/B testing", "Ẩn thương hiệu LadiPage", "Ưu tiên hỗ trợ"],
+    highlighted: true,
+  },
+  {
+    name: "Doanh nghiệp",
+    price: "Liên hệ",
+    period: "",
+    description: "Cho tổ chức cần phân quyền và hỗ trợ riêng.",
+    features: ["Không giới hạn team", "SSO & phân quyền nâng cao", "Hạ tầng riêng", "Quản lý thành công khách hàng"],
+  },
+];
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
 function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   e.stopPropagation();
@@ -16,8 +43,14 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  function openUpgrade() {
+    setIsOpen(false);
+    setIsUpgradeOpen(true);
+  }
+
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex h-full items-center">
       <button
         onClick={toggleDropdown} 
         className="flex items-center text-gray-700 dark:text-gray-400 dropdown-toggle cursor-pointer"
@@ -35,7 +68,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+        className="absolute right-0 top-full mt-2 flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
@@ -122,6 +155,28 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
               Support
             </DropdownItem>
           </li>
+          <li>
+            <DropdownItem
+              onItemClick={closeDropdown}
+              className="flex items-center gap-3 px-3 py-2 font-medium text-orange-600 rounded-lg group text-theme-sm hover:bg-orange-50 hover:text-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20"
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M12 3l7.5 3v5.25c0 4.5-3.12 8.7-7.5 9.75-4.38-1.05-7.5-5.25-7.5-9.75V6L12 3Z" />
+              </svg>
+              Xác thực ngay
+            </DropdownItem>
+          </li>
+          <li>
+            <DropdownItem
+              onClick={openUpgrade}
+              className="flex items-center gap-3 px-3 py-2 font-medium text-lime-600 rounded-lg group text-theme-sm hover:bg-lime-50 hover:text-lime-700 dark:text-lime-400 dark:hover:bg-lime-950/20"
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 16 3 6l5.5 4L12 4l3.5 6L21 6l-2 10H5Zm0 0h14v3H5v-3Z" />
+              </svg>
+              Nâng cấp ngay
+            </DropdownItem>
+          </li>
         </ul>
         <Link
           href="/signin"
@@ -145,6 +200,87 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
           Sign out
         </Link>
       </Dropdown>
+
+      <Modal
+        isOpen={isUpgradeOpen}
+        onClose={() => setIsUpgradeOpen(false)}
+        className="mx-4 max-w-[920px] overflow-hidden"
+      >
+        <div className="bg-white dark:bg-gray-900">
+          <div className="border-b border-gray-100 px-6 py-5 dark:border-gray-800 sm:px-8">
+            <div className="flex flex-col gap-3 pr-12 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-lime-600">Nâng cấp tài khoản</p>
+                <h2 className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">Mở khóa toàn bộ công cụ tăng trưởng</h2>
+                <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                  Chọn gói phù hợp để tăng giới hạn sử dụng, mở tính năng tối ưu chuyển đổi và nhận hỗ trợ nhanh hơn.
+                </p>
+              </div>
+              <div className="rounded-full bg-lime-50 px-3 py-1 text-xs font-semibold text-lime-700 dark:bg-lime-950/30 dark:text-lime-300">
+                Tiết kiệm 20% khi thanh toán năm
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 p-6 sm:grid-cols-3 sm:p-8">
+            {upgradePlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`relative flex min-h-[360px] flex-col rounded-2xl border p-5 ${
+                  plan.highlighted
+                    ? "border-lime-400 bg-lime-50/60 shadow-lg shadow-lime-500/10 dark:border-lime-700 dark:bg-lime-950/20"
+                    : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+                }`}
+              >
+                {plan.highlighted && (
+                  <span className="absolute right-4 top-4 rounded-full bg-lime-500 px-2.5 py-1 text-[11px] font-bold text-white">
+                    Khuyên dùng
+                  </span>
+                )}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{plan.name}</h3>
+                <p className="mt-2 min-h-[40px] text-sm text-gray-500 dark:text-gray-400">{plan.description}</p>
+                <div className="mt-5 flex items-end gap-1">
+                  <span className="text-3xl font-black text-gray-900 dark:text-white">{plan.price}</span>
+                  {plan.period && <span className="pb-1 text-sm font-medium text-gray-500">{plan.period}</span>}
+                </div>
+                <ul className="mt-5 flex-1 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lime-100 text-lime-700 dark:bg-lime-950 dark:text-lime-300">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m5 13 4 4L19 7" />
+                        </svg>
+                      </span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className={`mt-6 h-11 rounded-xl text-sm font-bold transition ${
+                    plan.highlighted
+                      ? "bg-lime-500 text-white hover:bg-lime-600"
+                      : "border border-gray-200 text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {plan.name === "Doanh nghiệp" ? "Liên hệ tư vấn" : "Chọn gói"}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-400 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <span>Có thể hủy hoặc đổi gói bất cứ lúc nào.</span>
+            <button
+              type="button"
+              onClick={() => setIsUpgradeOpen(false)}
+              className="font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            >
+              Để sau
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

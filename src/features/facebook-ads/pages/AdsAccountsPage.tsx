@@ -21,6 +21,74 @@ const initialUtilities: UtilityItem[] = [
   { id: "8", name: "Share đối tác BM", enabled: true, color: "bg-sky-500" },
 ];
 
+const mockAdsAccounts: AdsAccount[] = [
+  {
+    id: "mock-act-1001",
+    name: "LDP - Chuyển đổi Landing Page",
+    uid: "act_328194205018734",
+    status: "ACTIVE",
+    type: "BM",
+    balance: "1.240.000đ",
+    threshold: "5.000.000đ",
+    limit: "2.000.000đ/ngày",
+    currency: "VND",
+    role: "Admin",
+    paymentMethod: "Visa •••• 4821",
+  },
+  {
+    id: "mock-act-1002",
+    name: "Ecom Store - Retargeting",
+    uid: "act_684920174563201",
+    status: "ACTIVE",
+    type: "BM",
+    balance: "820.500đ",
+    threshold: "3.000.000đ",
+    limit: "1.500.000đ/ngày",
+    currency: "VND",
+    role: "Advertiser",
+    paymentMethod: "Mastercard •••• 0932",
+  },
+  {
+    id: "mock-act-1003",
+    name: "CloudPhone - Lead Gen",
+    uid: "act_901238456770112",
+    status: "PENDING_REVIEW",
+    type: "PERSONAL",
+    balance: "0đ",
+    threshold: "1.000.000đ",
+    limit: "500.000đ/ngày",
+    currency: "VND",
+    role: "Admin",
+    paymentMethod: "Momo Business",
+  },
+  {
+    id: "mock-act-1004",
+    name: "Dynamic Ads - Catalog",
+    uid: "act_557001238964520",
+    status: "ACTIVE",
+    type: "BM",
+    balance: "3.560.000đ",
+    threshold: "10.000.000đ",
+    limit: "4.000.000đ/ngày",
+    currency: "VND",
+    role: "Finance editor",
+    paymentMethod: "Visa •••• 7750",
+  },
+  {
+    id: "mock-act-1005",
+    name: "Test Account - Tạm dừng",
+    uid: "act_119874502330876",
+    status: "DISABLED",
+    type: "PERSONAL",
+    balance: "125.000đ",
+    threshold: "1.000.000đ",
+    limit: "0đ/ngày",
+    currency: "VND",
+    role: "Admin",
+    paymentMethod: "Chưa xác minh",
+  },
+];
+
 export default function TaiKhoanQC() {
   const [accounts, setAccounts] = useState<AdsAccount[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -57,8 +125,11 @@ export default function TaiKhoanQC() {
       const cachedAccounts = await adsAccountsService.getCachedAccounts().catch(() => []);
       if (!isMounted) return;
 
-      setAccounts(cachedAccounts);
-      setDataLoaded(cachedAccounts.length > 0);
+      setAccounts(cachedAccounts.length ? cachedAccounts : mockAdsAccounts);
+      setDataLoaded(true);
+      if (!cachedAccounts.length) {
+        setLoadMessage("Đang hiển thị dữ liệu mock vì extension/API chưa kết nối.");
+      }
     };
 
     void loadCachedAccounts();
@@ -87,11 +158,12 @@ export default function TaiKhoanQC() {
         dataOptions,
       });
 
+      const visibleAccounts = refreshedAccounts.length ? refreshedAccounts : mockAdsAccounts;
       const message = refreshedAccounts.length
         ? `Đã tải ${refreshedAccounts.length} tài khoản quảng cáo.`
-        : "Không có tài khoản quảng cáo trong dữ liệu trả về.";
+        : "Extension/API chưa trả dữ liệu, đang hiển thị dữ liệu mock để xem UI.";
 
-      setAccounts(refreshedAccounts);
+      setAccounts(visibleAccounts);
       setDataLoaded(true);
       setLoadMessage(message);
       showClientToast(message, refreshedAccounts.length ? "success" : "info");
@@ -101,12 +173,12 @@ export default function TaiKhoanQC() {
       const cachedAccounts = await adsAccountsService.getCachedAccounts().catch(() => []);
       const message = cachedAccounts.length
         ? "Không tải được dữ liệu mới, đang hiển thị dữ liệu cache."
-        : "Chưa có dữ liệu thật. Kiểm tra cookie/token hoặc extension/bridge Facebook.";
+        : "Chưa có dữ liệu thật, đang hiển thị dữ liệu mock để xem UI.";
 
-      setAccounts(cachedAccounts);
-      setDataLoaded(cachedAccounts.length > 0);
+      setAccounts(cachedAccounts.length ? cachedAccounts : mockAdsAccounts);
+      setDataLoaded(true);
       setLoadMessage(message);
-      showClientToast(message, cachedAccounts.length ? "warning" : "error");
+      showClientToast(message, cachedAccounts.length ? "warning" : "info");
       setLoadingProgress(100);
     } finally {
       window.clearInterval(interval);

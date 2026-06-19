@@ -22,6 +22,53 @@ const initialUtilities: UtilityItem[] = [
   { id: "9", name: "Share Page", enabled: true, color: "bg-sky-500" },
 ];
 
+const mockFanpages: FanpageItem[] = [
+  {
+    id: "mock-page-1",
+    name: "LadiPage Việt Nam",
+    pageId: "102938475610",
+    status: "ACTIVE",
+    followers: "248.920",
+    postsCount: 1264,
+    verification: "BLUE",
+    distribution: "Đề xuất tốt",
+    monetization: "Đủ điều kiện",
+  },
+  {
+    id: "mock-page-2",
+    name: "Ecom Store Demo",
+    pageId: "204857392110",
+    status: "ACTIVE",
+    followers: "86.430",
+    postsCount: 642,
+    verification: "GRAY",
+    distribution: "Ổn định",
+    monetization: "Đang xét",
+  },
+  {
+    id: "mock-page-3",
+    name: "CloudPhone Automation",
+    pageId: "593820147662",
+    status: "PENDING_REVIEW",
+    followers: "32.110",
+    postsCount: 218,
+    verification: "NONE",
+    distribution: "Giới hạn nhẹ",
+    monetization: "Chưa đủ điều kiện",
+  },
+  {
+    id: "mock-page-4",
+    name: "Dynamic Ads Lab",
+    pageId: "778120034592",
+    status: "DISABLED",
+    followers: "12.084",
+    postsCount: 89,
+    verification: "NONE",
+    distribution: "Tạm dừng",
+    monetization: "Không khả dụng",
+  },
+];
+
 export default function Fanpage() {
   const [pages, setPages] = useState<FanpageItem[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -61,8 +108,11 @@ export default function Fanpage() {
       const cachedPages = await fanpagesService.getCachedPages().catch(() => []);
       if (!isMounted) return;
 
-      setPages(cachedPages);
-      setDataLoaded(cachedPages.length > 0);
+      setPages(cachedPages.length ? cachedPages : mockFanpages);
+      setDataLoaded(true);
+      if (!cachedPages.length) {
+        setLoadMessage("Đang hiển thị dữ liệu mock vì extension/API chưa kết nối.");
+      }
     };
 
     void loadCachedPages();
@@ -91,11 +141,12 @@ export default function Fanpage() {
         dataOptions,
       });
 
+      const visiblePages = refreshedPages.length ? refreshedPages : mockFanpages;
       const message = refreshedPages.length
         ? `Đã tải ${refreshedPages.length} Fanpage.`
-        : "Không có Fanpage trong dữ liệu trả về.";
+        : "Extension/API chưa trả dữ liệu, đang hiển thị dữ liệu mock để xem UI.";
 
-      setPages(refreshedPages);
+      setPages(visiblePages);
       setDataLoaded(true);
       setLoadMessage(message);
       showClientToast(message, refreshedPages.length ? "success" : "info");
@@ -105,12 +156,12 @@ export default function Fanpage() {
       const cachedPages = await fanpagesService.getCachedPages().catch(() => []);
       const message = cachedPages.length
         ? "Không tải được dữ liệu mới, đang hiển thị dữ liệu cache."
-        : "Chưa có dữ liệu thật. Kiểm tra cookie/token hoặc extension/bridge Facebook.";
+        : "Chưa có dữ liệu thật, đang hiển thị dữ liệu mock để xem UI.";
 
-      setPages(cachedPages);
-      setDataLoaded(cachedPages.length > 0);
+      setPages(cachedPages.length ? cachedPages : mockFanpages);
+      setDataLoaded(true);
       setLoadMessage(message);
-      showClientToast(message, cachedPages.length ? "warning" : "error");
+      showClientToast(message, cachedPages.length ? "warning" : "info");
       setLoadingProgress(100);
     } finally {
       window.clearInterval(interval);

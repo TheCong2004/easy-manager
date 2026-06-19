@@ -21,6 +21,61 @@ const initialUtilities: UtilityItem[] = [
   { id: "8", name: "Tạo ứng dụng", enabled: true, color: "bg-teal-500" },
 ];
 
+const mockBusinessManagers: BusinessManager[] = [
+  {
+    id: "mock-bm-1",
+    name: "LadiPage Growth Hub",
+    bmId: "10084920491834",
+    status: "ACTIVE",
+    limit: "Không giới hạn",
+    pagesCount: 12,
+    partnersCount: 4,
+    adminsCount: 6,
+    instagramCount: 3,
+    whatsappCount: 1,
+    paymentMethod: "Visa •••• 4821",
+  },
+  {
+    id: "mock-bm-2",
+    name: "Ecom Store Việt Nam",
+    bmId: "26790184455203",
+    status: "ACTIVE",
+    limit: "25 tài khoản QC",
+    pagesCount: 8,
+    partnersCount: 2,
+    adminsCount: 5,
+    instagramCount: 2,
+    whatsappCount: 1,
+    paymentMethod: "Mastercard •••• 0932",
+  },
+  {
+    id: "mock-bm-3",
+    name: "CloudPhone Agency",
+    bmId: "55012390764211",
+    status: "PENDING_REVIEW",
+    limit: "10 tài khoản QC",
+    pagesCount: 5,
+    partnersCount: 1,
+    adminsCount: 3,
+    instagramCount: 1,
+    whatsappCount: 0,
+    paymentMethod: "Đang xác minh",
+  },
+  {
+    id: "mock-bm-4",
+    name: "BM Test - Tạm khóa",
+    bmId: "90450128773109",
+    status: "DISABLED",
+    limit: "0",
+    pagesCount: 2,
+    partnersCount: 0,
+    adminsCount: 2,
+    instagramCount: 0,
+    whatsappCount: 0,
+    paymentMethod: "Không khả dụng",
+  },
+];
+
 export default function TaiKhoanBM() {
   const [bms, setBms] = useState<BusinessManager[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -61,8 +116,11 @@ export default function TaiKhoanBM() {
       const cachedBms = await businessManagersService.getCachedManagers().catch(() => []);
       if (!isMounted) return;
 
-      setBms(cachedBms);
-      setDataLoaded(cachedBms.length > 0);
+      setBms(cachedBms.length ? cachedBms : mockBusinessManagers);
+      setDataLoaded(true);
+      if (!cachedBms.length) {
+        setLoadMessage("Đang hiển thị dữ liệu mock vì extension/API chưa kết nối.");
+      }
     };
 
     void loadCachedBms();
@@ -91,11 +149,12 @@ export default function TaiKhoanBM() {
         dataOptions,
       });
 
+      const visibleBms = refreshedBms.length ? refreshedBms : mockBusinessManagers;
       const message = refreshedBms.length
         ? `Đã tải ${refreshedBms.length} Business Manager.`
-        : "Không có Business Manager trong dữ liệu trả về.";
+        : "Extension/API chưa trả dữ liệu, đang hiển thị dữ liệu mock để xem UI.";
 
-      setBms(refreshedBms);
+      setBms(visibleBms);
       setDataLoaded(true);
       setLoadMessage(message);
       showClientToast(message, refreshedBms.length ? "success" : "info");
@@ -105,12 +164,12 @@ export default function TaiKhoanBM() {
       const cachedBms = await businessManagersService.getCachedManagers().catch(() => []);
       const message = cachedBms.length
         ? "Không tải được dữ liệu mới, đang hiển thị dữ liệu cache."
-        : "Chưa có dữ liệu thật. Kiểm tra cookie/token hoặc extension/bridge Facebook.";
+        : "Chưa có dữ liệu thật, đang hiển thị dữ liệu mock để xem UI.";
 
-      setBms(cachedBms);
-      setDataLoaded(cachedBms.length > 0);
+      setBms(cachedBms.length ? cachedBms : mockBusinessManagers);
+      setDataLoaded(true);
       setLoadMessage(message);
-      showClientToast(message, cachedBms.length ? "warning" : "error");
+      showClientToast(message, cachedBms.length ? "warning" : "info");
       setLoadingProgress(100);
     } finally {
       window.clearInterval(interval);

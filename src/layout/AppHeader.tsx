@@ -124,16 +124,6 @@ const AppHeader: React.FC = () => {
 
         {/* Right Side: Action Buttons, Help, Notification, Theme Toggle, User */}
         <div className="flex items-center gap-3 h-7">
-          {/* Action Button: Xác thực ngay */}
-          <button className="hidden sm:inline-flex items-center justify-center h-7 px-3.5 text-xs font-semibold text-orange-600 border border-orange-500 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/20 transition cursor-pointer select-none whitespace-nowrap">
-            Xác thực ngay
-          </button>
-
-          {/* Action Button: Nâng cấp ngay */}
-          <button className="hidden sm:inline-flex items-center justify-center h-7 px-3.5 text-xs font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-xs transition cursor-pointer select-none whitespace-nowrap">
-            Nâng cấp ngay
-          </button>
-
           <div className="flex items-center gap-1.5 border-l border-gray-200 dark:border-gray-800 pl-3 h-7">
             {/* Help / Question Icon */}
             <button className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer transition">
