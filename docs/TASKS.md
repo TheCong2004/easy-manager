@@ -9,7 +9,7 @@ Dưới đây là danh sách các đầu việc cần triển khai cho MVP theo 
 - [x] **Task 0: Thiết kế specs & Cấu trúc tài liệu tham chiếu**
   - Tạo `AGENTS.md` và thư mục tài liệu `docs/` để định hình kiến trúc.
 
-- [ ] **Task 1: Tạo Database Schema & Supabase Migrations**
+- [x] **Task 1: Tạo Database Schema & Supabase Migrations**
   - Tạo các bảng PostgreSQL cho `workspaces`, `pages`, `forms`, `form_submissions`, `funnels`, và `funnel_events`.
   - Sinh file TypeScript Types từ Supabase DB.
   - *Lưu ý: Không tạo giao diện UI trong tác vụ này.*

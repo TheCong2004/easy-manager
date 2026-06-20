@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDrop, useDrag } from "react-dnd";
 import {
   EditorBlock, BlockType, DND_TYPES, PaletteDragItem, CanvasDragItem,
@@ -19,6 +19,9 @@ import {
   CarouselBlock, TabsBlock, FrameBlock, AccordionBlock, TableBlock,
   SurveyBlock, MenuBlock, HtmlCodeBlock
 } from "./blocks/NewLadiBlocks";
+import { CartProvider, useCart } from "../cart/CartContext";
+import { CartDrawer } from "../cart/CartDrawer";
+import { CheckoutModal } from "../cart/CheckoutModal";
 
 // ── Block Renderer ────────────────────────────────────────────
 const BlockRenderer: React.FC<{
@@ -263,6 +266,26 @@ const DropZone: React.FC<{
   );
 };
 
+// ── Floating Cart Button ──────────────────────────────────────────────────────
+const FloatingCartButton: React.FC = () => {
+  const { totalItems, openDrawer } = useCart();
+  return (
+    <button
+      onClick={openDrawer}
+      className="fixed bottom-6 right-6 z-[990] flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-2xl shadow-slate-900/30 hover:bg-slate-700 active:scale-95 transition-all duration-200"
+      title="Xem giỏ hàng"
+    >
+      <span className="text-lg">🛒</span>
+      <span className="text-sm font-bold">Giỏ hàng</span>
+      {totalItems > 0 && (
+        <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-red-500 text-[11px] font-black px-1">
+          {totalItems}
+        </span>
+      )}
+    </button>
+  );
+};
+
 // ── Main Canvas ────────────────────────────────────────────────
 interface CanvasProps {
   blocks: EditorBlock[];
@@ -295,10 +318,33 @@ export const Canvas: React.FC<CanvasProps> = ({
   onMoveDown,
   onUpdateBlock,
 }) => {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [viewportWidth, setViewportWidth] = useState(0);
   const canvasWidth = DEVICE_WIDTHS[deviceMode];
-  const scaledWidth = canvasWidth * zoom;
-  const minPageHeight = 720;
+  const minPageHeight = 1600;
   const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
+  const fitZoom = viewportWidth
+    ? Math.min(1, Math.max(0.28, (viewportWidth - 48) / canvasWidth))
+    : 1;
+  const effectiveZoom = Math.min(zoom, fitZoom);
+  const scaledWidth = canvasWidth * effectiveZoom;
+
+  useEffect(() => {
+    const node = viewportRef.current;
+    if (!node) return;
+
+    const updateViewportWidth = () => setViewportWidth(node.clientWidth);
+    updateViewportWidth();
+
+    const resizeObserver = new ResizeObserver(updateViewportWidth);
+    resizeObserver.observe(node);
+    window.addEventListener("resize", updateViewportWidth);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateViewportWidth);
+    };
+  }, []);
 
   // Click on canvas bg deselects
   const handleCanvasBgClick = (e: React.MouseEvent) => {
@@ -306,103 +352,113 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   return (
-    <div
-      className="flex-1 overflow-auto"
-      style={{
-        backgroundColor: "#f3f4f6",
-        backgroundImage: "radial-gradient(circle, rgba(107, 114, 128, 0.08) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }}
-      onClick={handleCanvasBgClick}
-    >
-      <div className="flex min-h-full items-start justify-center px-10 py-8">
-        <div
-          className="relative transition-all duration-300"
-          style={{
-            width: scaledWidth,
-            minHeight: (minPageHeight + 34) * zoom,
-          }}
-        >
+    <CartProvider>
+      {/* Cart Drawer (slides in from right) */}
+      <CartDrawer />
+      {/* Checkout Modal */}
+      <CheckoutModal />
+      {/* Floating Cart Button */}
+      <FloatingCartButton />
+
+      <div
+        ref={viewportRef}
+        className="flex-1 overflow-auto"
+        style={{
+          backgroundColor: "#f3f4f6",
+          backgroundImage: "radial-gradient(circle, rgba(107, 114, 128, 0.08) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+        onClick={handleCanvasBgClick}
+      >
+        <div className="flex min-h-full items-start justify-center px-4 py-6">
           <div
-            className="origin-top-left overflow-hidden rounded-[10px] border border-gray-250 bg-white shadow-xl shadow-gray-300/40"
+            className="relative transition-all duration-300"
             style={{
-              width: canvasWidth,
-              transform: `scale(${zoom})`,
+              width: scaledWidth,
+              minHeight: (minPageHeight + 34) * effectiveZoom,
             }}
           >
-            <div className="flex h-8 items-center justify-between border-b border-gray-200 bg-gray-50 px-3 text-[10px] text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500/70" />
-                <span className="h-2 w-2 rounded-full bg-amber-500/70" />
-                <span className="h-2 w-2 rounded-full bg-emerald-500/70" />
-              </div>
-              <div className="font-mono uppercase tracking-wider">
-                {deviceLabel} / {canvasWidth}px / {Math.round(zoom * 100)}%
-              </div>
-            </div>
-
-            {/* Page background */}
             <div
-              className="landing-product-surface w-full"
+              className="origin-top-left overflow-hidden rounded-[10px] border border-gray-250 bg-white shadow-xl shadow-gray-300/40"
               style={{
                 width: canvasWidth,
-                minHeight: minPageHeight,
-                backgroundColor: pageBgColor,
+                transform: `scale(${effectiveZoom})`,
               }}
-              onClick={handleCanvasBgClick}
             >
-              {blocks.length === 0 ? (
-                <DropZone onDrop={(bt) => onDropFromPalette(bt, 0)} />
-              ) : (
-                <>
-                  {blocks.map((block, index) => (
-                    <React.Fragment key={block.id}>
-                      {/* Inter-block drop zone (compact) */}
-                      <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, index)} />
-                      <SortableBlock
-                        block={block}
-                        index={index}
-                        isSelected={selectedId === block.id}
-                        onSelect={() => onSelectBlock(block.id)}
-                        onMove={onMoveBlock}
-                        onDelete={onDeleteBlock}
-                        onDuplicate={onDuplicateBlock}
-                        onMoveUp={onMoveUp}
-                        onMoveDown={onMoveDown}
-                        onUpdateBlock={onUpdateBlock}
-                        isFirst={index === 0}
-                        isLast={index === blocks.length - 1}
-                      />
-                    </React.Fragment>
-                  ))}
-                  {/* Drop zone at the end */}
-                  <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, blocks.length)} />
-                </>
-              )}
-            </div>
-          </div>
+              <div className="flex h-8 items-center justify-between border-b border-gray-200 bg-gray-50 px-3 text-[10px] text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500/70" />
+                  <span className="h-2 w-2 rounded-full bg-amber-500/70" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500/70" />
+                </div>
+                <div className="font-mono uppercase tracking-wider">
+                  {deviceLabel} / {canvasWidth}px / {Math.round(effectiveZoom * 100)}%
+                </div>
+                <div />
+              </div>
 
-          <div className="pointer-events-auto absolute left-1/2 top-full z-40 mt-5 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 p-1.5 shadow-lg shadow-gray-200/50 backdrop-blur">
-            {[
-              { title: "Select", path: "M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" },
-              { title: "Pan", path: "M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" },
-              { title: "Frame", path: "M4.5 4.5h15v15h-15z" },
-              { title: "Text", path: "M6 4.5h12M12 4.5v15m-3 0h6" },
-              { title: "Code", path: "M8.25 9.75 4.5 13.5l3.75 3.75m7.5-7.5 3.75 3.75-3.75 3.75" },
-            ].map((tool) => (
-              <button
-                key={tool.title}
-                title={tool.title}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+              {/* Page Content */}
+              <div
+                className="w-full"
+                style={{
+                  minHeight: minPageHeight,
+                  backgroundColor: pageBgColor,
+                }}
+                onClick={handleCanvasBgClick}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d={tool.path} />
-                </svg>
-              </button>
-            ))}
+                {blocks.length === 0 ? (
+                  <DropZone onDrop={(bt) => onDropFromPalette(bt, 0)} />
+                ) : (
+                  <>
+                    {blocks.map((block, index) => (
+                      <React.Fragment key={block.id}>
+                        {/* Inter-block drop zone (compact) */}
+                        <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, index)} />
+                        <SortableBlock
+                          block={block}
+                          index={index}
+                          isSelected={selectedId === block.id}
+                          onSelect={() => onSelectBlock(block.id)}
+                          onMove={onMoveBlock}
+                          onDelete={onDeleteBlock}
+                          onDuplicate={onDuplicateBlock}
+                          onMoveUp={onMoveUp}
+                          onMoveDown={onMoveDown}
+                          onUpdateBlock={onUpdateBlock}
+                          isFirst={index === 0}
+                          isLast={index === blocks.length - 1}
+                        />
+                      </React.Fragment>
+                    ))}
+                    {/* Drop zone at the end */}
+                    <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, blocks.length)} />
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="pointer-events-auto absolute left-1/2 top-full z-40 mt-5 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 p-1.5 shadow-lg shadow-gray-200/50 backdrop-blur">
+              {[
+                { title: "Select", path: "M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" },
+                { title: "Pan", path: "M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" },
+                { title: "Frame", path: "M4.5 4.5h15v15h-15z" },
+                { title: "Text", path: "M6 4.5h12M12 4.5v15m-3 0h6" },
+                { title: "Code", path: "M8.25 9.75 4.5 13.5l3.75 3.75m7.5-7.5 3.75 3.75-3.75 3.75" },
+              ].map((tool) => (
+                <button
+                  key={tool.title}
+                  title={tool.title}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d={tool.path} />
+                  </svg>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </CartProvider>
   );
 };

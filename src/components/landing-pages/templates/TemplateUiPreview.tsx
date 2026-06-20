@@ -32,20 +32,38 @@ import {
 function resolveTemplatePresetId(template: TemplateItem): string {
   const value = `${template.id} ${template.name} ${template.category}`.toLowerCase();
 
+  // Legacy templates
   if (value.includes("112306") || value.includes("wedding") || value.includes("cuoi")) return "wedding-invite";
-  if (value.includes("112305") || value.includes("112309") || value.includes("my pham") || value.includes("spa")) return "beauty-shop";
+  if (value.includes("112305") || value.includes("112309") || value.includes("my pham")) return "beauty-shop";
   if (value.includes("112307") || value.includes("tea") || value.includes("tra")) return "herb-tea";
   if (value.includes("112308") || value.includes("smartwatch") || value.includes("dong ho")) return "smartwatch-performance";
   if (value.includes("112312") || value.includes("course")) return "webinar-lead";
   if (value.includes("112313") || value.includes("slide show") || value.includes("carousel")) return "hero-slide-show";
   if (value.includes("112314") || value.includes("product grid") || value.includes("flash sale")) return "ladi-product-grid";
   if (value.includes("112315") || value.includes("course funnel") || value.includes("e-learning")) return "course-slide-funnel";
-  if (value.includes("112316") || value.includes("gallery showcase") || value.includes("portfolio")) return "gallery-showcase";
+  if (value.includes("112316") || value.includes("gallery showcase")) return "gallery-showcase";
   if (value.includes("112317") || value.includes("builder product kit")) return "builder-product-kit";
   if (value.includes("112318") || value.includes("builder ui elements")) return "builder-ui-elements";
+  if (value.includes("112310") || value.includes("grand") || value.includes("khai trương") || value.includes("khai truong")) return "grand-opening";
+  if (value.includes("112311")) return "finance-consulting";
+
+  // 12 new templates — matched by ID prefix t15–t26
+  if (value.includes("t15") || value.includes("saas") || value.includes("saas-minimal")) return "saas-minimal";
+  if (value.includes("t16") || value.includes("ecommerce-bold") || value.includes("bold offer")) return "ecommerce-bold";
+  if (value.includes("t17") || value.includes("real-estate") || value.includes("real estate")) return "real-estate-premium";
+  if (value.includes("t18") || value.includes("online-course") || value.includes("online course")) return "online-course";
+  if (value.includes("t19") || value.includes("webinar-event") || value.includes("webinar event")) return "webinar-event";
+  if (value.includes("t20") || value.includes("agency-portfolio") || value.includes("agency portfolio")) return "agency-portfolio";
+  if (value.includes("t21") || value.includes("clinic-trust") || value.includes("clinic trust")) return "clinic-trust";
+  if (value.includes("t22") || value.includes("restaurant-menu") || value.includes("restaurant")) return "restaurant-menu";
+  if (value.includes("t23") || value.includes("mobile-app") || value.includes("mobile app")) return "mobile-app";
+  if (value.includes("t24") || value.includes("finance-lead") || value.includes("finance lead")) return "finance-lead";
+  if (value.includes("t25") || value.includes("beauty-spa") || value.includes("beauty spa") || value.includes("spa")) return "beauty-spa";
+  if (value.includes("t26") || value.includes("local-service") || value.includes("local service")) return "local-service";
 
   return "product-launch";
 }
+
 
 function getPreset(template: TemplateItem): LandingTemplatePreset {
   const presetId = resolveTemplatePresetId(template);

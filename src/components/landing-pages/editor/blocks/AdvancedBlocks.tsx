@@ -17,45 +17,45 @@ interface TimeLeft {
   seconds: number;
 }
 
+const Unit = ({ value, label, accentColor }: { value: number; label: string; accentColor: string }) => (
+  <div className="flex flex-col items-center">
+    <div
+      className="w-16 h-16 flex items-center justify-center rounded-xl text-2xl font-black text-white tabular-nums"
+      style={{ backgroundColor: accentColor }}
+    >
+      {String(value).padStart(2, "0")}
+    </div>
+    <span className="text-xs mt-1 font-medium uppercase tracking-wider opacity-70">{label}</span>
+  </div>
+);
+
+const calculateTimeLeft = (targetDate: string): TimeLeft => {
+  const diff = new Date(targetDate).getTime() - Date.now();
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  return {
+    days: Math.floor(diff / 86400000),
+    hours: Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000) / 60000),
+    seconds: Math.floor((diff % 60000) / 1000),
+  };
+};
+
 export const CountdownBlock: React.FC<CountdownBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { targetDate, title, expiredText, bgColor, accentColor } = props;
 
-  const calculate = (): TimeLeft => {
-    const diff = new Date(targetDate).getTime() - Date.now();
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    return {
-      days: Math.floor(diff / 86400000),
-      hours: Math.floor((diff % 86400000) / 3600000),
-      minutes: Math.floor((diff % 3600000) / 60000),
-      seconds: Math.floor((diff % 60000) / 1000),
-    };
-  };
-
-  const [time, setTime] = useState<TimeLeft>(calculate());
+  const [time, setTime] = useState<TimeLeft>(() => calculateTimeLeft(targetDate));
 
   useEffect(() => {
-    const t = setInterval(() => setTime(calculate()), 1000);
+    const t = setInterval(() => setTime(calculateTimeLeft(targetDate)), 1000);
     return () => clearInterval(t);
   }, [targetDate]);
 
   const isExpired = time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0;
 
-  const Unit = ({ value, label }: { value: number; label: string }) => (
-    <div className="flex flex-col items-center">
-      <div
-        className="w-16 h-16 flex items-center justify-center rounded-xl text-2xl font-black text-white tabular-nums"
-        style={{ backgroundColor: accentColor }}
-      >
-        {String(value).padStart(2, "0")}
-      </div>
-      <span className="text-xs mt-1 font-medium uppercase tracking-wider opacity-70">{label}</span>
-    </div>
-  );
-
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full py-10 px-4 cursor-pointer transition-all flex flex-col items-center gap-6 ${
+      className={`relative w-full py-20 px-8 cursor-pointer transition-all flex flex-col items-center gap-6 ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
       style={{ backgroundColor: bgColor, color: "#fff" }}
@@ -87,13 +87,13 @@ export const CountdownBlock: React.FC<CountdownBlockProps> = ({ props, isSelecte
         </p>
       ) : (
         <div className="flex items-end gap-4">
-          <Unit value={time.days} label="Ngày" />
+          <Unit value={time.days} label="Ngày" accentColor={accentColor} />
           <span className="text-2xl font-black mb-4 opacity-50">:</span>
-          <Unit value={time.hours} label="Giờ" />
+          <Unit value={time.hours} label="Giờ" accentColor={accentColor} />
           <span className="text-2xl font-black mb-4 opacity-50">:</span>
-          <Unit value={time.minutes} label="Phút" />
+          <Unit value={time.minutes} label="Phút" accentColor={accentColor} />
           <span className="text-2xl font-black mb-4 opacity-50">:</span>
-          <Unit value={time.seconds} label="Giây" />
+          <Unit value={time.seconds} label="Giây" accentColor={accentColor} />
         </div>
       )}
       {isSelected && (
@@ -133,7 +133,7 @@ export const VideoBlock: React.FC<VideoBlockProps> = ({ props, isSelected, onSel
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-6 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -182,7 +182,7 @@ export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSel
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-6 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-16 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >

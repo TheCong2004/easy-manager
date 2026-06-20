@@ -9,6 +9,24 @@ interface HeroBlockProps {
   onUpdate?: (props: Record<string, unknown>) => void;
 }
 
+function isDarkColor(color: string): boolean {
+  if (!color) return true;
+  const hex = color.replace("#", "");
+  if (hex.length === 3) {
+    const r = parseInt(hex[0] + hex[0], 16);
+    const g = parseInt(hex[1] + hex[1], 16);
+    const b = parseInt(hex[2] + hex[2], 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 < 165;
+  }
+  if (hex.length === 6) {
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 < 165;
+  }
+  return true;
+}
+
 export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const {
     headline, subheadline, ctaText, ctaUrl, ctaColor,
@@ -48,10 +66,10 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelec
           onClick={(e) => {
             if (isSelected) e.stopPropagation();
           }}
-          className="font-extrabold leading-tight"
+          className="font-bold tracking-tight leading-tight"
           style={{
-            fontSize: "clamp(2rem, 5vw, 3.5rem)",
-            color: bgImage || bgColor !== "#ffffff" ? "#fff" : "#0f172a",
+            fontSize: "clamp(2rem, 5vw, 3.25rem)",
+            color: bgImage || isDarkColor(bgColor) ? "#fff" : "#0f172a",
             outline: "none",
           }}
         >
@@ -64,9 +82,9 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelec
           onClick={(e) => {
             if (isSelected) e.stopPropagation();
           }}
-          className="max-w-2xl leading-relaxed text-lg"
+          className="max-w-2xl leading-relaxed text-base md:text-lg font-normal opacity-90"
           style={{
-            color: bgImage || bgColor !== "#ffffff" ? "rgba(255,255,255,0.85)" : "#475569",
+            color: bgImage || isDarkColor(bgColor) ? "rgba(255,255,255,0.85)" : "#475569",
             outline: "none",
           }}
         >
@@ -81,11 +99,11 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({ props, isSelected, onSelec
             e.preventDefault();
             if (isSelected) e.stopPropagation();
           }}
-          className="inline-flex items-center gap-2 font-bold px-7 py-3 rounded-xl text-white shadow-lg transition hover:opacity-90 active:scale-95"
+          className="inline-flex items-center gap-2 font-semibold px-6 py-2.5 rounded-lg text-white shadow-sm border border-black/10 transition hover:opacity-90 active:scale-98"
           style={{ backgroundColor: ctaColor, width: "fit-content", outline: "none" }}
         >
           {ctaText}
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
         </a>

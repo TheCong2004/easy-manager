@@ -16,7 +16,7 @@ export const FeatureCardBlock: React.FC<FeatureCardBlockProps> = ({ props, isSel
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-6 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-16 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -92,12 +92,12 @@ export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSel
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-6 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-16 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
       <div
-        className="p-6 rounded-2xl"
+        className="p-10 rounded-2xl"
         style={{ backgroundColor: bgColor, color: textColor }}
       >
         {/* Stars */}
@@ -124,7 +124,7 @@ export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSel
           onClick={(e) => {
             if (isSelected) e.stopPropagation();
           }}
-          className="text-base leading-relaxed mb-5 italic"
+          className="text-xl leading-relaxed mb-6 italic font-medium"
           style={{ color: textColor, outline: "none" }}
         >
           &ldquo;{quote}&rdquo;

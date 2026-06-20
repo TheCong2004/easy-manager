@@ -1,10 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   GalleryProps, BoxProps, IconProps, ProductCardProps, CollectionListProps,
   CarouselProps, TabsProps, FrameProps, AccordionProps, TableProps,
   SurveyProps, MenuProps, HtmlCodeProps
 } from "../types";
+import { useCart, parsePriceNum } from "../../cart/CartContext";
 
 // ── Gallery Block ─────────────────────────────────────────────
 export const GalleryBlock: React.FC<{ props: GalleryProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
@@ -14,7 +15,7 @@ export const GalleryBlock: React.FC<{ props: GalleryProps; isSelected: boolean; 
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -48,7 +49,7 @@ export const BoxBlock: React.FC<{ props: BoxProps; isSelected: boolean; onSelect
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -83,7 +84,7 @@ export const IconBlock: React.FC<{ props: IconProps; isSelected: boolean; onSele
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -115,46 +116,96 @@ export const IconBlock: React.FC<{ props: IconProps; isSelected: boolean; onSele
 export const ProductCardBlock: React.FC<{ props: ProductCardProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
   const { title, description, price, oldPrice, image, badge, ctaText, bgColor, borderColor, borderRadius, items, columns = 1 } = props;
 
-  // Helper to render a single product card layout
-  const renderProductItem = (itemTitle: string, itemDesc: string, itemPrice: string, itemOldPrice?: string, itemImage?: string, itemBadge?: string) => (
-    <div
-      className="overflow-hidden border border-gray-200 shadow-md flex flex-col h-full bg-white rounded-xl hover:shadow-lg transition-shadow duration-200"
-      style={{ borderColor, borderRadius }}
-    >
-      <div className="relative aspect-square w-full bg-gray-50">
-        <img src={itemImage || image} alt={itemTitle} className="w-full h-full object-cover" />
-        {itemBadge && (
-          <span className="absolute top-2.5 left-2.5 bg-slate-950 text-white font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
-            {itemBadge}
-          </span>
-        )}
-      </div>
-      <div className="p-3.5 flex flex-col flex-1">
-        <div className="flex items-center gap-0.5 mb-1">
-          {Array.from({ length: 5 }).map((_, idx) => (
-            <span key={idx} className="text-slate-400 text-[10px]">★</span>
-          ))}
-          <span className="text-[9px] text-gray-400 font-medium ml-1">(95 đánh giá)</span>
-        </div>
-        <h3 className="text-xs font-bold text-gray-800 line-clamp-1">{itemTitle}</h3>
-        {itemDesc && <p className="text-[10px] text-gray-500 line-clamp-2 mt-0.5 mb-2 leading-normal">{itemDesc}</p>}
-        <div className="flex items-baseline gap-1.5 mt-auto">
-          <span className="text-xs font-black text-slate-950">{itemPrice}</span>
-          {itemOldPrice && <span className="text-[9px] text-gray-400 line-through">{itemOldPrice}</span>}
-        </div>
-        <button className="mt-2.5 min-h-10 w-full rounded-lg bg-slate-950 px-3 py-2 text-[11px] font-bold leading-tight text-white shadow-sm transition duration-155 hover:bg-slate-800">
-          {ctaText || "MUA NGAY"}
-        </button>
-      </div>
-    </div>
+  // Cart integration — gracefully falls back if used outside CartProvider
+  let addToCart: ((p: import("../../cart/CartContext").CartProduct) => void) | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const cart = useCart();
+    addToCart = cart.addToCart;
+  } catch {
+    addToCart = null;
+  }
+
+  // Per-item "added" flash state: id → boolean
+  const [addedIds, setAddedIds] = useState<Record<string, boolean>>({});
+
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, id: string, itemTitle: string, itemPrice: string, itemOldPrice?: string, itemImage?: string, itemBadge?: string) => {
+      e.stopPropagation();
+      if (!addToCart) return;
+      addToCart({
+        id,
+        title: itemTitle,
+        price: itemPrice,
+        priceNum: parsePriceNum(itemPrice),
+        oldPrice: itemOldPrice,
+        image: itemImage,
+        badge: itemBadge,
+      });
+      setAddedIds((prev) => ({ ...prev, [id]: true }));
+      setTimeout(() => setAddedIds((prev) => ({ ...prev, [id]: false })), 1500);
+    },
+    [addToCart]
   );
+
+  // Helper to render a single product card layout
+  const renderProductItem = (
+    itemId: string,
+    itemTitle: string,
+    itemDesc: string,
+    itemPrice: string,
+    itemOldPrice?: string,
+    itemImage?: string,
+    itemBadge?: string
+  ) => {
+    const isAdded = addedIds[itemId];
+    return (
+      <div
+        className="overflow-hidden border border-gray-200 shadow-md flex flex-col h-full bg-white rounded-xl hover:shadow-lg transition-shadow duration-200"
+        style={{ borderColor, borderRadius }}
+      >
+        <div className="relative aspect-square w-full bg-gray-50">
+          <img src={itemImage || image} alt={itemTitle} className="w-full h-full object-cover" />
+          {itemBadge && (
+            <span className="absolute top-2.5 left-2.5 bg-slate-950 text-white font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
+              {itemBadge}
+            </span>
+          )}
+        </div>
+        <div className="p-3.5 flex flex-col flex-1">
+          <div className="flex items-center gap-0.5 mb-1">
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <span key={idx} className="text-yellow-400 text-[10px]">★</span>
+            ))}
+            <span className="text-[9px] text-gray-400 font-medium ml-1">(95 đánh giá)</span>
+          </div>
+          <h3 className="text-xs font-bold text-gray-800 line-clamp-1">{itemTitle}</h3>
+          {itemDesc && <p className="text-[10px] text-gray-500 line-clamp-2 mt-0.5 mb-2 leading-normal">{itemDesc}</p>}
+          <div className="flex items-baseline gap-1.5 mt-auto">
+            <span className="text-xs font-black text-slate-950">{itemPrice}</span>
+            {itemOldPrice && <span className="text-[9px] text-gray-400 line-through">{itemOldPrice}</span>}
+          </div>
+          <button
+            onClick={(e) => handleAddToCart(e, itemId, itemTitle, itemPrice, itemOldPrice, itemImage, itemBadge)}
+            className={`mt-2.5 min-h-10 w-full rounded-lg px-3 py-2 text-[11px] font-bold leading-tight text-white shadow-sm transition-all duration-200 ${
+              isAdded
+                ? "bg-emerald-500 scale-[0.98]"
+                : "bg-slate-950 hover:bg-slate-800 active:scale-[0.96]"
+            }`}
+          >
+            {isAdded ? "✓ Đã thêm vào giỏ" : (ctaText || "🛒 Thêm vào giỏ")}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const hasGridItems = Array.isArray(items) && items.length > 0;
 
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
       style={{ backgroundColor: bgColor }}
@@ -168,16 +219,16 @@ export const ProductCardBlock: React.FC<{ props: ProductCardProps; isSelected: b
         >
           {items.map((item) => (
             <div key={item.id} className="w-full">
-              {renderProductItem(item.title, item.description, item.price, item.oldPrice, item.image, item.badge)}
+              {renderProductItem(item.id, item.title, item.description, item.price, item.oldPrice, item.image, item.badge)}
             </div>
           ))}
         </div>
       ) : (
         <div className="w-full max-w-sm mx-auto">
-          {renderProductItem(title, description, price, oldPrice, image, badge)}
+          {renderProductItem("single", title, description, price, oldPrice, image, badge)}
         </div>
       )}
-      
+
       {isSelected && (
         <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
           {hasGridItems ? `PRODUCT GRID (${columns} CỘT)` : "PRODUCT CARD"}
@@ -194,41 +245,59 @@ export const CollectionListBlock: React.FC<{ props: CollectionListProps; isSelec
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-20 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
       style={{ backgroundColor: bgColor }}
     >
       <div
-        className={
-          layout === "grid"
-            ? "grid gap-4"
-            : "flex flex-col gap-3"
-        }
+        className={layout === "grid" ? "grid gap-6" : "flex flex-col gap-4"}
         style={
           layout === "grid"
-            ? { gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${columns > 2 ? 190 : 240}px), 1fr))` }
+            ? { gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${columns > 3 ? 180 : 220}px), 1fr))` }
             : {}
         }
       >
-        {items.map((item) => (
-          <div key={item.id} className="flex items-start gap-3.5 rounded-xl border border-slate-700 bg-slate-900 p-4 transition duration-150 hover:border-slate-500">
-            <span className="flex-shrink-0 rounded-lg bg-slate-800 p-2 text-2xl text-white">{item.icon}</span>
-            <div className="space-y-0.5">
-              <h4 className="text-[13px] font-bold text-white">{item.title}</h4>
-              <p className="text-[13px] leading-relaxed text-slate-300">{item.desc}</p>
-            </div>
+        {items.map((item, idx) => (
+          <div
+            key={item.id}
+            className="flex flex-col items-center text-center gap-3 rounded-2xl px-6 py-10 transition duration-150"
+            style={{
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <span
+              className="text-xs font-black uppercase tracking-[0.2em] opacity-50"
+              style={{ color: "inherit" }}
+            >
+              {String(idx + 1).padStart(2, "0")}
+            </span>
+            <p
+              className="text-4xl font-black leading-none tracking-tight"
+              style={{ color: "inherit" }}
+            >
+              {item.title}
+            </p>
+            <p
+              className="text-sm leading-relaxed opacity-75 max-w-[180px]"
+              style={{ color: "inherit" }}
+            >
+              {item.desc}
+            </p>
           </div>
         ))}
       </div>
       {isSelected && (
         <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
-          COLLECTION
+          STATS
         </div>
       )}
     </div>
   );
 };
+
 
 // ── Carousel Block ────────────────────────────────────────────
 export const CarouselBlock: React.FC<{ props: CarouselProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
@@ -241,7 +310,7 @@ export const CarouselBlock: React.FC<{ props: CarouselProps; isSelected: boolean
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -296,7 +365,7 @@ export const TabsBlock: React.FC<{ props: TabsProps; isSelected: boolean; onSele
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -346,7 +415,7 @@ export const FrameBlock: React.FC<{ props: FrameProps; isSelected: boolean; onSe
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -400,7 +469,7 @@ export const AccordionBlock: React.FC<{ props: AccordionProps; isSelected: boole
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -443,7 +512,7 @@ export const TableBlock: React.FC<{ props: TableProps; isSelected: boolean; onSe
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -484,7 +553,7 @@ export const SurveyBlock: React.FC<{ props: SurveyProps; isSelected: boolean; on
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -538,24 +607,70 @@ export const SurveyBlock: React.FC<{ props: SurveyProps; isSelected: boolean; on
 export const MenuBlock: React.FC<{ props: MenuProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
   const { logoText, items, bgColor, textColor } = props;
 
+  const hexToRgba = (hex: string, alpha: number) => {
+    if (!hex) return 'rgba(255, 255, 255, 0.8)';
+    let cleanHex = hex.replace('#', '');
+    if (cleanHex.length === 3) {
+      cleanHex = cleanHex.split('').map(char => char + char).join('');
+    }
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const borderCol = hexToRgba(textColor || "#000000", 0.12);
+
+  // Treats the last item as CTA button if there are multiple items
+  const navLinks = items && items.length > 1 ? items.slice(0, -1) : (items || []);
+  const ctaItem = items && items.length > 1 ? items[items.length - 1] : null;
+
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
       <div
-        className="w-full flex items-center justify-between px-6 py-4 shadow-sm border border-gray-150/10"
-        style={{ backgroundColor: bgColor, color: textColor }}
+        className="w-full flex items-center justify-between px-6 md:px-12 py-4.5 border-b transition-all duration-300"
+        style={{
+          backgroundColor: bgColor || "#ffffff",
+          borderColor: borderCol,
+          color: textColor,
+        }}
       >
-        <span className="font-black text-sm uppercase tracking-wider">{logoText}</span>
-        <div className="flex items-center gap-5">
-          {items.map((item, idx) => (
-            <span key={idx} className="text-xs font-semibold hover:opacity-80 transition cursor-pointer select-none">
-              {item.label}
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-sm tracking-widest uppercase select-none">{logoText}</span>
+        </div>
+
+        {/* Navigation Items */}
+        <div className="flex items-center gap-8">
+          <div className="hidden sm:flex items-center gap-8">
+            {navLinks.map((item, idx) => (
+              <span
+                key={idx}
+                className="text-xs md:text-[13px] font-medium opacity-80 hover:opacity-100 transition-all duration-200 cursor-pointer select-none"
+              >
+                {item.label}
+              </span>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          {ctaItem && (
+            <span
+              className="inline-flex items-center justify-center px-4 py-2 text-[10px] md:text-xs font-semibold tracking-wider uppercase rounded border shadow-sm transition hover:opacity-90 active:scale-98"
+              style={{
+                backgroundColor: textColor || "#000000",
+                color: bgColor === "#ffffff" || bgColor === "#fff" ? "#ffffff" : bgColor,
+                borderColor: borderCol,
+              }}
+            >
+              {ctaItem.label}
             </span>
-          ))}
+          )}
         </div>
       </div>
       {isSelected && (
@@ -574,7 +689,7 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
+      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
@@ -591,3 +706,4 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
     </div>
   );
 };
+

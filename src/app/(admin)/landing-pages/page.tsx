@@ -166,6 +166,127 @@ const templatesData: TemplateItem[] = [
     likes: 3010,
     scrollDist: "calc(-100% + 260px)",
   },
+  // ── 12 mẫu mới ─────────────────────────────────────────────────────────────
+  {
+    id: "t15",
+    name: "SaaS Minimal Clean — Flux AI CRM",
+    image: "/images/product/smartwatch_product.png",
+    category: "service",
+    isPro: false,
+    views: 8120,
+    likes: 4060,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t16",
+    name: "E-commerce Bold Offer — Flash Sale 70%",
+    image: "/images/product/skincare_product.png",
+    category: "ecommerce",
+    isPro: false,
+    views: 11430,
+    likes: 5780,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t17",
+    name: "Premium Real Estate — Luxury Biệt thự",
+    image: "/images/grid-image/image-01.png",
+    category: "service",
+    isPro: true,
+    views: 5340,
+    likes: 2890,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t18",
+    name: "Online Course Conversion — GrowthAcademy",
+    image: "/images/carousel/carousel-02.png",
+    category: "service",
+    isPro: false,
+    views: 9870,
+    likes: 4920,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t19",
+    name: "Webinar Event Modern — Growth Summit 2026",
+    image: "/images/carousel/carousel-01.png",
+    category: "others",
+    isPro: false,
+    views: 7650,
+    likes: 3820,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t20",
+    name: "Agency Portfolio — VOID Studio Creative",
+    image: "/images/grid-image/image-02.png",
+    category: "others",
+    isPro: true,
+    views: 6210,
+    likes: 3140,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t21",
+    name: "Clinic Trust Landing — VitaCare Phòng khám",
+    image: "/images/grid-image/image-04.png",
+    category: "service",
+    isPro: false,
+    views: 4980,
+    likes: 2490,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t22",
+    name: "Restaurant Premium Menu — Nhà hàng Umami",
+    image: "/images/grid-image/image-05.png",
+    category: "service",
+    isPro: false,
+    views: 5720,
+    likes: 2960,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t23",
+    name: "Mobile App Launch — Pendo Finance App",
+    image: "/images/product/green_tea_product.png",
+    category: "others",
+    isPro: false,
+    views: 8880,
+    likes: 4440,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t24",
+    name: "Finance Lead Generation — ProsperWealth",
+    image: "/images/product/smartwatch_product.png",
+    category: "service",
+    isPro: true,
+    views: 6560,
+    likes: 3280,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t25",
+    name: "Beauty Spa Elegant — Lumière Spa & Skincare",
+    image: "/images/product/skincare_product.png",
+    category: "service",
+    isPro: false,
+    views: 7340,
+    likes: 3670,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t26",
+    name: "Local Service Lead Gen — AirFix Điều hòa",
+    image: "/images/grid-image/image-06.png",
+    category: "service",
+    isPro: false,
+    views: 9120,
+    likes: 4560,
+    scrollDist: "calc(-100% + 260px)",
+  },
 ];
 
 const initialTags: TagItem[] = [
@@ -181,19 +302,36 @@ const initialTags: TagItem[] = [
 
 function mapTemplateToEditorPreset(template: TemplateItem): string {
   const value = `${template.id} ${template.name} ${template.category}`.toLowerCase();
+  // Legacy templates
   if (value.includes("112306") || value.includes("wedding") || value.includes("cưới")) return "wedding-invite";
-  if (value.includes("112305") || value.includes("112309") || value.includes("mỹ phẩm") || value.includes("spa")) return "beauty-shop";
+  if (value.includes("112305") || value.includes("112309") || value.includes("mỹ phẩm")) return "beauty-shop";
   if (value.includes("112307") || value.includes("trà") || value.includes("tea")) return "herb-tea";
   if (value.includes("112308") || value.includes("smartwatch") || value.includes("đồng hồ")) return "smartwatch-performance";
-  if (value.includes("112312") || value.includes("khóa học") || value.includes("course")) return "webinar-lead";
+  if (value.includes("112312") || value.includes("khóa học")) return "webinar-lead";
   if (value.includes("112313") || value.includes("slide show") || value.includes("carousel")) return "hero-slide-show";
   if (value.includes("112314") || value.includes("product grid") || value.includes("flash sale")) return "ladi-product-grid";
   if (value.includes("112315") || value.includes("course funnel") || value.includes("e-learning")) return "course-slide-funnel";
-  if (value.includes("112316") || value.includes("gallery showcase") || value.includes("portfolio")) return "gallery-showcase";
+  if (value.includes("112316") || value.includes("gallery showcase")) return "gallery-showcase";
   if (value.includes("112317") || value.includes("builder product kit")) return "builder-product-kit";
   if (value.includes("112318") || value.includes("builder ui elements")) return "builder-ui-elements";
+  if (value.includes("112310") || value.includes("grand") || value.includes("khai trương")) return "grand-opening";
+  if (value.includes("112311")) return "finance-consulting";
+  // 12 template mới — khớp theo ID t15–t26
+  if (value.includes("t15") || value.includes("saas") || value.includes("flux ai crm")) return "saas-minimal";
+  if (value.includes("t16") || value.includes("ecommerce") || value.includes("flash sale 70")) return "ecommerce-bold";
+  if (value.includes("t17") || value.includes("real estate") || value.includes("biệt thự")) return "real-estate-premium";
+  if (value.includes("t18") || value.includes("online course") || value.includes("growthacademy")) return "online-course";
+  if (value.includes("t19") || value.includes("webinar event") || value.includes("growth summit")) return "webinar-event";
+  if (value.includes("t20") || value.includes("agency") || value.includes("void studio")) return "agency-portfolio";
+  if (value.includes("t21") || value.includes("clinic") || value.includes("vitacare")) return "clinic-trust";
+  if (value.includes("t22") || value.includes("restaurant") || value.includes("umami")) return "restaurant-menu";
+  if (value.includes("t23") || value.includes("mobile app") || value.includes("pendo")) return "mobile-app";
+  if (value.includes("t24") || value.includes("finance lead") || value.includes("prosperwealth")) return "finance-lead";
+  if (value.includes("t25") || value.includes("beauty spa") || value.includes("lumière")) return "beauty-spa";
+  if (value.includes("t26") || value.includes("local service") || value.includes("airfix")) return "local-service";
   return "product-launch";
 }
+
 
 export default function LandingPagesManagement() {
   const [pages, setPages] = useState<LandingPageItem[]>(initialPages);
