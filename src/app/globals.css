@@ -898,6 +898,115 @@ span.flatpickr-weekday,
   transform: translateY(var(--scroll-dist)) !important;
 }
 
+.template-ui-scroll-effect {
+  transform: scale(var(--preview-scale, 0.34)) translateY(0);
+  transform-origin: top left;
+  transition: transform 3.2s ease-in-out;
+  will-change: transform;
+}
+
+.group:hover .template-ui-scroll-effect {
+  transform: scale(var(--preview-scale, 0.34)) translateY(var(--scroll-dist, calc(-100% + 780px)));
+}
+
+.landing-product-surface {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 13px;
+  color: #111827;
+}
+
+.landing-product-surface :where(p, span, a, button, input, label, td, th, li) {
+  font-size: 13px;
+}
+
+.landing-product-surface :where(a, button) {
+  border-color: #111827;
+}
+
+.landing-product-library,
+.landing-editor-shell {
+  --landing-accent: #111827;
+  --landing-accent-hover: #374151;
+  --landing-muted: #f3f4f6;
+  --landing-border: #d1d5db;
+  font-size: 13px;
+}
+
+.landing-product-library :where(p, span, a, button, input, label, td, th, li),
+.landing-editor-shell :where(p, span, a, button, input, label, td, th, li) {
+  font-size: 13px;
+}
+
+.landing-product-library :where(button, a),
+.landing-editor-shell :where(button, a) {
+  letter-spacing: 0;
+}
+
+.landing-product-library :where(.bg-lime-500, .bg-lime-600, .bg-orange-500, .bg-red-500, .bg-purple-600),
+.landing-editor-shell :where(.bg-lime-500, .bg-lime-600, .bg-orange-500, .bg-red-500, .bg-purple-600) {
+  background-color: var(--landing-accent) !important;
+}
+
+.landing-product-library :where(.hover\:bg-lime-600:hover, .hover\:bg-purple-700:hover, .hover\:bg-red-600:hover),
+.landing-editor-shell :where(.hover\:bg-lime-600:hover, .hover\:bg-purple-700:hover, .hover\:bg-red-600:hover) {
+  background-color: var(--landing-accent-hover) !important;
+}
+
+.landing-product-library :where(.text-lime-300, .text-lime-500, .text-lime-600, .text-lime-700, .text-orange-300, .text-orange-600, .text-rose-500, .text-purple-600, .text-purple-700),
+.landing-editor-shell :where(.text-lime-300, .text-lime-500, .text-lime-600, .text-lime-700, .text-orange-300, .text-orange-600, .text-rose-500, .text-purple-600, .text-purple-700) {
+  color: var(--landing-accent) !important;
+}
+
+.landing-product-library :where(.border-lime-100, .border-lime-200, .border-lime-300, .border-purple-100, .border-purple-200, .border-purple-500\/30, .border-red-200, .border-orange-100),
+.landing-editor-shell :where(.border-lime-100, .border-lime-200, .border-lime-300, .border-purple-100, .border-purple-200, .border-purple-500\/30, .border-red-200, .border-orange-100) {
+  border-color: var(--landing-border) !important;
+}
+
+.landing-product-library :where(.bg-lime-50, .bg-lime-100, .bg-orange-50, .bg-purple-50, .bg-purple-50\/30, .bg-purple-50\/20, .bg-red-50),
+.landing-editor-shell :where(.bg-lime-50, .bg-lime-100, .bg-orange-50, .bg-purple-50, .bg-purple-50\/30, .bg-purple-50\/20, .bg-red-50) {
+  background-color: var(--landing-muted) !important;
+}
+
+.landing-product-library :where(.focus\:border-lime-400:focus, .focus\:border-purple-500:focus),
+.landing-editor-shell :where(.focus\:border-lime-400:focus, .focus\:border-purple-500:focus) {
+  border-color: var(--landing-accent) !important;
+}
+
+.landing-product-library :where(.ring-lime-200, .ring-lime-400\/20, .ring-orange-100),
+.landing-editor-shell :where(.ring-lime-200, .ring-lime-400\/20, .ring-orange-100) {
+  --tw-ring-color: var(--landing-border) !important;
+}
+
+.landing-editor-shell :where(.ring-purple-500, .hover\:ring-purple-400\/40:hover) {
+  --tw-ring-color: var(--landing-accent) !important;
+}
+
+@keyframes landingReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-reveal {
+  animation: landingReveal 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-reveal-delay {
+  animation-delay: 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal,
+  .landing-reveal-delay {
+    animation: none;
+  }
+}
+
 /* Ensure SVG icons inside active menu items are white to maintain contrast */
 .menu-item-active svg {
   color: white !important;

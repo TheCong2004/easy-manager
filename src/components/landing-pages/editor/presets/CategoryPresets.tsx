@@ -1,160 +1,45 @@
 "use client";
+
 import React from "react";
 import { useDrag } from "react-dnd";
-import { BlockType, PALETTE_CATEGORIES, DND_TYPES, PaletteDragItem } from "../types";
+import { BlockType, DND_TYPES, PaletteDragItem } from "../types";
+
+const iconSvg = (children: React.ReactNode) => (
+  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" viewBox="0 0 24 24">
+    {children}
+  </svg>
+);
 
 export const BLOCK_ICONS: Record<BlockType, React.ReactNode> = {
-  hero: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M21 3H3m18 9H3" />
-    </svg>
-  ),
-  text: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-    </svg>
-  ),
-  image: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-    </svg>
-  ),
-  button: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" />
-    </svg>
-  ),
-  spacer: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75M3 18h14.25M17.25 18.75V9.75m0 9l2.25-2.25M17.25 18.75l-2.25-2.25M17.25 9.75l2.25 2.25m-2.25-2.25l-2.25 2.25" />
-    </svg>
-  ),
-  divider: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.499 11.998h15" />
-    </svg>
-  ),
-  columns: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
-    </svg>
-  ),
-  feature_card: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.561 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-    </svg>
-  ),
-  testimonial: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-    </svg>
-  ),
-  countdown: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  video: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
-    </svg>
-  ),
-  form_capture: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ),
-  chat_widget: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm3.75 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm3.75 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 4.142-4.03 7.5-9 7.5a10.7 10.7 0 01-3.533-.594L3 20.25l1.783-4.161A6.884 6.884 0 013 12c0-4.142 4.03-7.5 9-7.5s9 3.358 9 7.5z" />
-    </svg>
-  ),
-  funnel_popup: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875h16.5v4.5H3.75v-4.5zm2.25 7.5h12v6.75h-12v-6.75z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15.75h6" />
-    </svg>
-  ),
-  tea_landing: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c-4.5-4.5-4.5-10.5 1.5-16.5C18 9 18 15 12 21z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c0-5 1.5-9 5-12" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 13c4.5-.5 7.5 1 9 4.5C8.5 18.5 5.5 17 4 13z" />
-    </svg>
-  ),
-  smartwatch_landing: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <rect x="6" y="6" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="2" fill="none" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 6V3h6v3M9 18v3h6v-3" />
-    </svg>
-  ),
-  gallery: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-    </svg>
-  ),
-  box: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  ),
-  icon: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.561 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-    </svg>
-  ),
-  product_card: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-    </svg>
-  ),
-  collection_list: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-    </svg>
-  ),
-  carousel: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-    </svg>
-  ),
-  tabs: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ),
-  frame: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
-    </svg>
-  ),
-  accordion: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
-    </svg>
-  ),
-  table: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5M4.5 19.5h15a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H4.5A1.5 1.5 0 003 6v12a1.5 1.5 0 001.5 1.5z" />
-    </svg>
-  ),
-  survey: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ),
-  menu: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-    </svg>
-  ),
-  html_code: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
-    </svg>
-  ),
+  hero: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16v12H4zM7 15h5M7 11h9" />),
+  text: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 5h14M12 5v14M8 19h8" />),
+  image: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16v14H4zM7 15l3-3 3 3 2-2 2 2M8 9h.01" />),
+  button: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14v8H5zM9 12h6" />),
+  spacer: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M6 4h12M6 20h12M12 7v10M9 10l3-3 3 3M9 14l3 3 3-3" />),
+  divider: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 12h16" />),
+  columns: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16v14H4zM12 5v14" />),
+  feature_card: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 5h14v14H5zM8 9h8M8 13h5" />),
+  testimonial: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 6h14v10H8l-3 3zM9 10h6M9 13h4" />),
+  countdown: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />),
+  video: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16v12H4zM10 9l5 3-5 3z" />),
+  form_capture: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" />),
+  chat_widget: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 6h14v10H9l-4 3zM9 11h.01M12 11h.01M15 11h.01" />),
+  funnel_popup: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 6h14v12H5zM8 10h8M8 14h5" />),
+  tea_landing: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M12 20c-4-4-3-10 3-15 3 5 2 11-3 15zM5 13c4 0 6 2 7 5" />),
+  smartwatch_landing: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8v10H8zM10 3h4M10 21h4" />),
+  gallery: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" />),
+  box: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 5h14v14H5z" />),
+  icon: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M12 4l2.2 4.5 4.8.7-3.5 3.4.8 4.8L12 15.1l-4.3 2.3.8-4.8L5 9.2l4.8-.7z" />),
+  product_card: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12l-1 12H7zM9 7a3 3 0 016 0" />),
+  collection_list: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 7h3M11 7h8M5 12h3M11 12h8M5 17h3M11 17h8" />),
+  carousel: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M8 6h10v12H8zM4 8h2M4 16h2M20 8h0M20 16h0" />),
+  tabs: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 7h6v4H4zM10 9h10v10H4v-8" />),
+  frame: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16v14H4zM4 9h16" />),
+  accordion: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14M5 12h14M5 17h14" />),
+  table: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16v14H4zM4 10h16M4 15h16M10 5v14" />),
+  survey: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M6 4h12v16H6zM9 9l1.5 1.5L14 7M9 15h6" />),
+  menu: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />),
+  html_code: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14" />),
 };
 
 export const PaletteItem: React.FC<{
@@ -164,21 +49,25 @@ export const PaletteItem: React.FC<{
   const [{ isDragging }, drag] = useDrag<PaletteDragItem, unknown, { isDragging: boolean }>({
     type: DND_TYPES.PALETTE_BLOCK,
     item: { type: DND_TYPES.PALETTE_BLOCK, blockType },
-    collect: (m) => ({ isDragging: m.isDragging() }),
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
   });
 
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
       onClick={() => onClickAdd(blockType)}
-      className={`group flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-grab active:cursor-grabbing transition-all select-none ${
+      className={`group flex cursor-grab select-none items-center gap-2.5 rounded-lg border px-3 py-2.5 transition active:cursor-grabbing ${
         isDragging
-          ? "border-purple-500 bg-purple-50 opacity-50"
-          : "border-gray-200 bg-gray-50 hover:border-purple-500/60 hover:bg-purple-50"
+          ? "border-gray-950 bg-gray-100 opacity-50"
+          : "border-gray-200 bg-gray-50 hover:border-gray-950 hover:bg-white"
       }`}
     >
-      <span className="text-gray-500 flex-shrink-0 transition group-hover:text-purple-600">{BLOCK_ICONS[blockType]}</span>
-      <span className="text-xs font-semibold text-gray-700 truncate">{blockType.replace("_", " ").toUpperCase()}</span>
+      <span className="flex-shrink-0 text-gray-500 transition group-hover:text-gray-950">
+        {BLOCK_ICONS[blockType]}
+      </span>
+      <span className="truncate text-xs font-semibold text-gray-700">
+        {blockType.replace("_", " ").toUpperCase()}
+      </span>
     </div>
   );
 };
@@ -192,609 +81,1067 @@ export interface PresetItem {
   element: React.ReactNode;
 }
 
-export const getCategoryPresets = (category: string): PresetItem[] => {
-  const items: PresetItem[] = [];
+const assets = {
+  skincare: "/images/product/skincare_product.png",
+  tea: "/images/product/green_tea_product.png",
+  watch: "/images/product/smartwatch_product.png",
+  support: "/images/landing/support-ai-section.png",
+};
 
-  if (category === "text") {
-    items.push(
+const cardPreview = (title: string, rows = 2) => (
+  <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
+    <div className="text-[11px] font-black leading-tight text-gray-950">{title}</div>
+    <div className="mt-1.5 space-y-1">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div key={index} className={`h-1.5 rounded-full bg-gray-200 ${index === rows - 1 ? "w-2/3" : "w-full"}`} />
+      ))}
+    </div>
+  </div>
+);
+
+const buttonPreview = (label: string, tone: "dark" | "outline" | "light" = "dark") => {
+  const className = {
+    dark: "border-gray-950 bg-gray-950 text-white",
+    outline: "border-gray-950 bg-white text-gray-950",
+    light: "border-gray-200 bg-white text-gray-950",
+  }[tone];
+
+  return (
+    <button className={`pointer-events-none w-full rounded-lg border px-3 py-2 text-[11px] font-black ${className}`}>
+      {label}
+    </button>
+  );
+};
+
+const productThumb = (src: string, label: string, price: string) => (
+  <div className="rounded-lg border border-gray-200 bg-white p-1.5">
+    <img src={src} alt="" className="h-12 w-full rounded-md object-cover" />
+    <div className="mt-1 truncate text-[8px] font-black text-gray-900">{label}</div>
+    <div className="text-[8px] font-black text-gray-950">{price}</div>
+  </div>
+);
+
+export const getCategoryPresets = (category: string): PresetItem[] => {
+  const presets: Record<string, PresetItem[]> = {
+    text: [
       {
-        id: "h1",
-        label: "Tiêu đề lớn nhất (H1)",
-        sub: "h1 head title van ban",
+        id: "text-heading-3",
+        label: "Heading 3",
+        sub: "heading h3 title tieu de",
         blockType: "text",
-        props: { fontSize: 36, content: "TIÊU ĐỀ CHÍNH LANDING PAGE" },
-        element: <div className="text-lg font-extrabold text-gray-900 tracking-tight leading-tight">Heading 1 (36px)</div>
+        props: { content: "Heading 3", fontSize: 28, color: "#111827", textAlign: "left", lineHeight: 1.2, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[24px] font-black leading-none text-gray-950">Heading 3</div>,
       },
       {
-        id: "h2",
-        label: "Tiêu đề vừa (H2)",
-        sub: "h2 sub subtitle van ban",
+        id: "text-heading-2",
+        label: "Heading 2",
+        sub: "heading h2 title tieu de",
         blockType: "text",
-        props: { fontSize: 24, content: "Tiêu đề phụ nổi bật H2" },
-        element: <div className="text-sm font-bold text-gray-800 tracking-tight leading-tight">Heading 2 (24px)</div>
+        props: { content: "Heading 2", fontSize: 36, color: "#111827", textAlign: "left", lineHeight: 1.15, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[32px] font-black leading-none text-gray-950">Heading 2</div>,
       },
       {
-        id: "h3",
-        label: "Tiêu đề nhỏ (H3)",
-        sub: "h3 sub subtitle van ban",
+        id: "text-heading-1",
+        label: "Heading 1",
+        sub: "heading h1 title tieu de",
         blockType: "text",
-        props: { fontSize: 18, content: "Tiêu đề phân đoạn H3" },
-        element: <div className="text-xs font-semibold text-gray-700 leading-tight">Heading 3 (18px)</div>
+        props: { content: "Heading 1", fontSize: 48, color: "#111827", textAlign: "left", lineHeight: 1.08, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[44px] font-black leading-none text-gray-950">Heading 1</div>,
       },
       {
-        id: "p",
-        label: "Đoạn văn mô tả",
-        sub: "paragraph body text van ban",
+        id: "text-title-blue",
+        label: "Thêm tiêu đề 2",
+        sub: "title blue tieu de mau xanh",
         blockType: "text",
-        props: { fontSize: 15, content: "Đây là đoạn văn bản chi tiết giới thiệu về dịch vụ hoặc sản phẩm của bạn. Hãy chỉnh sửa nội dung này trong thanh công cụ bên phải." },
-        element: <div className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">Đoạn văn tiêu chuẩn dùng để thuyết phục khách hàng và mô tả chi tiết tính năng sản phẩm.</div>
+        props: { content: "Thêm tiêu đề 2", fontSize: 32, color: "#1677ff", textAlign: "left", lineHeight: 1.2, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[30px] font-black leading-tight text-[#1677ff]">Thêm tiêu đề 2</div>,
       },
       {
-        id: "hero-text",
-        label: "Banner Hero Mini",
-        sub: "hero banner layout header van ban",
+        id: "text-title-orange",
+        label: "Thêm tiêu đề 3",
+        sub: "title orange tieu de mau cam",
+        blockType: "text",
+        props: { content: "Thêm tiêu đề 3", fontSize: 30, color: "#ff7a30", textAlign: "left", lineHeight: 1.2, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[27px] font-medium leading-tight text-[#ff7a30]">Thêm tiêu đề 3</div>,
+      },
+      {
+        id: "text-title-red",
+        label: "Thêm tiêu đề 4",
+        sub: "title red tieu de mau do",
+        blockType: "text",
+        props: { content: "Thêm tiêu đề 4", fontSize: 24, color: "#ef1f1f", textAlign: "left", lineHeight: 1.2, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[22px] font-medium leading-tight text-[#ef1f1f]">Thêm tiêu đề 4</div>,
+      },
+      {
+        id: "text-title-brown",
+        label: "Thêm tiêu đề 5",
+        sub: "title brown tieu de mau nau",
+        blockType: "text",
+        props: { content: "Thêm tiêu đề 5", fontSize: 18, color: "#b65a22", textAlign: "left", lineHeight: 1.25, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[17px] font-medium leading-tight text-[#b65a22]">Thêm tiêu đề 5</div>,
+      },
+      {
+        id: "text-big-title",
+        label: "Big Title",
+        sub: "big title headline large",
+        blockType: "text",
+        props: { content: "Big Title", fontSize: 44, color: "#111827", textAlign: "left", lineHeight: 1.05, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[36px] font-black leading-none text-gray-950">Big Title</div>,
+      },
+      {
+        id: "text-caps-title",
+        label: "Caps Title",
+        sub: "caps title uppercase",
+        blockType: "text",
+        props: { content: "CAPS TITLE", fontSize: 26, color: "#d35414", textAlign: "left", lineHeight: 1.1, paddingX: 24, paddingY: 8 },
+        element: <div className="text-[24px] font-black uppercase tracking-wide text-[#d35414]">CAPS TITLE</div>,
+      },
+      {
+        id: "text-hero-headline",
+        label: "Headline bán hàng",
+        sub: "h1 hero headline sales title van ban",
+        blockType: "text",
+        props: {
+          content: "Da sáng mịn sau 14 ngày sử dụng",
+          fontSize: 36,
+          color: "#111827",
+          textAlign: "left",
+          lineHeight: 1.12,
+          paddingX: 24,
+          paddingY: 12,
+        },
+        element: <div className="text-[18px] font-black leading-[1.08] text-gray-950">Headline bán hàng 2 dòng</div>,
+      },
+      {
+        id: "text-section-title",
+        label: "Tiêu đề section",
+        sub: "h2 section title van ban",
+        blockType: "text",
+        props: {
+          content: "Vì sao khách hàng chọn sản phẩm này?",
+          fontSize: 26,
+          color: "#111827",
+          textAlign: "center",
+          lineHeight: 1.2,
+          paddingX: 24,
+          paddingY: 12,
+        },
+        element: <div className="text-[15px] font-black leading-tight text-gray-950">Tiêu đề section rõ ràng</div>,
+      },
+      {
+        id: "text-product-desc",
+        label: "Mô tả 13px",
+        sub: "paragraph body copy product 13px van ban",
+        blockType: "text",
+        props: {
+          content: "Công thức dịu nhẹ, dễ dùng hằng ngày, phù hợp cho khách cần kết quả rõ nhưng vẫn an toàn cho da.",
+          fontSize: 13,
+          color: "#4b5563",
+          textAlign: "left",
+          lineHeight: 1.65,
+          paddingX: 24,
+          paddingY: 10,
+        },
+        element: <div className="text-[11px] leading-relaxed text-gray-600">Mô tả 13px, gọn, tập trung lợi ích.</div>,
+      },
+      {
+        id: "text-proof",
+        label: "Dòng bằng chứng",
+        sub: "proof review trust evidence van ban",
+        blockType: "text",
+        props: {
+          content: "4.8/5 từ 2.300 khách hàng đã mua trong 30 ngày gần nhất.",
+          fontSize: 13,
+          color: "#111827",
+          textAlign: "center",
+          lineHeight: 1.5,
+          paddingX: 20,
+          paddingY: 8,
+        },
+        element: <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-center text-[10px] font-bold text-gray-800">4.8/5 từ 2.300 khách</div>,
+      },
+      {
+        id: "text-price",
+        label: "Dòng giá ưu đãi",
+        sub: "price offer sale urgency van ban",
+        blockType: "text",
+        props: {
+          content: "Chỉ 399.000đ hôm nay. Tặng kèm tư vấn routine miễn phí.",
+          fontSize: 16,
+          color: "#111827",
+          textAlign: "center",
+          lineHeight: 1.4,
+          paddingX: 24,
+          paddingY: 10,
+        },
+        element: <div className="text-center text-[12px] font-black text-gray-950">399.000đ + quà tặng</div>,
+      },
+      {
+        id: "text-note",
+        label: "Ghi chú nhỏ",
+        sub: "note policy microcopy van ban",
+        blockType: "text",
+        props: {
+          content: "Miễn phí đổi trả trong 7 ngày nếu sản phẩm chưa phù hợp.",
+          fontSize: 12,
+          color: "#6b7280",
+          textAlign: "center",
+          lineHeight: 1.5,
+          paddingX: 20,
+          paddingY: 6,
+        },
+        element: <div className="text-center text-[10px] text-gray-500">Ghi chú nhỏ, chính sách</div>,
+      },
+      {
+        id: "hero-clean-product",
+        label: "Hero sản phẩm",
+        sub: "hero banner product cta",
         blockType: "hero",
+        props: {
+          headline: "Bộ chăm sóc da tối giản cho người bận rộn",
+          subheadline: "Làm sạch, cấp ẩm và phục hồi trong một routine dễ theo.",
+          ctaText: "Mua ngay",
+          ctaColor: "#111827",
+          bgColor: "#f7f7f8",
+          bgImage: assets.skincare,
+          textAlign: "left",
+          minHeight: 420,
+          overlayOpacity: 0.15,
+        },
         element: (
-          <div className="h-14 rounded border border-purple-200 bg-purple-50/50 flex flex-col items-center justify-center p-2 text-center border-dashed">
-            <span className="font-extrabold text-[10px] text-purple-700">HERO BANNER MINI</span>
-            <span className="text-[8px] text-gray-500">Tiêu đề + CTA + Ảnh nền</span>
+          <div className="grid h-20 grid-cols-[1.35fr_.65fr] overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+            <div className="p-2">
+              <div className="h-2 w-14 rounded bg-gray-950" />
+              <div className="mt-2 h-1.5 w-20 rounded bg-gray-300" />
+              <div className="mt-1 h-1.5 w-12 rounded bg-gray-200" />
+            </div>
+            <img src={assets.skincare} alt="" className="h-full w-full object-cover" />
           </div>
-        )
-      }
-    );
-  } else if (category === "button") {
-    items.push(
+        ),
+      },
+    ],
+    button: [
       {
-        id: "btn-solid-orange",
-        label: "Nút Đặt Hàng (Cam)",
-        sub: "button orange solid buy now cta nut bam",
+        id: "button-blue",
+        label: "Nút xanh dương",
+        sub: "button blue cta",
         blockType: "button",
-        props: { style: "filled", label: "ĐẶT HÀNG NGAY", color: "#f97316", textColor: "#ffffff", borderRadius: 8 },
-        element: <button className="w-full bg-[#f97316] text-white text-[10px] py-1.5 font-bold pointer-events-none rounded shadow-sm">ĐẶT HÀNG NGAY</button>
+        props: { label: "Đăng ký ngay", style: "filled", color: "#2511d9", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        element: <button className="pointer-events-none w-full rounded-lg bg-[#2511d9] px-3 py-2 text-[13px] font-black text-white">Đăng ký ngay</button>,
       },
       {
-        id: "btn-outline-purple",
-        label: "Nút Tìm Hiểu Thêm (Tím)",
-        sub: "button purple outline learn more cta nut bam",
+        id: "button-green",
+        label: "Nút xanh lá",
+        sub: "button green cta",
         blockType: "button",
-        props: { style: "outline", label: "TÌM HIỂU THÊM", color: "#8b5cf6", textColor: "#8b5cf6", borderRadius: 8 },
-        element: <button className="w-full bg-transparent text-[#8b5cf6] border border-[#8b5cf6] text-[10px] py-1.5 font-bold pointer-events-none rounded">TÌM HIỂU THÊM</button>
+        props: { label: "Mua ngay", style: "filled", color: "#65c900", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        element: <button className="pointer-events-none w-full rounded-lg bg-[#65c900] px-3 py-2 text-[13px] font-black text-white">Mua ngay</button>,
       },
       {
-        id: "btn-buy-green",
-        label: "Nút Mua Ngay (Bo tròn xanh)",
-        sub: "button green rounded buy now cta nut bam",
+        id: "button-red",
+        label: "Nút đỏ sale",
+        sub: "button red sale cta",
         blockType: "button",
-        props: { style: "filled", label: "MUA NGAY →", color: "#16a34a", textColor: "#ffffff", borderRadius: 9999 },
-        element: <button className="w-full bg-[#16a34a] text-white rounded-full text-[10px] py-1.5 font-bold pointer-events-none shadow-sm">MUA NGAY →</button>
+        props: { label: "Nhận ưu đãi", style: "filled", color: "#ef1f1f", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        element: <button className="pointer-events-none w-full rounded-lg bg-[#ef1f1f] px-3 py-2 text-[13px] font-black text-white">Nhận ưu đãi</button>,
       },
       {
-        id: "btn-link-blue",
-        label: "Nút dạng văn bản (Link)",
-        sub: "button text link blue click here cta nut bam",
+        id: "button-orange",
+        label: "Nút cam",
+        sub: "button orange cta",
         blockType: "button",
-        props: { style: "text", label: "Xem chi tiết chính sách →", color: "transparent", textColor: "#2563eb", borderRadius: 0 },
-        element: <span className="text-blue-600 text-[10px] font-bold underline text-center block pointer-events-none">Xem chi tiết chính sách →</span>
-      }
-    );
-  } else if (category === "image") {
-    items.push(
+        props: { label: "Đặt hàng", style: "filled", color: "#ff7a30", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        element: <button className="pointer-events-none w-full rounded-lg bg-[#ff7a30] px-3 py-2 text-[13px] font-black text-white">Đặt hàng</button>,
+      },
       {
-        id: "img-classic",
-        label: "Hình ảnh cơ bản",
-        sub: "image single picture photo anh",
+        id: "button-yellow",
+        label: "Nút vàng",
+        sub: "button yellow cta",
+        blockType: "button",
+        props: { label: "Xem combo", style: "filled", color: "#ffd43b", textColor: "#111827", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        element: <button className="pointer-events-none w-full rounded-lg bg-[#ffd43b] px-3 py-2 text-[13px] font-black text-gray-950">Xem combo</button>,
+      },
+      {
+        id: "button-purple",
+        label: "Nút tím",
+        sub: "button purple cta",
+        blockType: "button",
+        props: { label: "Nhận tư vấn", style: "filled", color: "#8b35ff", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        element: <button className="pointer-events-none w-full rounded-lg bg-[#8b35ff] px-3 py-2 text-[13px] font-black text-white">Nhận tư vấn</button>,
+      },
+      {
+        id: "button-buy-dark",
+        label: "Mua ngay đen",
+        sub: "button buy now dark cta",
+        blockType: "button",
+        props: { label: "Mua ngay", style: "filled", color: "#111827", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 10, align: "center", icon: "" },
+        element: buttonPreview("Mua ngay"),
+      },
+      {
+        id: "button-consult-outline",
+        label: "Nhận tư vấn viền",
+        sub: "button consult outline cta",
+        blockType: "button",
+        props: { label: "Nhận tư vấn", style: "outline", color: "#111827", textColor: "#111827", size: "md", fullWidth: true, borderRadius: 10, align: "center", icon: "" },
+        element: buttonPreview("Nhận tư vấn", "outline"),
+      },
+      {
+        id: "button-package",
+        label: "Chọn bộ này",
+        sub: "button package order conversion",
+        blockType: "button",
+        props: { label: "Chọn bộ này", style: "filled", color: "#111827", textColor: "#ffffff", size: "lg", fullWidth: true, borderRadius: 14, align: "center", icon: "" },
+        element: buttonPreview("Chọn bộ này"),
+      },
+      {
+        id: "button-zalo-light",
+        label: "Chat Zalo trắng",
+        sub: "button zalo chat contact",
+        blockType: "button",
+        props: { label: "Chat Zalo", style: "outline", color: "#d1d5db", textColor: "#111827", size: "md", fullWidth: true, borderRadius: 10, align: "center", icon: "" },
+        element: buttonPreview("Chat Zalo", "light"),
+      },
+      {
+        id: "button-phone-pill",
+        label: "Gọi tư vấn pill",
+        sub: "button phone call pill",
+        blockType: "button",
+        props: { label: "Gọi tư vấn", style: "filled", color: "#111827", textColor: "#ffffff", size: "sm", fullWidth: false, borderRadius: 9999, align: "center", icon: "" },
+        element: <div className="mx-auto w-28">{buttonPreview("Gọi tư vấn")}</div>,
+      },
+    ],
+    image: [
+      {
+        id: "image-clean-product",
+        label: "Ảnh sản phẩm sạch",
+        sub: "image product clean photo anh",
         blockType: "image",
-        props: { src: "/images/product/skincare_product.png", alt: "Sản phẩm", showCaption: false },
-        element: (
-          <div className="h-16 bg-gray-100 border border-gray-250 rounded flex flex-col items-center justify-center text-gray-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
-            </svg>
-          </div>
-        )
+        props: { src: assets.skincare, alt: "Sản phẩm chăm sóc da", caption: "", width: "full", borderRadius: 16, showCaption: false, objectFit: "cover" },
+        element: <img src={assets.skincare} alt="" className="h-20 w-full rounded-lg object-cover" />,
       },
       {
-        id: "img-modern-rounded",
-        label: "Ảnh bo góc sang trọng",
-        sub: "image rounded corners avatar border anh",
+        id: "image-caption",
+        label: "Ảnh có caption",
+        sub: "image caption product proof anh",
         blockType: "image",
-        props: { src: "/images/product/green_tea_product.png", alt: "Green Tea Organic", borderRadius: 16, showCaption: true, caption: "Trà xanh Organic nguyên chất" },
+        props: { src: assets.tea, alt: "Sản phẩm trà xanh", caption: "Ảnh thật sản phẩm khi giao đến khách", width: "full", borderRadius: 12, showCaption: true, objectFit: "cover" },
         element: (
-          <div className="h-16 bg-gray-100 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center">
-            <span className="text-[10px] text-gray-500 font-bold">Image rounded corners</span>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <img src={assets.tea} alt="" className="h-16 w-full object-cover" />
+            <div className="px-2 py-1 text-[9px] text-gray-500">Caption sản phẩm</div>
           </div>
-        )
-      }
-    );
-  } else if (category === "gallery") {
-    items.push(
+        ),
+      },
       {
-        id: "gallery-3-cols",
-        label: "Ảnh trưng bày (3 cột)",
-        sub: "gallery columns photos grid images list layout",
+        id: "image-support",
+        label: "Ảnh tư vấn",
+        sub: "image support consultant service anh",
+        blockType: "image",
+        props: { src: assets.support, alt: "Đội ngũ tư vấn", caption: "", width: "large", borderRadius: 18, showCaption: false, objectFit: "cover" },
+        element: <img src={assets.support} alt="" className="h-20 w-full rounded-xl object-cover" />,
+      },
+    ],
+    gallery: [
+      {
+        id: "gallery-3",
+        label: "Gallery 3 ảnh",
+        sub: "gallery 3 images product",
         blockType: "gallery",
-        props: { columns: 3, gap: 12, borderRadius: 8 },
+        props: { images: [assets.skincare, assets.tea, assets.watch], columns: 3, gap: 10, borderRadius: 12, aspectRatio: "1/1" },
         element: (
-          <div className="grid grid-cols-3 gap-1 h-12">
-            <div className="bg-gray-200 border border-gray-300 rounded"></div>
-            <div className="bg-gray-200 border border-gray-300 rounded"></div>
-            <div className="bg-gray-200 border border-gray-300 rounded"></div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {[assets.skincare, assets.tea, assets.watch].map((src) => <img key={src} src={src} alt="" className="h-14 rounded-md object-cover" />)}
           </div>
-        )
+        ),
       },
       {
-        id: "gallery-2-cols",
-        label: "Ảnh trưng bày (2 cột)",
-        sub: "gallery columns grid images list layout",
+        id: "gallery-2",
+        label: "Gallery 2 ảnh lớn",
+        sub: "gallery 2 images showcase",
         blockType: "gallery",
-        props: { columns: 2, gap: 16, borderRadius: 12 },
+        props: { images: [assets.skincare, assets.support], columns: 2, gap: 14, borderRadius: 16, aspectRatio: "4/3" },
         element: (
-          <div className="grid grid-cols-2 gap-1.5 h-12">
-            <div className="bg-gray-200 border border-gray-300 rounded"></div>
-            <div className="bg-gray-200 border border-gray-300 rounded"></div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {[assets.skincare, assets.support].map((src) => <img key={src} src={src} alt="" className="h-16 rounded-lg object-cover" />)}
           </div>
-        )
-      }
-    );
-  } else if (category === "box") {
-    items.push(
+        ),
+      },
       {
-        id: "box-border-dashed",
-        label: "Hộp chứa viền nét đứt",
-        sub: "box container outline border dashed hinh hop",
+        id: "gallery-proof",
+        label: "Gallery bằng chứng",
+        sub: "gallery proof review before after",
+        blockType: "gallery",
+        props: { images: [assets.support, assets.skincare, assets.tea, assets.watch], columns: 4, gap: 8, borderRadius: 10, aspectRatio: "1/1" },
+        element: (
+          <div className="grid grid-cols-4 gap-1">
+            {[assets.support, assets.skincare, assets.tea, assets.watch].map((src) => <img key={src} src={src} alt="" className="h-11 rounded object-cover" />)}
+          </div>
+        ),
+      },
+    ],
+    box: [
+      {
+        id: "box-offer",
+        label: "Box ưu đãi",
+        sub: "box offer promotion sale",
         blockType: "box",
-        props: { bgColor: "#f9fafb", borderColor: "#cbd5e1", borderWidth: 2, borderRadius: 8, paddingX: 16, paddingY: 16 },
-        element: <div className="h-12 border-2 border-dashed border-gray-300 bg-gray-50 rounded flex items-center justify-center text-[9px] text-gray-400 font-bold">Container nét đứt</div>
+        props: { title: "Ưu đãi hôm nay", description: "Giảm 30% và tặng tư vấn routine miễn phí cho 100 đơn đầu tiên.", bgColor: "#f9fafb", borderColor: "#d1d5db", borderWidth: 1, borderRadius: 16, paddingX: 24, paddingY: 22, shadow: "sm" },
+        element: cardPreview("Box ưu đãi", 3),
       },
       {
-        id: "box-shadow-card",
-        label: "Hộp thẻ trắng có bóng đổ",
-        sub: "box container card solid premium shadow hinh hop",
+        id: "box-guarantee",
+        label: "Box cam kết",
+        sub: "box guarantee trust policy",
         blockType: "box",
-        props: { bgColor: "#ffffff", borderColor: "#e2e8f0", borderWidth: 1, borderRadius: 16, paddingX: 24, paddingY: 24 },
-        element: <div className="h-12 border border-gray-200 bg-white shadow-md rounded-xl flex items-center justify-center text-[9px] text-gray-700 font-extrabold">White Premium Card</div>
-      }
-    );
-  } else if (category === "icon") {
-    items.push(
-      {
-        id: "icon-gold-star",
-        label: "Sao đánh giá vàng",
-        sub: "icon star badge rating gold bieu tuong",
-        blockType: "icon",
-        props: { icon: "⭐", size: 36, color: "#f59e0b", bgColor: "#fef3c7", borderRadius: 9999, align: "center" },
-        element: (
-          <div className="flex justify-center py-1">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs">⭐</div>
-          </div>
-        )
+        props: { title: "Cam kết sản phẩm", description: "Đổi trả trong 7 ngày, hỗ trợ tư vấn trước và sau khi mua.", bgColor: "#ffffff", borderColor: "#111827", borderWidth: 1, borderRadius: 14, paddingX: 22, paddingY: 20, shadow: "none" },
+        element: cardPreview("Box cam kết", 2),
       },
       {
-        id: "icon-purple-bolt",
-        label: "Tia chớp nhanh nhẹn",
-        sub: "icon bolt speed feature quick bieu tuong",
-        blockType: "icon",
-        props: { icon: "⚡", size: 36, color: "#8b5cf6", bgColor: "#f3e8ff", borderRadius: 12, align: "center" },
-        element: (
-          <div className="flex justify-center py-1">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-xs">⚡</div>
-          </div>
-        )
-      }
-    );
-  } else if (category === "divider") {
-    items.push(
-      {
-        id: "div-thick-solid",
-        label: "Đường kẻ chia phần liền",
-        sub: "divider line solid separator duong ke",
-        blockType: "divider",
-        props: { style: "solid", color: "#e2e8f0", thickness: 2 },
-        element: <div className="h-4 flex items-center justify-center"><div className="w-full h-0.5 bg-gray-200"></div></div>
+        id: "box-pain",
+        label: "Box nỗi đau",
+        sub: "box pain point customer problem",
+        blockType: "box",
+        props: { title: "Bạn đã thử nhiều sản phẩm nhưng chưa hợp?", description: "Chúng tôi giúp bạn chọn đúng routine thay vì mua theo cảm tính.", bgColor: "#f3f4f6", borderColor: "#e5e7eb", borderWidth: 1, borderRadius: 12, paddingX: 24, paddingY: 20, shadow: "none" },
+        element: cardPreview("Box nỗi đau", 2),
       },
       {
-        id: "div-thin-dashed",
-        label: "Đường ngăn cách nét đứt",
-        sub: "divider line dashed separator duong ke",
-        blockType: "divider",
-        props: { style: "dashed", color: "#cbd5e1", thickness: 1 },
-        element: <div className="h-4 flex items-center justify-center"><div className="w-full h-px border-t border-dashed border-gray-300"></div></div>
-      }
-    );
-  } else if (category === "form") {
-    items.push(
+        id: "box-price",
+        label: "Box giá",
+        sub: "box price package pricing",
+        blockType: "box",
+        props: { title: "Bộ tiêu chuẩn", description: "399.000đ. Phù hợp cho người mới bắt đầu chăm sóc da.", bgColor: "#111827", borderColor: "#111827", borderWidth: 1, borderRadius: 18, paddingX: 26, paddingY: 24, shadow: "md" },
+        element: (
+          <div className="rounded-xl bg-gray-950 p-3 text-white">
+            <div className="text-[10px] font-bold text-gray-300">Bộ tiêu chuẩn</div>
+            <div className="mt-1 text-[17px] font-black">399.000đ</div>
+          </div>
+        ),
+      },
+    ],
+    icon: [
       {
-        id: "form-newsletter",
-        label: "Form đăng ký nhận tin (Email)",
-        sub: "form newsletter capture lead contact email form",
+        id: "icon-plus",
+        label: "Icon dấu cộng",
+        sub: "icon plus feature",
+        blockType: "icon",
+        props: { icon: "+", size: 32, color: "#111827", bgColor: "#f3f4f6", borderRadius: 12, align: "center" },
+        element: <div className="flex justify-center"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-lg font-black text-gray-950">+</div></div>,
+      },
+      {
+        id: "icon-ok",
+        label: "Icon OK",
+        sub: "icon ok trust",
+        blockType: "icon",
+        props: { icon: "OK", size: 24, color: "#ffffff", bgColor: "#111827", borderRadius: 9999, align: "center" },
+        element: <div className="flex justify-center"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-[11px] font-black text-white">OK</div></div>,
+      },
+      {
+        id: "icon-number",
+        label: "Icon số bước",
+        sub: "icon number step",
+        blockType: "icon",
+        props: { icon: "01", size: 22, color: "#111827", bgColor: "#ffffff", borderRadius: 10, align: "left" },
+        element: <div className="flex justify-start"><div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-[11px] font-black text-gray-950">01</div></div>,
+      },
+    ],
+    divider: [
+      {
+        id: "divider-thin",
+        label: "Line mảnh",
+        sub: "divider thin line",
+        blockType: "divider",
+        props: { color: "#e5e7eb", thickness: 1, style: "solid", paddingX: 24, paddingY: 12 },
+        element: <div className="py-2"><div className="h-px bg-gray-200" /></div>,
+      },
+      {
+        id: "divider-bold",
+        label: "Line đậm",
+        sub: "divider bold section",
+        blockType: "divider",
+        props: { color: "#111827", thickness: 2, style: "solid", paddingX: 24, paddingY: 16 },
+        element: <div className="py-2"><div className="h-0.5 bg-gray-950" /></div>,
+      },
+      {
+        id: "spacer-mobile",
+        label: "Khoảng cách mobile",
+        sub: "spacer mobile space",
+        blockType: "spacer",
+        props: { height: 24, bgColor: "transparent" },
+        element: <div className="flex h-10 items-center justify-center rounded border border-dashed border-gray-300 text-[10px] font-bold text-gray-400">Spacer 24px</div>,
+      },
+      {
+        id: "spacer-section",
+        label: "Khoảng cách section",
+        sub: "spacer section gap",
+        blockType: "spacer",
+        props: { height: 56, bgColor: "transparent" },
+        element: <div className="flex h-14 items-center justify-center rounded border border-dashed border-gray-300 text-[10px] font-bold text-gray-400">Spacer 56px</div>,
+      },
+    ],
+    form: [
+      {
+        id: "form-phone",
+        label: "Form số điện thoại",
+        sub: "form phone lead consult",
         blockType: "form_capture",
         props: {
-          title: "Đăng Ký Nhận Bản Tin",
-          subtitle: "Nhận ưu đãi 10% cho đơn hàng đầu tiên của bạn.",
-          submitLabel: "ĐĂNG KÝ NGAY",
-          submitColor: "#8b5cf6",
+          title: "Nhận tư vấn miễn phí",
+          subtitle: "Để lại số điện thoại, đội ngũ sẽ gọi lại trong vài phút.",
+          fields: [{ id: "phone", label: "Số điện thoại", type: "phone", required: true }],
+          submitLabel: "Gửi thông tin",
+          submitColor: "#111827",
           bgColor: "#ffffff",
           borderRadius: 16,
-          fields: [
-            { id: "f_email", label: "Nhập địa chỉ Email của bạn", type: "email", required: true }
-          ]
         },
         element: (
-          <div className="p-2 border border-gray-200 bg-white rounded-lg space-y-1">
-            <div className="text-[9px] font-bold text-gray-800 text-center">Đăng Ký Nhận Bản Tin</div>
-            <div className="h-5 bg-gray-50 border border-gray-200 rounded px-1.5 text-[8px] text-gray-400 flex items-center">Nhập email...</div>
-            <div className="h-5 bg-[#8b5cf6] rounded text-[9px] font-bold text-white flex items-center justify-center">ĐĂNG KÝ</div>
+          <div className="space-y-1.5 rounded-lg border border-gray-200 bg-white p-2">
+            <div className="text-[10px] font-black text-gray-950">Nhận tư vấn</div>
+            <div className="h-7 rounded border border-gray-200 bg-gray-50" />
+            <div className="h-7 rounded bg-gray-950" />
           </div>
-        )
+        ),
       },
       {
-        id: "form-full-lead",
-        label: "Form liên hệ tư vấn đầy đủ",
-        sub: "form capture contact lead sales details form",
+        id: "form-order",
+        label: "Form đặt hàng",
+        sub: "form order name phone address",
         blockType: "form_capture",
         props: {
-          title: "Nhận Tư Vấn Miễn Phí",
-          subtitle: "Để lại thông tin, đội ngũ chuyên gia sẽ gọi lại cho bạn sau 15 phút.",
-          submitLabel: "GỬI THÔNG TIN",
-          submitColor: "#16a34a",
-          bgColor: "#ffffff",
-          borderRadius: 16,
+          title: "Thông tin đặt hàng",
+          subtitle: "Điền thông tin để được xác nhận đơn nhanh hơn.",
           fields: [
-            { id: "f_name", label: "Họ và tên của bạn", type: "text", required: true },
-            { id: "f_phone", label: "Số điện thoại liên hệ", type: "phone", required: true },
-            { id: "f_email", label: "Địa chỉ Email", type: "email", required: false }
-          ]
-        },
-        element: (
-          <div className="space-y-1.5 p-2 bg-white border border-gray-200 rounded-lg">
-            <div className="h-4 bg-gray-50 border border-gray-200 rounded px-1.5 text-[7px] text-gray-400 flex items-center">Họ và tên...</div>
-            <div className="h-4 bg-gray-50 border border-gray-200 rounded px-1.5 text-[7px] text-gray-400 flex items-center">Số điện thoại...</div>
-            <div className="h-4.5 bg-[#16a34a] rounded text-[8px] font-bold text-white flex items-center justify-center">GỬI ĐĂNG KÝ</div>
-          </div>
-        )
-      }
-    );
-  } else if (category === "product") {
-    items.push(
-      {
-        id: "prod-single-skincare",
-        label: "1 Sản phẩm: Kem Dưỡng Organic",
-        sub: "product card single showcase skincare premium store ecommerce san pham",
-        blockType: "product_card",
-        props: {
-          title: "Kem Dưỡng Da Organic Cao Cấp",
-          description: "Chiết xuất 100% thảo mộc hữu cơ giúp làn da sáng mịn rạng ngời tự nhiên.",
-          price: "399.000đ",
-          oldPrice: "550.000đ",
-          image: "/images/product/skincare_product.png",
-          badge: "Bán chạy",
-          ctaText: "MUA NGAY",
+            { id: "name", label: "Họ và tên", type: "text", required: true },
+            { id: "phone", label: "Số điện thoại", type: "phone", required: true },
+            { id: "address", label: "Địa chỉ nhận hàng", type: "text", required: true },
+          ],
+          submitLabel: "Đặt hàng ngay",
+          submitColor: "#111827",
           bgColor: "#ffffff",
-          borderColor: "#e2e8f0",
-          borderRadius: 16
-        },
-        element: (
-          <div className="p-2 border border-gray-200 bg-white rounded-lg flex gap-2 items-center">
-            <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-              <img src="/images/product/skincare_product.png" alt="Skincare" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-gray-800 truncate">Kem Dưỡng Organic</p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-[9px] text-red-655 font-black">399.000đ</span>
-                <span className="text-[8px] text-gray-400 line-through">550.000đ</span>
-              </div>
-            </div>
-          </div>
-        )
-      },
-      {
-        id: "prod-grid-double-row",
-        label: "2 Sản phẩm trên 1 Hàng (Hot)",
-        sub: "product grid row double 2 items columns e-commerce organic tea skincare",
-        blockType: "product_card",
-        props: {
-          title: "", // Empty title means grid mode
-          description: "",
-          price: "",
-          ctaText: "MUA NGAY",
-          bgColor: "#ffffff",
-          borderColor: "#e2e8f0",
           borderRadius: 16,
-          columns: 2,
-          items: [
-            {
-              id: "p_1",
-              title: "Kem Dưỡng Da Organic",
-              description: "Nuôi dưỡng làn da ban đêm chuyên sâu.",
-              price: "399.000đ",
-              oldPrice: "550.000đ",
-              image: "/images/product/skincare_product.png",
-              badge: "Bán chạy"
-            },
-            {
-              id: "p_2",
-              title: "Trà Xanh Zen Organic",
-              description: "Hỗ trợ thải độc, thanh nhiệt cơ thể.",
-              price: "249.000đ",
-              oldPrice: "320.000đ",
-              image: "/images/product/green_tea_product.png",
-              badge: "Mới"
-            }
-          ]
         },
         element: (
-          <div className="p-2 border border-purple-200 bg-purple-50/30 rounded-lg space-y-1.5">
-            <div className="text-[8px] font-bold text-purple-700 text-center uppercase tracking-wider">Hàng 2 sản phẩm (1 dòng)</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="bg-white border border-gray-250 p-1.5 rounded flex flex-col items-center">
-                <div className="w-8 h-8 rounded overflow-hidden bg-gray-100">
-                  <img src="/images/product/skincare_product.png" alt="p1" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-[8px] font-bold text-gray-800 text-center mt-1 truncate w-full">Kem Dưỡng</span>
-                <span className="text-[8px] text-red-655 font-bold">399k</span>
-              </div>
-              <div className="bg-white border border-gray-250 p-1.5 rounded flex flex-col items-center">
-                <div className="w-8 h-8 rounded overflow-hidden bg-gray-100">
-                  <img src="/images/product/green_tea_product.png" alt="p2" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-[8px] font-bold text-gray-800 text-center mt-1 truncate w-full">Trà Xanh Organic</span>
-                <span className="text-[8px] text-red-655 font-bold">249k</span>
-              </div>
-            </div>
+          <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-2">
+            {[1, 2, 3].map((item) => <div key={item} className="h-5 rounded border border-gray-200 bg-gray-50" />)}
+            <div className="h-6 rounded bg-gray-950" />
           </div>
-        )
+        ),
       },
       {
-        id: "prod-grid-triple-row",
-        label: "3 Sản phẩm trên 1 Hàng",
-        sub: "product grid row triple 3 items columns e-commerce",
+        id: "form-email",
+        label: "Form email nhận mã",
+        sub: "form email coupon code",
+        blockType: "form_capture",
+        props: {
+          title: "Nhận mã giảm giá",
+          subtitle: "Mã ưu đãi sẽ được gửi về email của bạn.",
+          fields: [{ id: "email", label: "Email", type: "email", required: true }],
+          submitLabel: "Nhận mã",
+          submitColor: "#111827",
+          bgColor: "#f9fafb",
+          borderRadius: 14,
+        },
+        element: cardPreview("Form email nhận mã", 2),
+      },
+    ],
+    product: [
+      {
+        id: "product-single",
+        label: "Card 1 sản phẩm",
+        sub: "product single card ecommerce",
+        blockType: "product_card",
+        props: { title: "Serum phục hồi da", description: "Kết cấu mỏng nhẹ, hỗ trợ cấp ẩm và làm dịu da sau 7 ngày.", price: "399.000đ", oldPrice: "520.000đ", image: assets.skincare, badge: "Bán chạy", ctaText: "Mua ngay", bgColor: "#ffffff", borderColor: "#e5e7eb", borderRadius: 16 },
+        element: (
+          <div className="flex gap-2 rounded-lg border border-gray-200 bg-white p-2">
+            <img src={assets.skincare} alt="" className="h-14 w-14 rounded-md object-cover" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[10px] font-black text-gray-950">Serum phục hồi da</div>
+              <div className="mt-1 text-[11px] font-black text-gray-950">399.000đ</div>
+              <div className="mt-1 h-4 rounded bg-gray-950" />
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "product-grid-2",
+        label: "Grid 2 sản phẩm",
+        sub: "product grid 2 columns ecommerce",
         blockType: "product_card",
         props: {
           title: "",
           description: "",
           price: "",
-          ctaText: "MUA NGAY",
+          oldPrice: "",
+          image: assets.skincare,
+          badge: "",
+          ctaText: "Chọn mua",
           bgColor: "#ffffff",
-          borderColor: "#e2e8f0",
+          borderColor: "#e5e7eb",
           borderRadius: 16,
-          columns: 3,
+          columns: 2,
           items: [
-            {
-              id: "p_1",
-              title: "Đồng Hồ Thông Minh S7",
-              description: "Hỗ trợ theo dõi sức khỏe 24/7.",
-              price: "1.250.000đ",
-              oldPrice: "1.890.000đ",
-              image: "/images/product/smartwatch_product.png",
-              badge: "Hot"
-            },
-            {
-              id: "p_2",
-              title: "Kem Dưỡng Da Organic",
-              description: "Chiết xuất thảo dược.",
-              price: "399.000đ",
-              oldPrice: "550.000đ",
-              image: "/images/product/skincare_product.png"
-            },
-            {
-              id: "p_3",
-              title: "Trà Xanh Zen Organic",
-              description: "Chống oxy hóa tự nhiên.",
-              price: "249.000đ",
-              image: "/images/product/green_tea_product.png",
-              badge: "Eco"
-            }
-          ]
+            { id: "p1", title: "Serum phục hồi", description: "Dịu nhẹ cho da nhạy cảm.", price: "399.000đ", oldPrice: "520.000đ", image: assets.skincare, badge: "Hot" },
+            { id: "p2", title: "Trà xanh organic", description: "Vị thanh, dễ uống mỗi ngày.", price: "249.000đ", oldPrice: "320.000đ", image: assets.tea, badge: "Mới" },
+          ],
         },
         element: (
-          <div className="p-2 border border-gray-250 bg-white rounded-lg space-y-1">
-            <div className="grid grid-cols-3 gap-1">
-              {[
-                { img: "/images/product/smartwatch_product.png", price: "1250k" },
-                { img: "/images/product/skincare_product.png", price: "399k" },
-                { img: "/images/product/green_tea_product.png", price: "249k" }
-              ].map((pItem, pIdx) => (
-                <div key={pIdx} className="bg-gray-50 border border-gray-200 p-1 rounded flex flex-col items-center">
-                  <div className="w-6 h-6 rounded overflow-hidden bg-gray-100">
-                    <img src={pItem.img} alt="item" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-[7px] text-red-655 font-black mt-1">{pItem.price}</span>
-                </div>
-              ))}
+          <div className="grid grid-cols-2 gap-1.5">
+            {productThumb(assets.skincare, "Serum", "399k")}
+            {productThumb(assets.tea, "Trà xanh", "249k")}
+          </div>
+        ),
+      },
+      {
+        id: "product-grid-3",
+        label: "Grid 3 sản phẩm",
+        sub: "product grid 3 columns ecommerce",
+        blockType: "product_card",
+        props: {
+          title: "",
+          description: "",
+          price: "",
+          oldPrice: "",
+          image: assets.skincare,
+          badge: "",
+          ctaText: "Chọn bộ",
+          bgColor: "#ffffff",
+          borderColor: "#e5e7eb",
+          borderRadius: 14,
+          columns: 3,
+          items: [
+            { id: "p1", title: "Bộ cơ bản", description: "Dùng thử 7 ngày.", price: "199.000đ", image: assets.skincare },
+            { id: "p2", title: "Bộ tiêu chuẩn", description: "Dùng hằng ngày.", price: "399.000đ", image: assets.tea, badge: "Nên chọn" },
+            { id: "p3", title: "Bộ premium", description: "Trọn routine.", price: "699.000đ", image: assets.watch },
+          ],
+        },
+        element: (
+          <div className="grid grid-cols-3 gap-1">
+            {[assets.skincare, assets.tea, assets.watch].map((src) => <img key={src} src={src} alt="" className="h-14 rounded-md object-cover" />)}
+          </div>
+        ),
+      },
+    ],
+    video: [
+      {
+        id: "video-demo",
+        label: "Video demo sản phẩm",
+        sub: "video product demo youtube",
+        blockType: "video",
+        props: { url: "https://www.youtube.com/embed/dQw4w9WgXcQ", thumbnail: assets.skincare, autoplay: false, muted: true, controls: true, aspectRatio: "16/9", borderRadius: 14 },
+        element: (
+          <div className="relative overflow-hidden rounded-lg border border-gray-200">
+            <img src={assets.skincare} alt="" className="h-20 w-full object-cover" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div className="rounded-full bg-white px-3 py-1 text-[10px] font-black text-gray-950">Play</div>
             </div>
           </div>
-        )
-      }
-    );
-  } else if (category === "video") {
-    items.push(
+        ),
+      },
+    ],
+    collection: [
       {
-        id: "vid-youtube",
-        label: "Video Youtube Embed",
-        sub: "video player embed youtube video clip",
-        blockType: "video",
-        props: { url: "https://www.youtube.com/embed/dQw4w9WgXcQ", autoplay: false, muted: true, controls: true, borderRadius: 12 },
-        element: (
-          <div className="h-16 bg-gray-50 border border-gray-255 rounded-xl flex flex-col items-center justify-center text-red-500 gap-1">
-            <span className="text-xl">▶</span>
-            <span className="text-[8px] text-gray-500 font-bold">YouTube Video Embed</span>
-          </div>
-        )
-      }
-    );
-  } else if (category === "collection") {
-    items.push(
-      {
-        id: "coll-benefits-grid",
-        label: "Lợi ích nổi bật (3 Cột)",
-        sub: "collection list features grid cards collection benefits",
+        id: "collection-benefits",
+        label: "Lợi ích 3 cột",
+        sub: "collection benefits feature grid",
         blockType: "collection_list",
         props: {
           columns: 3,
           layout: "grid",
+          bgColor: "transparent",
+          items: [
+            { id: "b1", title: "Dễ dùng", desc: "Routine rõ từng bước, không rối.", icon: "01" },
+            { id: "b2", title: "Tiết kiệm", desc: "Một bộ đủ cho nhu cầu chính.", icon: "02" },
+            { id: "b3", title: "Có tư vấn", desc: "Được hướng dẫn trước khi mua.", icon: "03" },
+          ],
+        },
+        element: (
+          <div className="grid grid-cols-3 gap-1">
+            {["01", "02", "03"].map((item) => <div key={item} className="rounded border border-gray-200 bg-white p-2 text-center text-[10px] font-black">{item}</div>)}
+          </div>
+        ),
+      },
+      {
+        id: "collection-process",
+        label: "Quy trình 4 bước",
+        sub: "collection process how it works list",
+        blockType: "collection_list",
+        props: {
+          columns: 1,
+          layout: "list",
           bgColor: "#ffffff",
           items: [
-            { id: "b_1", title: "Giao Hàng Siêu Tốc", desc: "Nhận hàng trong vòng 2 giờ kể từ khi thanh toán.", icon: "⚡" },
-            { id: "b_2", title: "Hữu Cơ 100%", desc: "Chứng nhận chất lượng USDA quốc tế.", icon: "🍃" },
-            { id: "b_3", title: "Bảo Hành 12 Tháng", desc: "Lỗi 1 đổi 1 tận nơi nhanh chóng.", icon: "🛡️" }
-          ]
-        },
-        element: (
-          <div className="grid grid-cols-3 gap-1 h-12">
-            <div className="bg-gray-50 border border-gray-200 rounded p-1 flex flex-col items-center justify-center"><span className="text-[8px]">⚡</span></div>
-            <div className="bg-gray-50 border border-gray-200 rounded p-1 flex flex-col items-center justify-center"><span className="text-[8px]">🍃</span></div>
-            <div className="bg-gray-50 border border-gray-200 rounded p-1 flex flex-col items-center justify-center"><span className="text-[8px]">🛡️</span></div>
-          </div>
-        )
-      }
-    );
-  } else if (category === "carousel") {
-    items.push(
-      {
-        id: "caro-products",
-        label: "Slider ảnh xoay vòng",
-        sub: "carousel slider images slideshow active index product banner",
-        blockType: "carousel",
-        props: {
-          images: [
-            "/images/product/green_tea_product.png",
-            "/images/product/skincare_product.png",
-            "/images/product/smartwatch_product.png"
+            { id: "s1", title: "Chọn nhu cầu", desc: "Bạn chọn tình trạng hoặc mục tiêu chính.", icon: "1" },
+            { id: "s2", title: "Nhận tư vấn", desc: "Đội ngũ xác nhận sản phẩm phù hợp.", icon: "2" },
+            { id: "s3", title: "Đặt hàng", desc: "Hoàn tất thông tin và chọn cách thanh toán.", icon: "3" },
+            { id: "s4", title: "Theo dõi kết quả", desc: "Nhận hướng dẫn dùng đúng cách.", icon: "4" },
           ],
-          autoplay: true,
-          interval: 3000,
-          showIndicators: true,
-          showArrows: true,
-          height: 350
         },
         element: (
-          <div className="p-2 border border-gray-255 bg-white rounded-lg flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-bold">⟨</span>
-            <span className="text-[8px] text-purple-600 font-extrabold">Carousel Slider (3 ảnh)</span>
-            <span className="text-[10px] text-gray-400 font-bold">⟩</span>
+          <div className="space-y-1">
+            {[1, 2, 3, 4].map((item) => <div key={item} className="h-6 rounded border border-gray-200 bg-white px-2 text-[9px] font-bold leading-6">Bước {item}</div>)}
           </div>
-        )
-      }
-    );
-  } else if (category === "tabs") {
-    items.push(
+        ),
+      },
       {
-        id: "tab-specs",
-        label: "Tabs chi tiết kỹ thuật",
-        sub: "tabs info navigation switch product reviews specs",
+        id: "collection-proof",
+        label: "Bằng chứng tin cậy",
+        sub: "collection proof trust evidence",
+        blockType: "collection_list",
+        props: {
+          columns: 2,
+          layout: "grid",
+          bgColor: "transparent",
+          items: [
+            { id: "p1", title: "2.300 đơn", desc: "Đã giao trong 30 ngày.", icon: "2K" },
+            { id: "p2", title: "4.8/5", desc: "Điểm đánh giá trung bình.", icon: "4.8" },
+            { id: "p3", title: "7 ngày", desc: "Đổi trả khi chưa phù hợp.", icon: "7D" },
+            { id: "p4", title: "15 phút", desc: "Thời gian phản hồi tư vấn.", icon: "15" },
+          ],
+        },
+        element: (
+          <div className="grid grid-cols-2 gap-1.5">
+            {["2.3K", "4.8", "7D", "15p"].map((item) => <div key={item} className="rounded-lg bg-gray-100 p-2 text-center text-[11px] font-black text-gray-950">{item}</div>)}
+          </div>
+        ),
+      },
+    ],
+    carousel: [
+      {
+        id: "carousel-product",
+        label: "Slider sản phẩm",
+        sub: "carousel slider product images",
+        blockType: "carousel",
+        props: { images: [assets.skincare, assets.tea, assets.watch], autoplay: true, interval: 3500, showIndicators: true, showArrows: true, height: 320 },
+        element: (
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <img src={assets.skincare} alt="" className="h-20 w-full object-cover" />
+            <div className="flex justify-center gap-1 py-1.5">
+              {[1, 2, 3].map((item) => <span key={item} className={`h-1.5 w-1.5 rounded-full ${item === 1 ? "bg-gray-950" : "bg-gray-300"}`} />)}
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "carousel-review",
+        label: "Slider review",
+        sub: "carousel testimonial review proof",
+        blockType: "carousel",
+        props: { images: [assets.support, assets.skincare, assets.tea], autoplay: true, interval: 4000, showIndicators: true, showArrows: false, height: 280 },
+        element: cardPreview("Slider review khách hàng", 3),
+      },
+    ],
+    tabs: [
+      {
+        id: "tabs-info",
+        label: "Tabs thông tin",
+        sub: "tabs product info specs review",
         blockType: "tabs",
+        props: {
+          activeTabId: "desc",
+          style: "pills",
+          accentColor: "#111827",
+          tabs: [
+            { id: "desc", label: "Mô tả", content: "Sản phẩm được thiết kế cho người cần giải pháp đơn giản, dễ dùng và có hướng dẫn rõ." },
+            { id: "use", label: "Cách dùng", content: "Dùng mỗi ngày theo hướng dẫn trong bộ sản phẩm." },
+            { id: "ship", label: "Giao hàng", content: "Giao nhanh toàn quốc, hỗ trợ kiểm tra trước khi nhận." },
+          ],
+        },
         element: (
-          <div className="flex gap-1 p-1 bg-gray-50 border border-gray-200 rounded">
-            <div className="bg-white text-[8px] text-purple-600 font-bold px-2 py-0.5 rounded shadow-sm border border-gray-200">Mô tả</div>
-            <div className="text-[8px] text-gray-500 font-bold px-2 py-0.5">Thông số</div>
-            <div className="text-[8px] text-gray-500 font-bold px-2 py-0.5">Ưu đãi</div>
+          <div className="flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
+            {["Mô tả", "Cách dùng", "Ship"].map((label, index) => <div key={label} className={`rounded px-2 py-1 text-[9px] font-bold ${index === 0 ? "bg-gray-950 text-white" : "text-gray-500"}`}>{label}</div>)}
           </div>
-        )
-      }
-    );
-  } else if (category === "frame") {
-    items.push(
+        ),
+      },
+    ],
+    frame: [
       {
-        id: "frame-browser-window",
-        label: "Mockup Cửa sổ Trình duyệt",
-        sub: "frame iframe window web mockup site frame",
+        id: "frame-browser",
+        label: "Frame website",
+        sub: "frame browser mockup iframe",
         blockType: "frame",
+        props: { url: "https://example.com", height: 420, title: "Website preview", browserMockup: true },
         element: (
-          <div className="border border-gray-200 bg-white rounded-lg overflow-hidden shadow-sm">
-            <div className="bg-gray-100 h-2.5 w-full flex gap-1 items-center px-1.5">
-              <span className="w-1 h-1 rounded-full bg-red-400"></span>
-              <span className="w-1 h-1 rounded-full bg-yellow-400"></span>
-              <span className="w-1 h-1 rounded-full bg-green-400"></span>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div className="flex h-4 items-center gap-1 bg-gray-100 px-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
             </div>
-            <div className="h-6 flex items-center justify-center text-[7px] text-gray-400">Browser Preview Window</div>
+            <div className="flex h-12 items-center justify-center text-[10px] font-bold text-gray-500">Browser frame</div>
           </div>
-        )
-      }
-    );
-  } else if (category === "accordion") {
-    items.push(
+        ),
+      },
+    ],
+    accordion: [
       {
-        id: "acc-faq-list",
-        label: "Hộp FAQ xếp chồng",
-        sub: "accordion faq collapse collapse question list accordion",
+        id: "accordion-faq",
+        label: "FAQ bán hàng",
+        sub: "accordion faq objection sales",
         blockType: "accordion",
+        props: {
+          allowMultiple: false,
+          accentColor: "#111827",
+          items: [
+            { id: "q1", question: "Sản phẩm có hợp với da nhạy cảm không?", answer: "Có. Công thức dịu nhẹ, nhưng bạn nên test vùng nhỏ trước khi dùng toàn mặt." },
+            { id: "q2", question: "Bao lâu thì thấy kết quả?", answer: "Thông thường khách cảm nhận da ẩm và dịu hơn sau 7 đến 14 ngày." },
+            { id: "q3", question: "Có được đổi trả không?", answer: "Có. Bạn được hỗ trợ đổi trả trong 7 ngày theo chính sách của shop." },
+          ],
+        },
         element: (
-          <div className="space-y-1 p-1 bg-white border border-gray-200 rounded-lg">
-            <div className="h-4 border border-gray-200 bg-gray-50 rounded px-1.5 text-[7px] text-gray-700 flex items-center justify-between"><span>Làm thế nào để đổi trả hàng?</span><span>▼</span></div>
-            <div className="h-4 border border-gray-200 bg-gray-50 rounded px-1.5 text-[7px] text-gray-700 flex items-center justify-between"><span>Sản phẩm có an toàn cho bà bầu?</span><span>▼</span></div>
+          <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-1">
+            {["Hợp da nhạy cảm?", "Bao lâu có kết quả?", "Có đổi trả không?"].map((question) => <div key={question} className="rounded bg-gray-50 px-2 py-1.5 text-[9px] font-bold text-gray-700">{question}</div>)}
           </div>
-        )
-      }
-    );
-  } else if (category === "table") {
-    items.push(
+        ),
+      },
       {
-        id: "tbl-pricing-matrix",
-        label: "Bảng giá so sánh dịch vụ",
-        sub: "table pricing grid package compare features table",
+        id: "accordion-policy",
+        label: "FAQ chính sách",
+        sub: "accordion policy shipping payment",
+        blockType: "accordion",
+        props: {
+          allowMultiple: true,
+          accentColor: "#111827",
+          items: [
+            { id: "q1", question: "Có thanh toán khi nhận hàng không?", answer: "Có. Bạn có thể chọn COD khi nhân viên xác nhận đơn." },
+            { id: "q2", question: "Phí vận chuyển thế nào?", answer: "Miễn phí giao hàng cho đơn từ 399.000đ." },
+            { id: "q3", question: "Tôi cần tư vấn trước khi mua?", answer: "Bạn có thể để lại số điện thoại để đội ngũ gọi lại." },
+          ],
+        },
+        element: cardPreview("FAQ chính sách", 3),
+      },
+    ],
+    table: [
+      {
+        id: "table-pricing",
+        label: "Bảng giá 3 gói",
+        sub: "table pricing package compare",
         blockType: "table",
+        props: {
+          headers: ["Gói", "Phù hợp", "Giá"],
+          rows: [
+            ["Cơ bản", "Dùng thử", "199.000đ"],
+            ["Tiêu chuẩn", "Dùng hằng ngày", "399.000đ"],
+            ["Premium", "Trọn routine", "699.000đ"],
+          ],
+          bgColor: "#ffffff",
+          borderColor: "#e5e7eb",
+        },
         element: (
-          <div className="border border-gray-200 bg-white rounded-lg overflow-hidden">
-            <div className="grid grid-cols-3 bg-gray-50 text-[6px] font-bold text-gray-500 p-1 border-b border-gray-200">
-              <span>GÓI</span><span>HỖ TRỢ</span><span>GIÁ</span>
-            </div>
-            <div className="grid grid-cols-3 text-[6px] text-gray-650 p-1 border-b border-gray-150">
-              <span>Cá nhân</span><span>Email</span><span>99k/tháng</span>
-            </div>
-            <div className="grid grid-cols-3 text-[6px] text-gray-650 p-1">
-              <span>Doanh nghiệp</span><span>24/7</span><span>499k/tháng</span>
-            </div>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white text-[8px]">
+            <div className="grid grid-cols-3 bg-gray-950 p-1 font-bold text-white"><span>Gói</span><span>Phù hợp</span><span>Giá</span></div>
+            {["199k", "399k", "699k"].map((price) => <div key={price} className="grid grid-cols-3 border-t border-gray-100 p-1 text-gray-600"><span>Bộ</span><span>Da</span><span>{price}</span></div>)}
           </div>
-        )
-      }
-    );
-  } else if (category === "survey") {
-    items.push(
+        ),
+      },
       {
-        id: "sv-feedback-stars",
-        label: "Khảo sát ý kiến đánh giá",
-        sub: "survey poll quiz checklist rating questionnaire survey",
+        id: "table-specs",
+        label: "Bảng thông số",
+        sub: "table specs details product",
+        blockType: "table",
+        props: {
+          headers: ["Thông tin", "Chi tiết"],
+          rows: [
+            ["Dung tích", "50ml"],
+            ["Phù hợp", "Da khô, da nhạy cảm"],
+            ["Cam kết", "Không paraben"],
+          ],
+          bgColor: "#ffffff",
+          borderColor: "#e5e7eb",
+        },
+        element: cardPreview("Bảng thông số sản phẩm", 3),
+      },
+    ],
+    survey: [
+      {
+        id: "survey-need",
+        label: "Khảo sát nhu cầu",
+        sub: "survey quiz need customer",
         blockType: "survey",
+        props: {
+          question: "Bạn đang cần cải thiện điều gì nhất?",
+          options: ["Da khô", "Da xỉn màu", "Mụn nhẹ", "Chưa rõ cần tư vấn"],
+          accentColor: "#111827",
+          submitLabel: "Xem gợi ý",
+        },
         element: (
-          <div className="p-2 border border-gray-250 bg-white rounded-lg space-y-1">
-            <div className="text-[7px] font-bold text-gray-800 text-center">Khảo sát chất lượng dịch vụ</div>
-            <div className="h-4 border border-purple-500 bg-purple-50 rounded px-1.5 text-[7px] text-purple-700 flex items-center justify-between"><span>Rất hài lòng</span><span>✓</span></div>
-            <div className="h-4 border border-gray-200 bg-white rounded px-1.5 text-[7px] text-gray-400 flex items-center justify-between"><span>Chưa hài lòng</span><span></span></div>
+          <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-2">
+            <div className="text-[10px] font-black text-gray-950">Bạn cần gì?</div>
+            {["Da khô", "Da xỉn màu"].map((option) => <div key={option} className="rounded border border-gray-200 px-2 py-1 text-[9px] text-gray-600">{option}</div>)}
           </div>
-        )
-      }
-    );
-  } else if (category === "menu") {
-    items.push(
+        ),
+      },
       {
-        id: "mnu-header-nav",
-        label: "Menu liên kết Header",
-        sub: "menu navigation bar header link logo menu navbar",
+        id: "survey-budget",
+        label: "Khảo sát ngân sách",
+        sub: "survey budget choice",
+        blockType: "survey",
+        props: {
+          question: "Bạn muốn bắt đầu với ngân sách nào?",
+          options: ["Dưới 300.000đ", "300.000đ đến 500.000đ", "Trên 500.000đ"],
+          accentColor: "#111827",
+          submitLabel: "Nhận gợi ý",
+        },
+        element: cardPreview("Survey ngân sách", 2),
+      },
+    ],
+    menu: [
+      {
+        id: "menu-product",
+        label: "Menu landing",
+        sub: "menu header nav product",
         blockType: "menu",
+        props: {
+          logoText: "LadiSkin",
+          logoUrl: "#",
+          items: [
+            { label: "Sản phẩm", url: "#product" },
+            { label: "Lợi ích", url: "#benefits" },
+            { label: "Đánh giá", url: "#reviews" },
+            { label: "Mua ngay", url: "#order" },
+          ],
+          bgColor: "#ffffff",
+          textColor: "#111827",
+        },
         element: (
-          <div className="p-1.5 px-3 bg-white border border-gray-200 rounded-lg flex items-center justify-between text-[7px] text-gray-700 font-extrabold">
-            <span className="text-purple-600">LADI-BRAND</span>
-            <div className="flex gap-2"><span>Trang chủ</span><span>Dịch vụ</span><span>Liên hệ</span></div>
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-[9px] font-black text-gray-950">
+            <span>LadiSkin</span>
+            <span>Sản phẩm</span>
+            <span>Mua ngay</span>
           </div>
-        )
-      }
-    );
-  } else if (category === "html") {
-    items.push(
+        ),
+      },
       {
-        id: "html-custom-embed",
-        label: "Khung nhúng HTML tùy chỉnh",
-        sub: "html code custom script embed iframe html_code",
-        blockType: "html_code",
+        id: "menu-dark",
+        label: "Menu nền đen",
+        sub: "menu dark header nav",
+        blockType: "menu",
+        props: {
+          logoText: "Offer",
+          logoUrl: "#",
+          items: [
+            { label: "Ưu đãi", url: "#offer" },
+            { label: "FAQ", url: "#faq" },
+            { label: "Liên hệ", url: "#contact" },
+          ],
+          bgColor: "#111827",
+          textColor: "#ffffff",
+        },
         element: (
-          <div className="h-10 rounded border border-purple-300 bg-purple-50 text-center flex items-center justify-center text-[8px] text-purple-700 font-mono border-dashed">
-            {"</> HTML Custom Embed Code"}
+          <div className="flex items-center justify-between rounded-lg bg-gray-950 px-3 py-2 text-[9px] font-black text-white">
+            <span>Offer</span>
+            <span>FAQ</span>
+            <span>Liên hệ</span>
           </div>
-        )
-      }
-    );
-  }
+        ),
+      },
+    ],
+    widget: [
+      {
+        id: "widget-countdown-offer",
+        label: "Countdown ưu đãi",
+        sub: "countdown timer offer urgency sale",
+        blockType: "countdown",
+        props: {
+          targetDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          title: "Ưu đãi kết thúc sau",
+          expiredText: "Ưu đãi đã kết thúc",
+          bgColor: "#111827",
+          accentColor: "#ffffff",
+        },
+        element: (
+          <div className="rounded-lg bg-gray-950 p-3 text-center text-white">
+            <div className="text-[9px] font-bold text-gray-300">Ưu đãi kết thúc sau</div>
+            <div className="mt-2 grid grid-cols-4 gap-1 text-[12px] font-black">
+              {["03", "12", "45", "09"].map((item) => <span key={item} className="rounded bg-white px-1.5 py-1 text-gray-950">{item}</span>)}
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "widget-chat-consult",
+        label: "Chat tư vấn",
+        sub: "chat widget consult zalo support",
+        blockType: "chat_widget",
+        props: {
+          title: "Cần tư vấn nhanh?",
+          greeting: "Chọn tình trạng của bạn, đội ngũ sẽ gợi ý bộ phù hợp.",
+          agentName: "Tư vấn viên",
+          replyTime: "Phản hồi trong vài phút",
+          primaryChannel: "Chat ngay",
+          secondaryChannel: "Zalo",
+          buttonLabel: "Bắt đầu tư vấn",
+          accentColor: "#111827",
+          bgColor: "#ffffff",
+          position: "right",
+          showSurvey: true,
+        },
+        element: (
+          <div className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm">
+            <div className="rounded-lg bg-gray-950 p-2 text-[10px] font-black text-white">Cần tư vấn nhanh?</div>
+            <div className="mt-2 grid grid-cols-2 gap-1">
+              <div className="rounded border border-gray-200 py-1 text-center text-[9px] font-bold">Chat</div>
+              <div className="rounded border border-gray-200 py-1 text-center text-[9px] font-bold">Zalo</div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "widget-exit-popup",
+        label: "Popup giữ khách",
+        sub: "popup funnel exit intent coupon lead",
+        blockType: "funnel_popup",
+        props: {
+          title: "Khoan rời trang đã",
+          description: "Nhận mã giảm giá và tư vấn chọn bộ phù hợp trước khi mua.",
+          ctaText: "Nhận mã ngay",
+          ctaUrl: "#lead-form",
+          trigger: "exit_intent",
+          triggerValue: 60,
+          frequency: "session",
+          accentColor: "#111827",
+          bgColor: "#ffffff",
+          imageUrl: assets.skincare,
+          showBackdrop: true,
+        },
+        element: (
+          <div className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm">
+            <div className="flex gap-2">
+              <img src={assets.skincare} alt="" className="h-12 w-12 rounded-lg object-cover" />
+              <div className="flex-1">
+                <div className="text-[10px] font-black text-gray-950">Popup giữ khách</div>
+                <div className="mt-1 h-1.5 rounded bg-gray-200" />
+                <div className="mt-1 h-1.5 w-2/3 rounded bg-gray-200" />
+              </div>
+            </div>
+            <div className="mt-2 h-6 rounded bg-gray-950" />
+          </div>
+        ),
+      },
+    ],
+    html: [
+      {
+        id: "html-trust-strip",
+        label: "HTML trust strip",
+        sub: "html trust strip custom",
+        blockType: "html_code",
+        props: {
+          height: 90,
+          code: "<div style='font-family:Arial,sans-serif;padding:18px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;color:#111827;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;font-size:13px'><strong>2.300+ đơn</strong><strong>4.8/5 đánh giá</strong><strong>Đổi trả 7 ngày</strong></div>",
+        },
+        element: cardPreview("HTML trust strip", 2),
+      },
+      {
+        id: "html-sale-bar",
+        label: "HTML sale bar",
+        sub: "html sale promotion bar",
+        blockType: "html_code",
+        props: {
+          height: 64,
+          code: "<div style='font-family:Arial,sans-serif;padding:14px 18px;border-radius:999px;background:#111827;color:white;text-align:center;font-size:13px;font-weight:800'>Ưu đãi hôm nay: giảm 30% cho 100 đơn đầu tiên</div>",
+        },
+        element: <div className="rounded-full bg-gray-950 px-3 py-2 text-center text-[10px] font-black text-white">Sale bar HTML</div>,
+      },
+    ],
+  };
 
-  return items;
+  return presets[category] ?? [];
 };

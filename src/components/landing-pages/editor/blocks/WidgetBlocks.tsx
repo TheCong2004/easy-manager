@@ -35,31 +35,50 @@ export const ChatWidgetBlock: React.FC<{
   onUpdate?: UpdateFn;
 }> = ({ props, isSelected, onSelect, onUpdate }) => {
   const update = (next: Partial<ChatWidgetProps>) => onUpdate?.({ ...props, ...next });
-  const align = props.position === "left" ? "items-start text-left" : "items-end text-left";
+  const isLeft = props.position === "left";
+  const visualSrc = "/images/landing/support-ai-section.png";
 
   return (
     <section
       onClick={onSelect}
-      className={`relative cursor-pointer px-8 py-10 transition-all ${
+      className={`relative cursor-pointer px-4 py-8 transition-all sm:px-8 sm:py-12 ${
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
       style={{ backgroundColor: "#f7f8fb" }}
     >
-      <div className={`mx-auto flex max-w-5xl flex-col ${align}`}>
+      <div
+        className="mx-auto grid max-w-5xl items-center gap-5 sm:gap-8"
+        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))" }}
+      >
+        <div className={`${isLeft ? "lg:order-2" : ""} overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,.10)]`}>
+          <div className="relative aspect-[16/10] bg-slate-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={visualSrc} alt="AI support workspace" className="h-full w-full object-cover" />
+            <div className="absolute inset-x-0 bottom-0 border-t border-slate-200 bg-white/90 p-3 backdrop-blur-sm sm:p-5">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                {["Lead", "Course", "Support"].map((item) => (
+                  <div key={item} className="min-w-0 rounded-xl border border-slate-200 bg-white/90 px-2 py-2 text-center text-[11px] font-bold leading-tight text-slate-700 shadow-sm sm:text-[12px]">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
         <div
-          className="w-full max-w-[380px] overflow-hidden rounded-2xl border border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,.16)]"
+          className={`${isLeft ? "lg:order-1" : ""} w-full overflow-hidden rounded-2xl border border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,.14)]`}
           style={{ backgroundColor: props.bgColor }}
         >
-          <div className="p-5 text-white" style={{ background: `linear-gradient(135deg, ${props.accentColor}, #6d5dfc)` }}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/18 text-sm font-black">LC</div>
-              <div>
+          <div className="p-5 text-white" style={{ backgroundColor: props.accentColor }}>
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/18 text-sm font-black">LC</div>
+              <div className="min-w-0 flex-1">
                 <Editable
                   as="h3"
                   value={props.title}
                   isSelected={isSelected}
                   onCommit={(title) => update({ title })}
-                  className="block text-lg font-black"
+                  className="block text-[18px] font-black leading-tight"
                 />
                 <Editable
                   value={props.replyTime}
@@ -80,23 +99,23 @@ export const ChatWidgetBlock: React.FC<{
 
           <div className="space-y-4 p-5">
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
-              <div className="h-10 w-10 rounded-full bg-emerald-100" />
+              <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200" />
               <div className="min-w-0 flex-1">
                 <Editable
                   value={props.agentName}
                   isSelected={isSelected}
                   onCommit={(agentName) => update({ agentName })}
-                  className="block text-sm font-black text-slate-900"
+                  className="block break-words text-sm font-black text-slate-900"
                 />
-                <span className="text-xs font-medium text-emerald-600">Online</span>
+                <span className="text-xs font-medium text-slate-500">Online</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">
+            <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(112px, 1fr))" }}>
+              <button className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold leading-tight text-slate-700">
                 <Editable value={props.primaryChannel} isSelected={isSelected} onCommit={(primaryChannel) => update({ primaryChannel })} />
               </button>
-              <button className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">
+              <button className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold leading-tight text-slate-700">
                 <Editable value={props.secondaryChannel} isSelected={isSelected} onCommit={(secondaryChannel) => update({ secondaryChannel })} />
               </button>
             </div>
@@ -114,7 +133,7 @@ export const ChatWidgetBlock: React.FC<{
               </div>
             )}
 
-            <button className="w-full rounded-xl px-4 py-3 text-sm font-black text-white" style={{ backgroundColor: props.accentColor }}>
+            <button className="min-h-12 w-full rounded-xl px-4 py-3 text-sm font-black leading-tight text-white" style={{ backgroundColor: props.accentColor }}>
               <Editable value={props.buttonLabel} isSelected={isSelected} onCommit={(buttonLabel) => update({ buttonLabel })} />
             </button>
           </div>
@@ -149,7 +168,7 @@ export const FunnelPopupBlock: React.FC<{
             // eslint-disable-next-line @next/next/no-img-element
             <img src={props.imageUrl} alt={props.title} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full min-h-[260px] flex-col justify-end bg-gradient-to-br from-lime-100 via-white to-slate-100 p-6">
+            <div className="flex h-full min-h-[260px] flex-col justify-end bg-slate-100 p-6">
               <span className="w-fit rounded-full bg-white/80 px-3 py-1 text-[11px] font-black text-slate-700 shadow-sm">FunnelX</span>
               <div className="mt-4 h-24 rounded-xl bg-white/65 shadow-inner" />
             </div>

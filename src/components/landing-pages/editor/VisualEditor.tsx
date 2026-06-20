@@ -796,8 +796,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   return (
     <DndProvider backend={HTML5Backend}>
       <div
-        className="fixed inset-0 z-[999999] flex flex-col bg-gray-50 text-gray-800"
-        style={{ fontFamily: "Inter, sans-serif" }}
+        className="landing-editor-shell fixed inset-0 z-[999999] flex flex-col bg-gray-50 text-gray-800"
+        style={{ fontFamily: "Inter, sans-serif", fontSize: 13 }}
       >
         {/* Top bar (Light Theme already) */}
         <EditorTopBar

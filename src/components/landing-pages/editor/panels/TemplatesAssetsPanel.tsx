@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { LANDING_ASSETS, LANDING_TEMPLATE_PRESETS } from "../template-library";
+import { BUILDER_ASPECT_RATIOS, BUILDER_IMAGE_STYLES, BUILDER_OUTPUT_TYPE_PRESETS } from "../builder-presets";
 
 interface TemplatesAssetsPanelProps {
   onApplyTemplate: (templateId: string, mode: "append" | "replace") => void;
@@ -79,6 +80,44 @@ export const TemplatesAssetsPanel: React.FC<TemplatesAssetsPanelProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-gray-400">AI image presets từ Builder</div>
+          <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div>
+              <div className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-gray-400">Phong cách ảnh</div>
+              <div className="flex flex-wrap gap-1.5">
+                {BUILDER_IMAGE_STYLES.map((style) => (
+                  <span key={style.value} className="rounded-full border border-white bg-white px-2 py-1 text-[10px] font-bold text-gray-700 shadow-sm">
+                    <span className="mr-1">{style.emoji}</span>
+                    {style.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-gray-400">Kiểu đầu ra</div>
+              <div className="flex flex-wrap gap-1.5">
+                {BUILDER_OUTPUT_TYPE_PRESETS.map((type) => (
+                  <span key={type.id} className="rounded-md border border-purple-100 bg-purple-50 px-2 py-1 text-[10px] font-bold text-purple-700">
+                    <span className="mr-1">{type.emoji}</span>
+                    {type.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-gray-400">Tỉ lệ</div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {BUILDER_ASPECT_RATIOS.map((ratio) => (
+                  <span key={ratio.value} className="rounded-md border border-gray-200 bg-white px-1.5 py-1 text-center text-[9px] font-black text-gray-600 shadow-sm" title={ratio.tag}>
+                    {ratio.label}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

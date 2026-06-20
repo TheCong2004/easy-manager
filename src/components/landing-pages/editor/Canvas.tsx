@@ -343,7 +343,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
             {/* Page background */}
             <div
-              className="w-full"
+              className="landing-product-surface w-full"
               style={{
                 width: canvasWidth,
                 minHeight: minPageHeight,

@@ -10,9 +10,9 @@ interface ButtonBlockProps {
 }
 
 const sizeStyles: Record<string, string> = {
-  sm: "px-4 py-2 text-sm",
-  md: "px-6 py-3 text-base",
-  lg: "px-8 py-4 text-lg",
+  sm: "px-4 py-2 text-[13px]",
+  md: "px-5 py-2.5 text-[13px]",
+  lg: "px-6 py-3 text-[13px]",
 };
 
 export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
@@ -30,6 +30,8 @@ export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onS
     color: style === "filled" ? textColor : (style === "text" || style === "ghost" ? textColor || color : color),
     border: (style === "text" || style === "ghost") ? "2px solid transparent" : `2px solid ${color}`,
     fontWeight: 700,
+    fontSize: 13,
+    lineHeight: "18px",
     cursor: "pointer",
     transition: "all 0.15s",
     width: fullWidth ? "100%" : undefined,

@@ -1,7 +1,7 @@
 import React from "react";
-import Image from "next/image";
 import { TemplateItem } from "../dung-chung/types";
 import { IconDownload, IconEye, IconHeart, IconPlus, IconSearch } from "../dung-chung/icons";
+import { TemplateUiPreview } from "./TemplateUiPreview";
 
 interface TemplatesLibraryProps {
   activeTemplateTab: string;
@@ -60,7 +60,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
   handleUseTemplate,
 }) => {
   return (
-    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-5">
+    <div className="landing-product-library mx-auto flex w-full max-w-[1320px] flex-col gap-5">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-[28px] font-black tracking-tight text-slate-950 dark:text-white">Kho Template</h1>
@@ -70,7 +70,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-lime-200 bg-white px-4 text-sm font-bold text-lime-600 shadow-sm transition hover:border-lime-300 hover:bg-lime-50 dark:border-lime-900/60 dark:bg-slate-900 dark:text-lime-300">
+          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-[13px] font-bold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-9-9" />
@@ -105,7 +105,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                 onClick={() => setActiveCategory(category.id)}
                 className={`h-9 rounded-full px-4 text-sm font-bold transition ${
                   activeCategory === category.id
-                    ? "bg-lime-100 text-lime-700 ring-1 ring-lime-200 dark:bg-lime-400/15 dark:text-lime-300 dark:ring-lime-400/20"
+                    ? "bg-slate-950 text-white ring-1 ring-slate-950 dark:bg-white dark:text-slate-950 dark:ring-white"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
@@ -128,9 +128,9 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
               />
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-xs font-bold text-orange-600 ring-1 ring-orange-100 dark:bg-orange-400/10 dark:text-orange-300 dark:ring-orange-400/20">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">
               Dịch vụ thiết kế chỉ từ 1tr500k
-              <span className="rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">ƯU ĐÃI</span>
+              <span className="rounded bg-slate-950 px-1.5 py-0.5 text-[9px] font-black text-white">ƯU ĐÃI</span>
             </div>
           </div>
         </div>
@@ -147,17 +147,10 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-950"
               >
                 <div className="relative aspect-[4/3.35] overflow-hidden bg-slate-100 dark:bg-slate-900">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={720}
-                    height={900}
-                    style={{ "--scroll-dist": item.scrollDist } as React.CSSProperties}
-                    className="mobile-scroll-effect h-auto w-full object-top"
-                  />
+                  <TemplateUiPreview template={item} />
 
                   <div className="absolute left-3 top-3 flex items-center gap-2">
-                    <span className={`rounded-md px-2 py-1 text-[10px] font-black text-white shadow-sm ${item.isPro ? "bg-orange-500" : "bg-lime-500"}`}>
+                    <span className="rounded-md bg-slate-950 px-2 py-1 text-[10px] font-black text-white shadow-sm">
                       {item.isPro ? "PRO" : "FREE"}
                     </span>
                     <span className="rounded-md bg-white/90 px-2 py-1 text-[10px] font-black text-slate-600 shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-slate-300">
@@ -183,7 +176,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                     </button>
                     <button
                       onClick={() => handleUseTemplate(item)}
-                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-lime-500 text-xs font-black text-white shadow-sm transition hover:bg-lime-600"
+                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-slate-950 text-xs font-black text-white shadow-sm transition hover:bg-slate-800"
                     >
                       <IconPlus size={14} />
                       Sử dụng

@@ -106,6 +106,66 @@ const templatesData: TemplateItem[] = [
     likes: 1100,
     scrollDist: "calc(-100% + 260px)",
   },
+  {
+    id: "t9",
+    name: "LDP112313 - Hero Slide Show Carousel",
+    image: "/images/carousel/carousel-01.png",
+    category: "others",
+    isPro: false,
+    views: 7240,
+    likes: 3610,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t10",
+    name: "LDP112314 - Product Grid Flash Sale",
+    image: "/images/product/smartwatch_product.png",
+    category: "ecommerce",
+    isPro: false,
+    views: 8350,
+    likes: 4180,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t11",
+    name: "LDP112315 - Course Funnel E-Learning",
+    image: "/images/carousel/carousel-02.png",
+    category: "service",
+    isPro: true,
+    views: 6920,
+    likes: 3420,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t12",
+    name: "LDP112316 - Gallery Showcase Portfolio",
+    image: "/images/grid-image/image-01.png",
+    category: "others",
+    isPro: false,
+    views: 5480,
+    likes: 2280,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t13",
+    name: "LDP112317 - Builder Product Kit",
+    image: "/images/product/skincare_product.png",
+    category: "ecommerce",
+    isPro: true,
+    views: 9210,
+    likes: 4690,
+    scrollDist: "calc(-100% + 260px)",
+  },
+  {
+    id: "t14",
+    name: "LDP112318 - Builder UI Elements",
+    image: "/images/grid-image/image-03.png",
+    category: "service",
+    isPro: false,
+    views: 6370,
+    likes: 3010,
+    scrollDist: "calc(-100% + 260px)",
+  },
 ];
 
 const initialTags: TagItem[] = [
@@ -126,6 +186,12 @@ function mapTemplateToEditorPreset(template: TemplateItem): string {
   if (value.includes("112307") || value.includes("trà") || value.includes("tea")) return "herb-tea";
   if (value.includes("112308") || value.includes("smartwatch") || value.includes("đồng hồ")) return "smartwatch-performance";
   if (value.includes("112312") || value.includes("khóa học") || value.includes("course")) return "webinar-lead";
+  if (value.includes("112313") || value.includes("slide show") || value.includes("carousel")) return "hero-slide-show";
+  if (value.includes("112314") || value.includes("product grid") || value.includes("flash sale")) return "ladi-product-grid";
+  if (value.includes("112315") || value.includes("course funnel") || value.includes("e-learning")) return "course-slide-funnel";
+  if (value.includes("112316") || value.includes("gallery showcase") || value.includes("portfolio")) return "gallery-showcase";
+  if (value.includes("112317") || value.includes("builder product kit")) return "builder-product-kit";
+  if (value.includes("112318") || value.includes("builder ui elements")) return "builder-ui-elements";
   return "product-launch";
 }
 

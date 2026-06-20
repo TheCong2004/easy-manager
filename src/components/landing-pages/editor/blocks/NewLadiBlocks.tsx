@@ -21,7 +21,7 @@ export const GalleryBlock: React.FC<{ props: GalleryProps; isSelected: boolean; 
       <div
         className="grid w-full"
         style={{
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${columns > 2 ? 120 : 160}px), 1fr))`,
           gap: `${gap}px`
         }}
       >
@@ -124,7 +124,7 @@ export const ProductCardBlock: React.FC<{ props: ProductCardProps; isSelected: b
       <div className="relative aspect-square w-full bg-gray-50">
         <img src={itemImage || image} alt={itemTitle} className="w-full h-full object-cover" />
         {itemBadge && (
-          <span className="absolute top-2.5 left-2.5 bg-red-500 text-white font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
+          <span className="absolute top-2.5 left-2.5 bg-slate-950 text-white font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
             {itemBadge}
           </span>
         )}
@@ -132,17 +132,17 @@ export const ProductCardBlock: React.FC<{ props: ProductCardProps; isSelected: b
       <div className="p-3.5 flex flex-col flex-1">
         <div className="flex items-center gap-0.5 mb-1">
           {Array.from({ length: 5 }).map((_, idx) => (
-            <span key={idx} className="text-amber-400 text-[10px]">★</span>
+            <span key={idx} className="text-slate-400 text-[10px]">★</span>
           ))}
           <span className="text-[9px] text-gray-400 font-medium ml-1">(95 đánh giá)</span>
         </div>
         <h3 className="text-xs font-bold text-gray-800 line-clamp-1">{itemTitle}</h3>
         {itemDesc && <p className="text-[10px] text-gray-500 line-clamp-2 mt-0.5 mb-2 leading-normal">{itemDesc}</p>}
         <div className="flex items-baseline gap-1.5 mt-auto">
-          <span className="text-xs font-black text-red-600">{itemPrice}</span>
+          <span className="text-xs font-black text-slate-950">{itemPrice}</span>
           {itemOldPrice && <span className="text-[9px] text-gray-400 line-through">{itemOldPrice}</span>}
         </div>
-        <button className="w-full bg-[#65a30d] text-white py-1.5 rounded-lg font-bold text-[10px] mt-2.5 tracking-wide shadow-sm hover:bg-[#548a0a] transition duration-155">
+        <button className="mt-2.5 min-h-10 w-full rounded-lg bg-slate-950 px-3 py-2 text-[11px] font-bold leading-tight text-white shadow-sm transition duration-155 hover:bg-slate-800">
           {ctaText || "MUA NGAY"}
         </button>
       </div>
@@ -163,7 +163,7 @@ export const ProductCardBlock: React.FC<{ props: ProductCardProps; isSelected: b
         <div
           className="grid gap-4 w-full"
           style={{
-            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${columns > 2 ? 170 : 220}px), 1fr))`,
           }}
         >
           {items.map((item) => (
@@ -207,16 +207,16 @@ export const CollectionListBlock: React.FC<{ props: CollectionListProps; isSelec
         }
         style={
           layout === "grid"
-            ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
+            ? { gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${columns > 2 ? 190 : 240}px), 1fr))` }
             : {}
         }
       >
         {items.map((item) => (
-          <div key={item.id} className="p-4 bg-white/5 border border-white/10 rounded-xl flex gap-3.5 items-start hover:border-purple-500/40 hover:bg-white/[0.08] transition duration-150">
-            <span className="text-2xl flex-shrink-0 bg-purple-500/10 p-2 rounded-lg">{item.icon}</span>
+          <div key={item.id} className="flex items-start gap-3.5 rounded-xl border border-slate-700 bg-slate-900 p-4 transition duration-150 hover:border-slate-500">
+            <span className="flex-shrink-0 rounded-lg bg-slate-800 p-2 text-2xl text-white">{item.icon}</span>
             <div className="space-y-0.5">
-              <h4 className="text-xs font-bold text-gray-200">{item.title}</h4>
-              <p className="text-[11px] text-gray-400 leading-relaxed">{item.desc}</p>
+              <h4 className="text-[13px] font-bold text-white">{item.title}</h4>
+              <p className="text-[13px] leading-relaxed text-slate-300">{item.desc}</p>
             </div>
           </div>
         ))}
@@ -300,8 +300,8 @@ export const TabsBlock: React.FC<{ props: TabsProps; isSelected: boolean; onSele
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
-      <div className="w-full bg-white/5 border border-white/10 rounded-xl p-4">
-        <div className="flex gap-2 border-b border-white/10 pb-2 mb-3 select-none">
+      <div className="w-full rounded-xl border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex gap-2 border-b border-slate-200 pb-2 select-none">
           {tabs.map((tab) => {
             const isActive = tab.id === activeTabId;
             return (
@@ -310,10 +310,10 @@ export const TabsBlock: React.FC<{ props: TabsProps; isSelected: boolean; onSele
                 onClick={(e) => { e.stopPropagation(); setActiveTabId(tab.id); }}
                 className={`text-xs font-bold px-3 py-1.5 rounded transition ${
                   style === "underline"
-                    ? isActive ? "border-b-2 text-white" : "text-gray-400 hover:text-gray-200"
+                    ? isActive ? "border-b-2 text-slate-950" : "text-slate-500 hover:text-slate-900"
                     : isActive
                       ? "text-white shadow-sm"
-                      : "text-gray-400 hover:text-gray-200 bg-white/5"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-950"
                 }`}
                 style={
                   isActive && style !== "underline"
@@ -328,7 +328,7 @@ export const TabsBlock: React.FC<{ props: TabsProps; isSelected: boolean; onSele
             );
           })}
         </div>
-        <p className="text-xs text-gray-300 leading-relaxed min-h-12">{activeContent}</p>
+        <p className="min-h-12 text-[13px] leading-relaxed text-slate-600">{activeContent}</p>
       </div>
       {isSelected && (
         <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
@@ -408,10 +408,10 @@ export const AccordionBlock: React.FC<{ props: AccordionProps; isSelected: boole
         {items.map((item) => {
           const isOpen = !!openIds[item.id];
           return (
-            <div key={item.id} className="border border-white/10 rounded-xl overflow-hidden bg-white/5">
+            <div key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <button
                 onClick={(e) => { e.stopPropagation(); toggle(item.id); }}
-                className="w-full px-4 py-3 flex items-center justify-between text-left text-xs font-bold text-gray-200 hover:bg-white/5 transition"
+                className="flex w-full items-center justify-between px-4 py-3 text-left text-[13px] font-bold text-slate-950 transition hover:bg-slate-50"
               >
                 <span>{item.question}</span>
                 <span className={`text-[10px] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} style={{ color: isOpen ? accentColor : undefined }}>
@@ -419,7 +419,7 @@ export const AccordionBlock: React.FC<{ props: AccordionProps; isSelected: boole
                 </span>
               </button>
               {isOpen && (
-                <div className="px-4 pb-3 pt-1 text-[11px] text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+                <div className="border-t border-slate-100 bg-slate-50 px-4 pb-3 pt-2 text-[13px] leading-relaxed text-slate-600">
                   {item.answer}
                 </div>
               )}
@@ -450,7 +450,7 @@ export const TableBlock: React.FC<{ props: TableProps; isSelected: boolean; onSe
       <div className="overflow-x-auto w-full rounded-xl border" style={{ borderColor }}>
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-gray-50/5 font-bold text-gray-300 border-b" style={{ borderColor }}>
+            <tr className="border-b bg-slate-50 font-bold text-slate-700" style={{ borderColor }}>
               {headers.map((h, i) => (
                 <th key={i} className="px-4 py-3 border-r last:border-r-0" style={{ borderColor }}>{h}</th>
               ))}
@@ -460,7 +460,7 @@ export const TableBlock: React.FC<{ props: TableProps; isSelected: boolean; onSe
             {rows.map((row, ri) => (
               <tr key={ri} className="border-b last:border-b-0" style={{ borderColor }}>
                 {row.map((cell, ci) => (
-                  <td key={ci} className="px-4 py-3 text-gray-400 border-r last:border-r-0" style={{ borderColor }}>{cell}</td>
+                  <td key={ci} className="border-r px-4 py-3 text-slate-600 last:border-r-0" style={{ borderColor }}>{cell}</td>
                 ))}
               </tr>
             ))}
@@ -488,8 +488,8 @@ export const SurveyBlock: React.FC<{ props: SurveyProps; isSelected: boolean; on
         isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
-      <div className="w-full max-w-lg mx-auto bg-white/5 border border-white/10 rounded-2xl p-6 select-none shadow">
-        <h4 className="text-sm font-bold text-gray-200 text-center mb-4 leading-snug">{question}</h4>
+      <div className="mx-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow select-none">
+        <h4 className="mb-4 text-center text-[13px] font-bold leading-snug text-slate-950">{question}</h4>
         <div className="space-y-2">
           {options.map((opt, i) => {
             const isChecked = selectedIdx === i;
@@ -499,8 +499,8 @@ export const SurveyBlock: React.FC<{ props: SurveyProps; isSelected: boolean; on
                 onClick={(e) => { e.stopPropagation(); setSelectedIdx(i); }}
                 className={`w-full flex items-center justify-between text-left text-xs font-semibold px-4 py-3.5 rounded-xl border transition-all ${
                   isChecked
-                    ? "text-white bg-purple-500/10 border-purple-500"
-                    : "text-gray-400 bg-white/5 border-white/5 hover:border-white/15"
+                    ? "border-slate-950 bg-slate-100 text-slate-950"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                 }`}
                 style={isChecked ? { borderColor: accentColor, backgroundColor: `${accentColor}10` } : {}}
               >

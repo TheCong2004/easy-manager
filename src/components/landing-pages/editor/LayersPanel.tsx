@@ -148,6 +148,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     table: BLOCK_ICONS.table,
     survey: BLOCK_ICONS.survey,
     menu: BLOCK_ICONS.menu,
+    widget: BLOCK_ICONS.chat_widget,
     html: BLOCK_ICONS.html_code,
   };
 
@@ -175,15 +176,15 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
       <div
         key={item.id}
         onClick={() => onAddBlock(item.blockType, item.props)}
-        className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 bg-gray-50 p-2.5 hover:border-purple-500 hover:bg-purple-50/20 transition duration-150 cursor-pointer select-none shadow-sm"
+        className="group flex cursor-pointer select-none flex-col gap-2 border-b border-gray-200 bg-white px-3 py-3 transition hover:bg-gray-50"
         title="Click để chèn vào cuối trang"
       >
         <div className="w-full pointer-events-none">{item.element}</div>
-        <div className="flex items-center justify-between mt-1 select-none">
-          <span className="text-[9px] font-extrabold text-gray-700 group-hover:text-purple-750 uppercase tracking-wider truncate max-w-[170px]">
+        <div className="flex items-center justify-between select-none">
+          <span className="max-w-[170px] truncate text-[11px] font-extrabold uppercase tracking-wide text-gray-800 group-hover:text-[#2511d9]">
             {item.label}
           </span>
-          <span className="text-[9px] text-gray-400 group-hover:text-purple-650 font-black transition">
+          <span className="text-[11px] font-black text-gray-400 transition group-hover:text-[#2511d9]">
             + Thêm
           </span>
         </div>
@@ -214,11 +215,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
         {tab === "components" ? (
           <>
             {/* Split panel: Left Sub-sidebar for element categories */}
-            <div className="w-[100px] bg-gray-50 border-r border-gray-200 flex flex-col py-2 flex-shrink-0 select-none overflow-y-auto no-scrollbar">
+            <div className="w-[132px] bg-gray-50 border-r border-gray-200 flex flex-col py-2 flex-shrink-0 select-none overflow-y-auto no-scrollbar">
               {([
                 "text", "button", "image", "gallery", "box", "icon", "divider", "form",
                 "product", "video", "collection", "carousel", "tabs", "frame", "accordion",
-                "table", "survey", "menu", "html"
+                "table", "survey", "menu", "widget", "html"
               ] as const).map((catId) => {
                 const labelMap: Record<string, string> = {
                   text: "Văn bản",
@@ -239,6 +240,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                   table: "Table",
                   survey: "Survey",
                   menu: "Menu",
+                  widget: "Widget",
                   html: "Mã HTML",
                 };
                 const isActive = activeCategory === catId;
@@ -246,14 +248,14 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                   <button
                     key={catId}
                     onClick={() => setActiveCategory(catId)}
-                    className={`w-full py-3.5 px-1 flex flex-col items-center gap-1.5 transition-all text-center border-l-2 cursor-pointer ${
+                    className={`w-full min-h-11 px-3 py-2 flex flex-row items-center justify-start gap-2 transition-all text-left border-l-2 cursor-pointer ${
                       isActive
                         ? "bg-white text-purple-600 border-purple-500 font-bold"
                         : "border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/70"
                     }`}
                   >
-                    <span className="flex-shrink-0 transition">{categoryIcons[catId]}</span>
-                    <span className="text-[9px] tracking-wide uppercase font-bold truncate max-w-[80px]">{labelMap[catId]}</span>
+                    <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center transition">{categoryIcons[catId]}</span>
+                    <span className="min-w-0 truncate text-[12px] font-extrabold">{labelMap[catId]}</span>
                   </button>
                 );
               })}
