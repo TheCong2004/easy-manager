@@ -7,6 +7,7 @@ interface CountdownBlockProps {
   props: CountdownProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
 interface TimeLeft {
@@ -16,7 +17,7 @@ interface TimeLeft {
   seconds: number;
 }
 
-export const CountdownBlock: React.FC<CountdownBlockProps> = ({ props, isSelected, onSelect }) => {
+export const CountdownBlock: React.FC<CountdownBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { targetDate, title, expiredText, bgColor, accentColor } = props;
 
   const calculate = (): TimeLeft => {
@@ -59,9 +60,31 @@ export const CountdownBlock: React.FC<CountdownBlockProps> = ({ props, isSelecte
       }`}
       style={{ backgroundColor: bgColor, color: "#fff" }}
     >
-      <p className="text-sm font-semibold tracking-wider uppercase opacity-80">{title}</p>
+      <p
+        contentEditable={isSelected}
+        suppressContentEditableWarning
+        onBlur={(e) => onUpdate?.({ ...props, title: e.currentTarget.textContent || "" })}
+        onClick={(e) => {
+          if (isSelected) e.stopPropagation();
+        }}
+        className="text-sm font-semibold tracking-wider uppercase opacity-80"
+        style={{ outline: "none" }}
+      >
+        {title}
+      </p>
       {isExpired ? (
-        <p className="text-xl font-bold opacity-70">{expiredText}</p>
+        <p
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, expiredText: e.currentTarget.textContent || "" })}
+          onClick={(e) => {
+            if (isSelected) e.stopPropagation();
+          }}
+          className="text-xl font-bold opacity-70"
+          style={{ outline: "none" }}
+        >
+          {expiredText}
+        </p>
       ) : (
         <div className="flex items-end gap-4">
           <Unit value={time.days} label="Ngày" />
@@ -150,9 +173,10 @@ interface FormCaptureBlockProps {
   props: FormCaptureProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
-export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSelected, onSelect }) => {
+export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { title, subtitle, fields, submitLabel, submitColor, bgColor, borderRadius } = props;
 
   return (
@@ -166,8 +190,30 @@ export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSel
         className="w-full max-w-lg mx-auto p-8 shadow-sm"
         style={{ backgroundColor: bgColor, borderRadius, border: "1px solid #e5e7eb" }}
       >
-        <h3 className="text-xl font-bold text-gray-800 mb-1 text-center">{title}</h3>
-        <p className="text-sm text-gray-500 text-center mb-6">{subtitle}</p>
+        <h3
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, title: e.currentTarget.textContent || "" })}
+          onClick={(e) => {
+            if (isSelected) e.stopPropagation();
+          }}
+          className="text-xl font-bold text-gray-800 mb-1 text-center"
+          style={{ outline: "none" }}
+        >
+          {title}
+        </h3>
+        <p
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, subtitle: e.currentTarget.textContent || "" })}
+          onClick={(e) => {
+            if (isSelected) e.stopPropagation();
+          }}
+          className="text-sm text-gray-500 text-center mb-6"
+          style={{ outline: "none" }}
+        >
+          {subtitle}
+        </p>
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           {fields.map((field) => (
             <div key={field.id}>
@@ -187,8 +233,18 @@ export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSel
             className="w-full py-3 rounded-lg text-white font-bold text-sm shadow-sm hover:opacity-90 transition"
             style={{ backgroundColor: submitColor }}
           >
+          <span
+            contentEditable={isSelected}
+            suppressContentEditableWarning
+            onBlur={(e) => onUpdate?.({ ...props, submitLabel: e.currentTarget.textContent || "" })}
+            onClick={(e) => {
+              if (isSelected) e.stopPropagation();
+            }}
+            style={{ outline: "none" }}
+          >
             {submitLabel}
-          </button>
+          </span>
+        </button>
         </form>
       </div>
       {isSelected && (

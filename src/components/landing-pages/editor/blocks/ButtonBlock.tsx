@@ -27,15 +27,16 @@ export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onS
   const buttonStyle: React.CSSProperties = {
     borderRadius,
     backgroundColor: style === "filled" ? color : "transparent",
-    color: style === "filled" ? textColor : color,
-    border: style !== "ghost" ? `2px solid ${color}` : "2px solid transparent",
+    color: style === "filled" ? textColor : (style === "text" || style === "ghost" ? textColor || color : color),
+    border: (style === "text" || style === "ghost") ? "2px solid transparent" : `2px solid ${color}`,
     fontWeight: 700,
     cursor: "pointer",
     transition: "all 0.15s",
     width: fullWidth ? "100%" : undefined,
-    textDecoration: "none",
+    textDecoration: style === "text" ? "underline" : "none",
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
   };
 

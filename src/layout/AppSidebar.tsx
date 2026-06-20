@@ -265,6 +265,21 @@ const othersItems: NavItem[] = [
   {
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 7.5h16" />
+        <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+        <path d="M8 12h3" />
+        <path d="M8 16h8" />
+        <path d="m15 9 1 1 2-3" />
+      </svg>
+    ),
+    iconColor: "text-blue-600 dark:text-blue-400",
+    name: "OfferKit",
+    path: "/offerkit",
+    appId: "15",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58A14.98 14.98 0 0 0 21.75 2.25 14.98 14.98 0 0 0 9.63 8.41a6 6 0 0 1 5.96 5.96Z"/>
         <path d="m9.63 8.41-5.84-2.58"/>
       </svg>
@@ -300,7 +315,7 @@ const othersItems: NavItem[] = [
   },
 ];
 
-const defaultInstalledApplicationIds = ["1", "2", "3", "4", "5", "6", "10", "14"];
+const defaultInstalledApplicationIds = ["1", "2", "3", "4", "5", "6", "10", "14", "15"];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();

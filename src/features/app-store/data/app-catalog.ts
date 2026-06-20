@@ -123,6 +123,18 @@ export const initialApps: AppItem[] = [
     isPinned: true,
   },
   {
+    id: "15",
+    name: "OfferKit",
+    description: "Ung dung quan ly uu dai, ma giam gia, voucher, referral va loyalty cho chien dich Marketing va E-Learning.",
+    iconName: "offerkit",
+    status: "INSTALLED",
+    category: "marketing",
+    price: "Da cai dat",
+    downloads: "1.786",
+    tags: ["Voucher", "Referral", "Loyalty"],
+    isPinned: true,
+  },
+  {
     id: "11",
     name: "LadiFlow Pro",
     description: "Hệ thống tự động hóa chăm sóc khách hàng đa kênh theo kịch bản thông minh.",
@@ -217,5 +229,17 @@ export const appDetailContent: Record<string, {
       { title: "Phù hợp automation", items: ["Kết hợp form, tag và luồng chăm sóc", "Tự động hóa các bước phân loại"] },
     ],
     integrations: ["Automation", "Facebook Ads", "Website Builder", "LadiSales"],
+  },
+  "15": {
+    provider: "LadiPage",
+    price: "Da cai dat",
+    features: ["Quan ly chien dich uu dai", "Phat hanh voucher va ma giam gia", "Referral va loyalty", "API key cho tich hop", "Bao cao hieu qua", "Tu dong hoa quy tac ap dung"],
+    benefits: [
+      { title: "Tang chuyen doi chien dich", items: ["Tao uu dai rieng cho tung nhom khach hang", "Dong bo voi Facebook Ads va landing page"] },
+      { title: "Phu hop E-Learning", items: ["Cap ma truy cap khoa hoc", "Gan thuong cho hoc vien hoan thanh moc hoc tap"] },
+      { title: "Van hanh nhu app con", items: ["Mo truc tiep tu kho ung dung", "Chay rieng trong OfferKit dashboard"] },
+      { title: "Mo rong tich hop", items: ["Ket noi CRM, LMS, automation va webhook", "Quan ly API key cho doi ky thuat"] },
+    ],
+    integrations: ["Facebook Ads", "E-Learning", "Automation", "CRM"],
   },
 };

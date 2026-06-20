@@ -3,25 +3,33 @@
 # dependencies
 /.idea
 /node_modules
+**/node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
 
 # testing
 /coverage
+**/coverage/
 
 # next.js
 /.next/
+**/.next/
 /out/
+**/out/
 
 # OpenNext / Cloudflare Workers build output
 .open-next/
+**/.open-next/
 open-next.config.ts
 wrangler*.toml
 .wrangler/
+**/.turbo/
 
 # production
 /build
+**/build/
+**/dist/
 /.vercel
 
 # pnpm

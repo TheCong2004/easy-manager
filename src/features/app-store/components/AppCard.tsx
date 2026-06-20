@@ -102,6 +102,15 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen, onDetails
             </svg>
           </div>
         );
+      case "offerkit":
+        return (
+          <div className="w-12 h-12 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5h16M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h3m-3 4h8m-1-7 1 1 2-3" />
+            </svg>
+          </div>
+        );
       default:
         return (
           <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-950/20 text-gray-600 dark:text-gray-400 flex items-center justify-center border border-gray-100 dark:border-gray-900/30">

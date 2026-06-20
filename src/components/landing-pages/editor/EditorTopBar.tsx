@@ -56,11 +56,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   blockCount,
 }) => {
   return (
-    <div className="flex items-center h-14 px-3 gap-3 bg-[#09090f] border-b border-[#202032] flex-shrink-0 shadow-lg shadow-black/20 select-none overflow-x-auto">
+    <div className="flex items-center h-14 px-3 gap-3 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm shadow-gray-100 select-none overflow-x-auto">
       {/* ← Back */}
       <button
         onClick={onClose}
-        className="flex items-center gap-2 text-gray-400 hover:text-white transition-all text-xs font-semibold px-2.5 py-1.5 rounded-md hover:bg-white/5 border border-transparent hover:border-gray-800/60 flex-shrink-0 cursor-pointer"
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-all text-xs font-semibold px-2.5 py-1.5 rounded-md hover:bg-gray-100 border border-transparent hover:border-gray-200 flex-shrink-0 cursor-pointer"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -68,11 +68,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         <span>Quay lại</span>
       </button>
 
-      <div className="w-px h-6 bg-gray-800/60 flex-shrink-0" />
+      <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 
       {/* Page name — editable */}
       <div className="flex items-center gap-2.5 min-w-0">
-        <div className="p-1.5 bg-purple-600/10 rounded-md border border-purple-500/20 text-purple-400 flex-shrink-0">
+        <div className="p-1.5 bg-purple-50 rounded-md border border-purple-200 text-purple-600 flex-shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
           </svg>
@@ -82,11 +82,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             type="text"
             value={pageName}
             onChange={(e) => setPageName(e.target.value)}
-            className="bg-transparent text-sm font-semibold text-gray-100 focus:outline-none border-b border-transparent focus:border-purple-500 hover:bg-white/5 focus:bg-white/5 px-2 py-0.5 rounded transition pb-0.5 min-w-0 max-w-[140px] truncate"
+            className="bg-transparent text-sm font-semibold text-gray-800 focus:outline-none border-b border-transparent focus:border-purple-500 hover:bg-gray-100 focus:bg-gray-100 px-2 py-0.5 rounded transition pb-0.5 min-w-0 max-w-[140px] truncate"
             spellCheck={false}
           />
         </div>
-        <span className="text-[10px] text-gray-500 bg-gray-800/40 px-2 py-0.5 rounded-full border border-gray-800 hidden sm:inline-flex items-center">
+        <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 hidden sm:inline-flex items-center font-medium">
           {blockCount} blocks
         </span>
       </div>
@@ -94,7 +94,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       <div className="flex-1" />
 
       {/* View mode switcher */}
-      <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-gray-800/80 flex-shrink-0 shadow-inner">
+      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 flex-shrink-0">
         {(
           [
             { mode: "design", label: "Design" },
@@ -108,7 +108,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             className={`h-7.5 px-3 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
               activeViewMode === mode
                 ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
-                : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
             }`}
           >
             {label}
@@ -116,10 +116,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         ))}
       </div>
 
-      <div className="w-px h-6 bg-gray-800/60 flex-shrink-0" />
+      <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 
       {/* Device switcher */}
-      <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-gray-800/80 flex-shrink-0 shadow-inner">
+      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 flex-shrink-0">
         {(
           [
             {
@@ -158,7 +158,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             className={`flex items-center justify-center w-9 h-7.5 rounded-lg transition-all cursor-pointer ${
               deviceMode === mode
                 ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
-                : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
             }`}
           >
             {icon}
@@ -166,13 +166,13 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         ))}
       </div>
 
-      <div className="w-px h-6 bg-gray-800/60 flex-shrink-0" />
+      <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 
       {/* Zoom control */}
-      <div className="flex items-center gap-1.5 bg-white/5 rounded-lg p-0.5 border border-gray-800/80 flex-shrink-0">
+      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 flex-shrink-0">
         <button
           onClick={() => setZoom(Math.max(0.5, +(zoom - 0.25).toFixed(2)))}
-          className="w-7 h-7.5 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-200 hover:bg-white/5 cursor-pointer transition"
+          className="w-7 h-7.5 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 cursor-pointer transition"
           title="Thu nhỏ"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -182,17 +182,17 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         <select
           value={zoom}
           onChange={(e) => setZoom(Number(e.target.value))}
-          className="bg-transparent text-xs text-gray-300 focus:outline-none cursor-pointer w-14 text-center py-1 font-semibold"
+          className="bg-transparent text-xs text-gray-700 focus:outline-none cursor-pointer w-14 text-center py-1 font-semibold"
         >
           {ZOOM_PRESETS.map((z) => (
-            <option key={z} value={z} className="bg-[#0f0f15] text-gray-200">
+            <option key={z} value={z} className="bg-white text-gray-800">
               {Math.round(z * 100)}%
             </option>
           ))}
         </select>
         <button
           onClick={() => setZoom(Math.min(1.5, +(zoom + 0.25).toFixed(2)))}
-          className="w-7 h-7.5 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-200 hover:bg-white/5 cursor-pointer transition"
+          className="w-7 h-7.5 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 cursor-pointer transition"
           title="Phóng to"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -201,15 +201,15 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </button>
       </div>
 
-      <div className="w-px h-6 bg-gray-800/60 flex-shrink-0" />
+      <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 
       {/* Undo / Redo */}
-      <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 border border-gray-800/80 flex-shrink-0">
+      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 flex-shrink-0">
         <button
           onClick={onUndo}
           disabled={!canUndo}
           title="Hoàn tác (Ctrl+Z)"
-          className="w-8 h-7.5 flex items-center justify-center rounded-lg transition text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+          className="w-8 h-7.5 flex items-center justify-center rounded-lg transition text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
@@ -219,7 +219,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           onClick={onRedo}
           disabled={!canRedo}
           title="Làm lại (Ctrl+Y)"
-          className="w-8 h-7.5 flex items-center justify-center rounded-lg transition text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+          className="w-8 h-7.5 flex items-center justify-center rounded-lg transition text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
@@ -227,65 +227,65 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </button>
       </div>
 
-      <div className="w-px h-6 bg-gray-800/60 flex-shrink-0" />
+      <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 
       {/* Save status */}
-      <div className="flex items-center gap-2 px-2.5 py-1 bg-white/5 rounded-lg border border-gray-800/50 text-xs text-gray-400 flex-shrink-0 hidden md:flex">
+      <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-100 rounded-lg border border-gray-200 text-xs text-gray-600 flex-shrink-0 hidden md:flex">
         {isSaved ? (
           <>
-            <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span className="text-green-400/90 font-medium">{lastSavedAt ? new Date(lastSavedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "Da luu"}</span>
+            <span className="text-green-600 font-semibold">{lastSavedAt ? new Date(lastSavedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "Đã lưu"}</span>
           </>
         ) : (
           <>
             <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-amber-500/95 font-medium">Chưa lưu thay đổi</span>
+            <span className="text-amber-500 font-semibold">Chưa lưu</span>
           </>
         )}
       </div>
 
-      <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 border border-gray-800/80 flex-shrink-0">
+      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 flex-shrink-0">
         <button
           onClick={onSave}
           title="Save"
-          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-300 hover:text-white hover:bg-white/5 transition cursor-pointer"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
           Save
         </button>
         <button
           onClick={onCreateRevision}
           title="Create version"
-          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-300 hover:text-white hover:bg-white/5 transition cursor-pointer"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
           Version
         </button>
         <button
           onClick={onOpenCommand}
           title="Command palette"
-          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-300 hover:text-white hover:bg-white/5 transition cursor-pointer"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
           Cmd
         </button>
         <button
           onClick={onImportJson}
           title="Import JSON"
-          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-300 hover:text-white hover:bg-white/5 transition cursor-pointer"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
           Import
         </button>
         <button
           onClick={onExportJson}
           title="Export JSON"
-          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-300 hover:text-white hover:bg-white/5 transition cursor-pointer"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
           JSON
         </button>
         <button
           onClick={onExportHtml}
           title="Export HTML"
-          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-300 hover:text-white hover:bg-white/5 transition cursor-pointer"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
           HTML
         </button>

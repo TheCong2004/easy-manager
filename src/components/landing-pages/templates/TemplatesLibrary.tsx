@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { TemplateItem } from "../dung-chung/types";
-import { IconSearch, IconEye, IconHeart, IconPlus, IconDownload } from "../dung-chung/icons";
+import { IconDownload, IconEye, IconHeart, IconPlus, IconSearch } from "../dung-chung/icons";
 
 interface TemplatesLibraryProps {
   activeTemplateTab: string;
@@ -15,6 +15,35 @@ interface TemplatesLibraryProps {
   toggleLikeTemplate: (e: React.MouseEvent, id: string) => void;
   setSelectedTemplateForPreview: (template: TemplateItem) => void;
   handleUseTemplate: (template: TemplateItem) => void;
+}
+
+const templateTabs = [
+  { id: "sample", label: "Giao diện mẫu" },
+  { id: "featured", label: "Mẫu nổi bật" },
+  { id: "marketplace", label: "Marketplace" },
+  { id: "service", label: "Dịch vụ thiết kế" },
+];
+
+const categories = [
+  { id: "all", label: "Tất cả" },
+  { id: "ecommerce", label: "Thương mại điện tử" },
+  { id: "service", label: "Dịch vụ" },
+  { id: "others", label: "Khác" },
+];
+
+const categoryLabels: Record<TemplateItem["category"], string> = {
+  all: "Tất cả",
+  ecommerce: "Bán hàng",
+  service: "Dịch vụ",
+  others: "Khác",
+};
+
+function compactTemplateName(name: string): { code: string; title: string } {
+  const [rawCode, ...rest] = name.split(" - ");
+  return {
+    code: rawCode?.trim() || "LDP",
+    title: rest.join(" - ").trim() || name,
+  };
 }
 
 export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
@@ -31,249 +60,169 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
   handleUseTemplate,
 }) => {
   return (
-    <div className="space-y-6">
-      {/* Header: Title, subtitle and discovery button */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-5 mb-5">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
-            Kho Template
-          </h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Khám phá bộ sưu tập template chuyên nghiệp.
+    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-5">
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[28px] font-black tracking-tight text-slate-950 dark:text-white">Kho Template</h1>
+          <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+            Chọn mẫu, xem trước và tạo landing page có sẵn bố cục chỉnh sửa được.
           </p>
         </div>
 
-        <button className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold text-lime-500 bg-white border border-gray-200 hover:border-gray-300 rounded-lg shadow-2xs transition dark:bg-gray-800 dark:text-lime-300 dark:border-gray-800 cursor-pointer">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3" />
-          </svg>
-          <span>Khám phá Marketplace</span>
-        </button>
-      </div>
-
-      {/* Inner Pill Tabs */}
-      <div className="inline-flex bg-gray-100 dark:bg-gray-900 rounded-lg p-1 gap-1 self-start">
-        <button 
-          onClick={() => setActiveTemplateTab("sample")}
-          className={`px-4 py-1.5 text-xs font-semibold rounded-md transition duration-150 cursor-pointer ${
-            activeTemplateTab === "sample"
-              ? "bg-white dark:bg-gray-800 text-slate-800 dark:text-white shadow-2xs"
-              : "text-slate-500 hover:text-slate-800 dark:hover:text-gray-350"
-          }`}
-        >
-          Giao diện mẫu
-        </button>
-        <button 
-          onClick={() => setActiveTemplateTab("featured")}
-          className={`px-4 py-1.5 text-xs font-semibold rounded-md transition duration-150 cursor-pointer ${
-            activeTemplateTab === "featured"
-              ? "bg-white dark:bg-gray-800 text-slate-800 dark:text-white shadow-2xs"
-              : "text-slate-500 hover:text-slate-800 dark:hover:text-gray-350"
-          }`}
-        >
-          Mẫu thiết kế nổi bật
-        </button>
-        <button 
-          onClick={() => setActiveTemplateTab("marketplace")}
-          className={`px-4 py-1.5 text-xs font-semibold rounded-md transition duration-150 cursor-pointer ${
-            activeTemplateTab === "marketplace"
-              ? "bg-white dark:bg-gray-800 text-slate-800 dark:text-white shadow-2xs"
-              : "text-slate-500 hover:text-slate-800 dark:hover:text-gray-350"
-          }`}
-        >
-          Cửa hàng Giao diện mẫu
-        </button>
-        <button 
-          onClick={() => setActiveTemplateTab("service")}
-          className={`px-4 py-1.5 text-xs font-semibold rounded-md transition duration-150 cursor-pointer ${
-            activeTemplateTab === "service"
-              ? "bg-white dark:bg-gray-800 text-slate-800 dark:text-white shadow-2xs"
-              : "text-slate-500 hover:text-slate-800 dark:hover:text-gray-350"
-          }`}
-        >
-          Dịch vụ thiết kế
-        </button>
-      </div>
-
-      {/* Category selection row */}
-      <div className="flex flex-wrap items-center gap-6 border-b border-gray-100 dark:border-gray-800 pb-3 mt-4">
-        <button 
-          onClick={() => setActiveCategory("all")}
-          className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 ${
-            activeCategory === "all"
-              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
-              : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-          }`}
-        >
-          Tất cả
-        </button>
-        <button 
-          onClick={() => setActiveCategory("ecommerce")}
-          className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-1 ${
-            activeCategory === "ecommerce"
-              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
-              : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-          }`}
-        >
-          <span>Thương mại điện tử</span>
-          <svg className="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </button>
-        <button 
-          onClick={() => setActiveCategory("service")}
-          className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-1 ${
-            activeCategory === "service"
-              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
-              : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-          }`}
-        >
-          <span>Dịch vụ</span>
-          <svg className="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </button>
-        <button 
-          onClick={() => setActiveCategory("others")}
-          className={`whitespace-nowrap pb-2.5 text-[13px] transition-all cursor-pointer border-b-2 -mb-3 flex items-center gap-1 ${
-            activeCategory === "others"
-              ? "font-semibold border-lime-500 text-lime-500 dark:border-lime-300 dark:text-lime-300"
-              : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-          }`}
-        >
-          <span>Khác</span>
-          <svg className="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </button>
-
-        <div className="flex items-center gap-1.5 ml-auto pb-1 text-slate-500 text-[13px] font-semibold">
-          <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 font-normal">Dịch vụ Thiết kế chỉ từ 1tr500k</span>
-          <span className="px-1.5 py-0.5 text-[8px] font-bold text-white bg-red-500 rounded uppercase">
-            ƯU ĐÃI
-          </span>
+        <div className="flex items-center gap-3">
+          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-lime-200 bg-white px-4 text-sm font-bold text-lime-600 shadow-sm transition hover:border-lime-300 hover:bg-lime-50 dark:border-lime-900/60 dark:bg-slate-900 dark:text-lime-300">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-9-9" />
+            </svg>
+            Khám phá Marketplace
+          </button>
         </div>
       </div>
 
-      {/* Sub Search & Filter selector inputs */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 my-4">
-        {/* Search box for templates */}
-        <div className="relative w-full md:max-w-md">
-          <span className="absolute inset-y-0 left-3 flex items-center pl-1 text-slate-400">
-            <IconSearch size={16} />
-          </span>
-          <input
-            type="text"
-            placeholder="Tìm kiếm"
-            value={templateSearchQuery}
-            onChange={(e) => setTemplateSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-hidden focus:border-lime-400"
-          />
-        </div>
-
-        {/* Mocks select filter boxes */}
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:flex-none">
-            <select className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
-              <option>Tất cả</option>
-            </select>
-            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
-            </span>
-          </div>
-          <div className="relative flex-1 md:flex-none">
-            <select className="w-full md:w-36 appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-1.5 pr-8 text-[13px] font-medium text-slate-700 dark:text-slate-350 focus:outline-hidden focus:border-lime-400 cursor-pointer">
-              <option>Tất cả</option>
-            </select>
-            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid display templates list */}
-      {filteredTemplates.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {filteredTemplates.map((item) => (
-            <div 
-              key={item.id}
-              className="group rounded-xl border border-gray-200 dark:border-gray-800 p-2.5 bg-white dark:bg-gray-900 flex flex-col justify-between shadow-2xs hover:shadow-lg transition-all duration-300 relative"
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-wrap items-center gap-2">
+          {templateTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTemplateTab(tab.id)}
+              className={`h-9 rounded-lg px-4 text-xs font-black transition ${
+                activeTemplateTab === tab.id
+                  ? "bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+              }`}
             >
-              {/* Image Container with Hover Scroll */}
-              <div className="relative aspect-[3/4.2] overflow-hidden bg-gray-50 dark:bg-gray-950 rounded-lg select-none">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={350}
-                  height={1000}
-                  style={{
-                    "--scroll-dist": item.scrollDist,
-                  } as React.CSSProperties}
-                  className="w-full h-auto object-top mobile-scroll-effect"
-                />
-
-                {/* PRO / FREE badge */}
-                <span className="absolute top-2 left-2 px-2 py-0.5 text-[8px] font-black text-white bg-[#f97316] rounded-sm uppercase tracking-wider z-10 shadow-xs">
-                  {item.isPro ? "PRO" : "FREE"}
-                </span>
-
-                {/* Like icon click indicator */}
-                <button 
-                  onClick={(e) => toggleLikeTemplate(e, item.id)}
-                  className="absolute top-2 right-2 scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 bg-white/95 dark:bg-gray-800/95 p-1.5 rounded-full shadow-xs text-red-500 hover:scale-110 z-10 cursor-pointer"
-                >
-                  <IconHeart
-                    size={14}
-                    fill={likedTemplates[item.id] ? "currentColor" : "none"}
-                  />
-                </button>
-
-                {/* Overlay action buttons on Hover (No dark overlay, positioned side-by-side at the bottom) */}
-                <div className="absolute bottom-3 left-2.5 right-2.5 flex items-center justify-between gap-2 z-9 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <button 
-                    onClick={() => setSelectedTemplateForPreview(item)}
-                    className="flex-1 py-1.5 bg-white text-slate-800 hover:bg-slate-50 text-[11px] font-bold rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    <IconEye size={12} />
-                    <span>Xem trước</span>
-                  </button>
-                  <button 
-                    onClick={() => handleUseTemplate(item)}
-                    className="flex-1 py-1.5 bg-lime-500 text-white hover:bg-lime-600 text-[11px] font-bold rounded-lg shadow-sm transition cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    <IconPlus size={12} />
-                    <span>Sử dụng</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Footer Info details */}
-              <div className="mt-3.5 space-y-1">
-                <span className="text-[12px] font-bold text-slate-800 dark:text-gray-200 truncate block hover:text-lime-500 cursor-pointer">
-                  {item.name}
-                </span>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
-                  <span className="flex items-center gap-1">
-                    <IconEye size={11} />
-                    {item.views.toLocaleString()}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <IconDownload size={11} />
-                    {item.likes.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
+              {tab.label}
+            </button>
           ))}
         </div>
+
+        <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 dark:border-slate-800 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+                className={`h-9 rounded-full px-4 text-sm font-bold transition ${
+                  activeCategory === category.id
+                    ? "bg-lime-100 text-lime-700 ring-1 ring-lime-200 dark:bg-lime-400/15 dark:text-lime-300 dark:ring-lime-400/20"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-[340px]">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                <IconSearch size={16} />
+              </span>
+              <input
+                type="text"
+                placeholder="Tìm template..."
+                value={templateSearchQuery}
+                onChange={(event) => setTemplateSearchQuery(event.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-lime-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-xs font-bold text-orange-600 ring-1 ring-orange-100 dark:bg-orange-400/10 dark:text-orange-300 dark:ring-orange-400/20">
+              Dịch vụ thiết kế chỉ từ 1tr500k
+              <span className="rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">ƯU ĐÃI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {filteredTemplates.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {filteredTemplates.map((item) => {
+            const name = compactTemplateName(item.name);
+
+            return (
+              <article
+                key={item.id}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="relative aspect-[4/3.35] overflow-hidden bg-slate-100 dark:bg-slate-900">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    width={720}
+                    height={900}
+                    style={{ "--scroll-dist": item.scrollDist } as React.CSSProperties}
+                    className="mobile-scroll-effect h-auto w-full object-top"
+                  />
+
+                  <div className="absolute left-3 top-3 flex items-center gap-2">
+                    <span className={`rounded-md px-2 py-1 text-[10px] font-black text-white shadow-sm ${item.isPro ? "bg-orange-500" : "bg-lime-500"}`}>
+                      {item.isPro ? "PRO" : "FREE"}
+                    </span>
+                    <span className="rounded-md bg-white/90 px-2 py-1 text-[10px] font-black text-slate-600 shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-slate-300">
+                      {categoryLabels[item.category]}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={(event) => toggleLikeTemplate(event, item.id)}
+                    className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-rose-500 opacity-0 shadow-sm transition hover:scale-105 group-hover:opacity-100 dark:bg-slate-950/90"
+                    aria-label="Yêu thích template"
+                  >
+                    <IconHeart size={16} fill={likedTemplates[item.id] ? "currentColor" : "none"} />
+                  </button>
+
+                  <div className="absolute inset-x-3 bottom-3 grid translate-y-3 grid-cols-2 gap-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    <button
+                      onClick={() => setSelectedTemplateForPreview(item)}
+                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-800 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <IconEye size={14} />
+                      Xem trước
+                    </button>
+                    <button
+                      onClick={() => handleUseTemplate(item)}
+                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-lime-500 text-xs font-black text-white shadow-sm transition hover:bg-lime-600"
+                    >
+                      <IconPlus size={14} />
+                      Sử dụng
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-black uppercase tracking-wide text-lime-600 dark:text-lime-300">{name.code}</div>
+                      <h3 className="mt-1 line-clamp-2 min-h-[40px] text-sm font-black leading-snug text-slate-950 dark:text-white">
+                        {name.title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] font-bold text-slate-400 dark:border-slate-800">
+                    <span className="inline-flex items-center gap-1.5">
+                      <IconEye size={13} />
+                      {item.views.toLocaleString()}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <IconDownload size={13} />
+                      {item.likes.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       ) : (
-        <div className="py-24 text-center text-sm font-medium text-slate-455 dark:text-slate-500 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-900">
-          Chưa có mẫu nào phù hợp với tìm kiếm của bạn
+        <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-center dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-slate-900">
+            <IconSearch size={22} />
+          </div>
+          <p className="mt-4 text-sm font-black text-slate-800 dark:text-slate-100">Không tìm thấy template phù hợp</p>
+          <p className="mt-1 text-sm text-slate-500">Thử đổi từ khóa hoặc chọn lại danh mục.</p>
         </div>
       )}
     </div>

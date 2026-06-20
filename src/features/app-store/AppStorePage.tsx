@@ -82,6 +82,8 @@ export default function AppStorePage() {
       router.push("/facebook-ads/tai-khoan-qc");
     } else if (id === "14") {
       router.push("/cloudphone/cua-hang-cho-thue");
+    } else if (id === "15") {
+      router.push("/offerkit");
     } else if (id === "1") {
       router.push("/landing-pages");
     } else if (id === "2") {

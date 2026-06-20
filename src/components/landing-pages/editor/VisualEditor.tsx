@@ -16,11 +16,21 @@ import {
 import { EditorTopBar } from "./EditorTopBar";
 import { LayersPanel } from "./LayersPanel";
 import { Canvas } from "./Canvas";
-import { InspectorPanel, PageSettingsPanel } from "./InspectorPanel";
+import { InspectorPanel } from "./InspectorPanel";
+import { LANDING_ASSETS, LANDING_TEMPLATE_PRESETS, instantiateTemplateBlocks, resolveTemplatePresetId } from "./template-library";
 import { LandingPageItem } from "../dung-chung/types";
-import { FUNNELX_EVENTS, FUNNELX_FLAGS } from "@onlook/funnel";
+import { FUNNELX_FLAGS } from "@onlook/funnel";
 
-// ── Undo/Redo stack ──────────────────────────────────────────
+// Import modular split sub-panels
+import { PageListingPanel } from "./panels/PageListingPanel";
+import { BrandingPanel } from "./panels/BrandingPanel";
+import { TemplatesAssetsPanel } from "./panels/TemplatesAssetsPanel";
+import { FunnelPanel } from "./panels/FunnelPanel";
+import { SandboxPanel } from "./panels/SandboxPanel";
+import { HistoryPanel } from "./panels/HistoryPanel";
+import { BranchesPanel } from "./panels/BranchesPanel";
+import { AIChatPanel } from "./panels/AIChatPanel";
+
 const MAX_HISTORY = 60;
 
 function useHistory<T>(initial: T) {
@@ -67,21 +77,61 @@ function useHistory<T>(initial: T) {
   };
 }
 
-// ── Initial editor data factory ───────────────────────────────
 function buildInitialData(page: LandingPageItem): EditorData {
+  const presetId = resolveTemplatePresetId(page);
+  const presetBlocks = instantiateTemplateBlocks(presetId);
+
   return {
     pageId: page.id,
     pageName: page.name,
-    blocks: [
-      ensureOnlookBlockMeta(createDefaultBlock("hero")),
-      ensureOnlookBlockMeta(createDefaultBlock("countdown")),
-      ensureOnlookBlockMeta(createDefaultBlock("columns")),
-    ],
+    blocks: presetBlocks.length > 0
+      ? presetBlocks
+      : [
+          ensureOnlookBlockMeta(createDefaultBlock("hero")),
+          ensureOnlookBlockMeta(createDefaultBlock("countdown")),
+          ensureOnlookBlockMeta(createDefaultBlock("columns")),
+        ],
     pageSettings: createDefaultPageSettings(page.name),
   };
 }
 
-// ── Toast notification ─────────────────────────────────────────
+function isUntouchedStarterData(data: EditorData): boolean {
+  const [first, second, third] = data.blocks;
+  const defaultStarter = data.blocks.length === 3
+    && first?.type === "hero"
+    && second?.type === "countdown"
+    && third?.type === "columns"
+    && (first.label === "Hero Section" || first.componentName === "HeroBlock");
+  const oldImageBackdropPreset = first?.type === "hero"
+    && typeof first.props?.bgImage === "string"
+    && first.props.bgImage.includes("template_");
+
+  return (defaultStarter || oldImageBackdropPreset)
+    && !data.pageSettings.customDomain
+    && !data.pageSettings.pixelId;
+}
+
+function isLegacyTemplateData(data: EditorData, page: LandingPageItem): boolean {
+  const presetId = resolveTemplatePresetId(page);
+  const pagePresetIds = new Set(LANDING_TEMPLATE_PRESETS.filter((preset) => preset.category === "page").map((preset) => preset.id));
+
+  if (page.templateId && pagePresetIds.has(page.templateId) && isUntouchedStarterData(data)) return true;
+
+  if (presetId === "herb-tea") {
+    const teaBlocks = data.blocks.filter((block) => block.type === "tea_landing");
+    if (teaBlocks.length !== 1 || data.blocks.length !== 1) return true;
+  }
+  if (presetId !== "herb-tea") return false;
+
+  return data.blocks.some((block) => {
+    const props = block.props as Record<string, unknown>;
+    return block.label?.toLowerCase().includes("herb")
+      || block.label?.toLowerCase().includes("zen green")
+      || String(props.src ?? props.bgImage ?? "").includes("template_tea")
+      || String(props.title ?? props.headline ?? "").toLowerCase().includes("green tea");
+  });
+}
+
 const Toast: React.FC<{ message: string; type: "success" | "info" }> = ({ message, type }) => (
   <div
     className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all animate-bounce-in ${
@@ -104,17 +154,17 @@ const Toast: React.FC<{ message: string; type: "success" | "info" }> = ({ messag
 function formatActionLabel(action: LandingEditorAction): string {
   switch (action.type) {
     case "insert-element":
-      return `Inserted ${action.blockType} at ${action.index + 1}`;
+      return `Đã chèn ${action.blockType} tại ${action.index + 1}`;
     case "remove-element":
-      return `Removed ${action.blockType}`;
+      return `Đã xóa khối ${action.blockType}`;
     case "move-element":
-      return `Moved block ${action.fromIndex + 1} -> ${action.toIndex + 1}`;
+      return `Di chuyển khối ${action.fromIndex + 1} -> ${action.toIndex + 1}`;
     case "update-props":
-      return `Updated ${action.blockType}: ${action.keys.join(", ") || "props"}`;
+      return `Cập nhật ${action.blockType}: ${action.keys.join(", ") || "thuộc tính"}`;
     case "update-page-settings":
-      return `Updated page ${action.key}`;
+      return `Cài đặt trang: ${action.key}`;
     default:
-      return "Editor action";
+      return "Thao tác chỉnh sửa";
   }
 }
 
@@ -125,7 +175,6 @@ interface EditorRevision {
   createdAt: string;
 }
 
-// ── Main Visual Editor ─────────────────────────────────────────
 interface VisualEditorProps {
   page: LandingPageItem;
   pages?: LandingPageItem[];
@@ -171,7 +220,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const sidebarTabs = [
     {
       id: "layers",
-      label: "Layers",
+      label: "Layers & Thêm phần tử",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
@@ -201,7 +250,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     },
     {
       id: "images",
-      label: "Images",
+      label: "Templates & Assets",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -210,7 +259,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     },
     {
       id: "funnel",
-      label: "Funnel",
+      label: "Funnel & Logic",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h15l-6 7.125v4.875l-3 1.5v-6.375L4.5 5.25z" />
@@ -220,7 +269,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     },
     {
       id: "history",
-      label: "History",
+      label: "Lịch sử & Bản lưu",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3.75 2.25M3.75 12a8.25 8.25 0 111.833 5.197M3.75 18v-4.5h4.5" />
@@ -238,12 +287,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     },
     {
       id: "branches",
-      label: "Branches",
+      label: "Branches Git",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="18" cy="18" r="3" />
-          <circle cx="6" cy="6" r="3" />
-          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="18" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
+          <circle cx="6" cy="6" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
+          <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
           <path d="M18 15V9a4 4 0 0 0-4-4H9" />
           <line x1="6" y1="9" x2="6" y2="15" />
         </svg>
@@ -287,11 +336,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       if (raw) {
         const snapshot = JSON.parse(raw) as LandingEditorSnapshot;
         if (snapshot?.data?.pageId === page.id) {
-          applySnapshot(snapshot);
+          if (isUntouchedStarterData(snapshot.data) || isLegacyTemplateData(snapshot.data, page)) {
+            applySnapshot(createEditorSnapshot(buildInitialData(page), []));
+          } else {
+            applySnapshot(snapshot);
+          }
         }
       }
     } catch {
-      localStorage.removeItem(storageKey);
+      localStorage.setItem(storageKey, JSON.stringify(createEditorSnapshot(buildInitialData(page), [])));
     } finally {
       isHydratedRef.current = true;
     }
@@ -316,7 +369,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [data, pageName, actionLog, saveSnapshot]);
 
-  // Show toast
   const showToast = (message: string, type: "success" | "info" = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 2500);
@@ -343,8 +395,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     showToast(`Đã thêm ${newBlock.label}`);
   }, [data, push, recordAction, handleSelectBlock]);
 
-  const handleAddBlock = useCallback((blockType: BlockType) => {
-    const newBlock = ensureOnlookBlockMeta(createDefaultBlock(blockType));
+  const handleAddBlock = useCallback((blockType: BlockType, customProps?: Record<string, unknown>) => {
+    const defaultBlock = createDefaultBlock(blockType);
+    const newBlock = ensureOnlookBlockMeta({
+      ...defaultBlock,
+      props: {
+        ...defaultBlock.props,
+        ...customProps,
+      },
+    });
     const newBlocks = [...data.blocks, newBlock];
     push(normalizeEditorData({ ...data, blocks: newBlocks }));
     recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: newBlocks.length - 1, timestamp: Date.now() });
@@ -379,7 +438,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       recordAction({ type: "remove-element", blockId: removed.id, blockType: removed.type, timestamp: Date.now() });
     }
     if (selectedId === id) handleSelectBlock(null);
-    showToast("Đã xóa block", "info");
+    showToast("Đã xóa khối", "info");
   }, [data, push, recordAction, selectedId, handleSelectBlock]);
 
   const handleDuplicateBlock = useCallback((id: string) => {
@@ -389,7 +448,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     const cloned: EditorBlock = {
       ...original,
       id: `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      props: { ...original.props },
+      props: JSON.parse(JSON.stringify(original.props)), // deep copy props
       oid: undefined,
       instanceId: undefined,
       domId: undefined,
@@ -424,7 +483,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const handleSendChatMessage = useCallback((text: string) => {
     if (!text.trim()) return;
 
-    // Add user message
     const userMsg = { sender: "user" as const, text, timestamp: new Date().toLocaleTimeString() };
     setChatHistory(prev => [...prev, userMsg]);
     setIsAiTyping(true);
@@ -434,15 +492,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       let actionTaken = false;
 
       const normalizedText = text.toLowerCase().trim();
-
-      // Check if a block is selected
       const currentSelectedBlock = selectedId ? data.blocks.find(b => b.id === selectedId) : null;
 
       if (currentSelectedBlock) {
         const blockId = currentSelectedBlock.id;
         const currentProps = { ...currentSelectedBlock.props };
 
-        // 1. Change color instructions
         if (normalizedText.includes("màu cam") || normalizedText.includes("orange")) {
           if ("color" in currentProps) {
             currentProps.color = "#f97316";
@@ -477,7 +532,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           }
         }
 
-        // 2. Change text/title instructions
         const titleMatch = text.match(/(?:tiêu đề|tên nút|chữ thành|đổi chữ|sửa chữ)\s+['"“](.+?)['"”]/i) 
           || text.match(/(?:tiêu đề|tên nút|chữ thành|đổi chữ|sửa chữ)\s+(.+)$/i);
         if (titleMatch) {
@@ -501,7 +555,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           }
         }
 
-        // 3. Alignments
         if (normalizedText.includes("căn giữa") || normalizedText.includes("center")) {
           if ("textAlign" in currentProps) {
             currentProps.textAlign = "center";
@@ -512,16 +565,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             aiResponse = `Đã căn giữa nút cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
             actionTaken = true;
           }
-        } else if (normalizedText.includes("căn trái") || normalizedText.includes("left")) {
-          if ("textAlign" in currentProps) {
-            currentProps.textAlign = "left";
-            aiResponse = `Đã căn trái văn bản cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
-            actionTaken = true;
-          } else if ("align" in currentProps) {
-            currentProps.align = "left";
-            aiResponse = `Đã căn trái nút cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
-            actionTaken = true;
-          }
         }
 
         if (actionTaken) {
@@ -529,9 +572,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         }
       }
 
-      // 4. Page wide settings modifications
       if (!actionTaken) {
-        if (normalizedText.includes("nền trang màu đen") || normalizedText.includes("page background black") || normalizedText.includes("nền đen")) {
+        if (normalizedText.includes("nền trang màu đen") || normalizedText.includes("nền đen")) {
           handleUpdatePageSettings("bgColor", "#09090b");
           aiResponse = "Đã cập nhật màu nền của toàn bộ Landing Page sang màu đen tuyền (#09090b).";
           actionTaken = true;
@@ -546,7 +588,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         }
       }
 
-      // 5. Block creation via AI
       if (!actionTaken) {
         if (normalizedText.includes("thêm block") || normalizedText.includes("tạo block") || normalizedText.includes("add block")) {
           let typeToAdd: BlockType = "text";
@@ -563,13 +604,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           }
           
           handleAddBlock(typeToAdd);
-          aiResponse = `Tôi đã tạo và chèn thêm một block ${typeToAdd.toUpperCase()} mới vào cuối trang cho bạn!`;
+          aiResponse = `Tôi đã tạo và chèn thêm một khối ${typeToAdd.toUpperCase()} mới vào cuối trang cho bạn!`;
           actionTaken = true;
         }
       }
 
       if (!actionTaken) {
-        aiResponse = "Tôi đã hiểu ý tưởng thiết kế của bạn. Hãy chọn một block cụ thể (như Hero, Text, Nút CTA) để tôi có thể chỉnh sửa chính xác các chi tiết hoặc màu sắc của block đó!";
+        aiResponse = "Tôi đã hiểu ý tưởng thiết kế của bạn. Hãy chọn một khối cụ thể (như Hero, Text, Nút CTA) để tôi có thể chỉnh sửa chính xác các chi tiết hoặc màu sắc của khối đó!";
       }
 
       const aiMsg = { sender: "ai" as const, text: aiResponse, timestamp: new Date().toLocaleTimeString() };
@@ -588,7 +629,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       if (ctrlMeta && (e.key === "y" || (e.shiftKey && e.key === "z"))) { e.preventDefault(); redo(); }
       if (e.key === "Escape") setSelectedId(null);
       if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
-        // Only delete if not focused on an input
         const tag = (e.target as HTMLElement)?.tagName;
         if (!["INPUT", "TEXTAREA", "SELECT"].includes(tag)) {
           e.preventDefault();
@@ -608,14 +648,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo, selectedId, handleDeleteBlock, handleDuplicateBlock]);
 
-  // ── Publish handler ───────────────────────────────────────────
   const handlePublish = () => {
     saveSnapshot();
-    showToast("Đã xuất bản trang thành công! 🎉");
+    showToast("Đã xuất bản trang thành công! 🎉", "success");
     if (onPublish) onPublish({ ...page, name: pageName, status: "PUBLISHED" });
   };
 
-  // ── Selected block ────────────────────────────────────────────
   const downloadFile = useCallback((fileName: string, content: string, mimeType: string) => {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -628,19 +666,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   const handleManualSave = useCallback(() => {
     saveSnapshot();
-    showToast("Da luu ban thiet ke", "success");
+    showToast("Đã lưu bản thiết kế thiết kế", "success");
   }, [saveSnapshot]);
 
   const handleExportJson = useCallback(() => {
     const snapshot = createEditorSnapshot({ ...data, pageName }, actionLog);
     downloadFile(`${pageName || "landing-page"}.json`, JSON.stringify(snapshot, null, 2), "application/json");
-    showToast("Da xuat JSON", "success");
+    showToast("Đã xuất file JSON", "success");
   }, [actionLog, data, downloadFile, pageName]);
 
   const handleExportHtml = useCallback(() => {
     const html = renderLandingPageHtml({ ...data, pageName });
     downloadFile(`${pageName || "landing-page"}.html`, html, "text/html");
-    showToast("Da xuat HTML", "success");
+    showToast("Đã xuất file HTML", "success");
   }, [data, downloadFile, pageName]);
 
   const handleImportJson = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -663,9 +701,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             pageName: snapshot.data.pageName || pageName,
           },
         });
-        showToast("Da import ban thiet ke", "success");
+        showToast("Đã import bản thiết kế thành công", "success");
       } catch {
-        showToast("File JSON khong hop le", "info");
+        showToast("File JSON không hợp lệ", "info");
       }
     };
     reader.readAsText(file);
@@ -681,27 +719,71 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     const snapshot = createEditorSnapshot({ ...data, pageName }, actionLog);
     const revision: EditorRevision = {
       id: `rev_${Date.now()}`,
-      name: name?.trim() || `Version ${new Date().toLocaleString("vi-VN")}`,
+      name: name?.trim() || `Phiên bản ngày ${new Date().toLocaleString("vi-VN")}`,
       snapshot,
       createdAt: snapshot.updatedAt,
     };
     persistRevisions([revision, ...revisions]);
-    showToast("Da tao version", "success");
+    showToast("Đã tạo điểm lưu thành công", "success");
   }, [actionLog, data, pageName, persistRevisions, revisions]);
 
   const handleRestoreRevision = useCallback((revision: EditorRevision) => {
     applySnapshot(revision.snapshot);
     saveSnapshot(revision.snapshot.data, revision.snapshot.actions);
-    showToast("Da khoi phuc version", "success");
+    showToast("Đã khôi phục thiết kế", "success");
   }, [applySnapshot, saveSnapshot]);
 
   const handleClearCanvas = useCallback(() => {
-    if (!confirm("Xoa tat ca block tren trang nay?")) return;
+    if (!confirm("Bạn có muốn xóa tất cả các block trên trang này?")) return;
     push(normalizeEditorData({ ...data, blocks: [] }));
     setSelectedId(null);
     recordAction({ type: "update-page-settings", key: "clear-canvas", timestamp: Date.now() });
-    showToast("Da xoa canvas", "info");
+    showToast("Đã dọn sạch canvas", "info");
   }, [data, push, recordAction]);
+
+  const handleApplyTemplate = useCallback((templateId: string, mode: "append" | "replace" = "append") => {
+    const templateBlocks = instantiateTemplateBlocks(templateId);
+    if (templateBlocks.length === 0) return;
+    if (mode === "replace" && data.blocks.length > 0 && !confirm("Thay toàn bộ canvas bằng mẫu này?")) return;
+
+    const nextBlocks = mode === "replace" ? templateBlocks : [...data.blocks, ...templateBlocks];
+    push(normalizeEditorData({ ...data, blocks: nextBlocks }));
+    templateBlocks.forEach((block, offset) => {
+      recordAction({
+        type: "insert-element",
+        blockId: block.id,
+        blockType: block.type,
+        index: mode === "replace" ? offset : data.blocks.length + offset,
+        timestamp: Date.now(),
+      });
+    });
+    handleSelectBlock(templateBlocks[0].id);
+    showToast(mode === "replace" ? "Đã áp dụng mẫu trang mới" : "Đã chèn mẫu thiết kế", "success");
+  }, [data, handleSelectBlock, push, recordAction]);
+
+  const handleUseAsset = useCallback((url: string, name: string) => {
+    if (selectedId) {
+      const current = data.blocks.find((block) => block.id === selectedId);
+      if (current?.type === "image") {
+        handleUpdateBlock(current.id, { ...current.props, src: url, alt: name });
+        showToast(`Đã gán ảnh ${name}`, "success");
+        return;
+      }
+      if (current?.type === "hero") {
+        handleUpdateBlock(current.id, { ...current.props, bgImage: url });
+        showToast(`Đã gán ảnh nền ${name}`, "success");
+        return;
+      }
+      if (current?.type === "testimonial") {
+        handleUpdateBlock(current.id, { ...current.props, authorAvatar: url });
+        showToast(`Đã gán avatar ${name}`, "success");
+        return;
+      }
+    }
+
+    navigator.clipboard?.writeText(url);
+    showToast(`Đã copy link ảnh: ${name}`, "info");
+  }, [data.blocks, handleUpdateBlock, selectedId]);
 
   const selectedBlock = selectedId ? data.blocks.find((b) => b.id === selectedId) ?? null : null;
   const sandboxPreviewUrl = data.pageSettings.sandboxUrl
@@ -714,10 +796,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   return (
     <DndProvider backend={HTML5Backend}>
       <div
-        className="fixed inset-0 z-[999999] flex flex-col bg-[#0a0a0f]"
+        className="fixed inset-0 z-[999999] flex flex-col bg-gray-50 text-gray-800"
         style={{ fontFamily: "Inter, sans-serif" }}
       >
-        {/* Top bar */}
+        {/* Top bar (Light Theme already) */}
         <EditorTopBar
           pageName={pageName}
           setPageName={setPageName}
@@ -754,9 +836,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         {/* 3-column editor body */}
         <div className="flex flex-1 overflow-hidden">
           {/* LEFT SIDEBAR STRIP + WIDE PANEL */}
-          <div className="flex flex-shrink-0 bg-[#111118] border-r border-gray-800/80 h-full overflow-hidden select-none">
+          <div className="flex flex-shrink-0 bg-white border-r border-gray-200 h-full overflow-hidden select-none">
             {/* Narrow sidebar strip */}
-            <div className="w-14 bg-[#0a0a0f] border-r border-gray-800/80 flex flex-col items-center py-4 gap-4 flex-shrink-0 select-none">
+            <div className="w-14 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4 gap-4 flex-shrink-0 select-none">
               {sidebarTabs.map((tabItem) => {
                 const isActive = activeTab === tabItem.id;
                 return (
@@ -766,8 +848,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     title={tabItem.label}
                     className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                       isActive
-                        ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
-                        : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                        ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
+                        : "text-gray-400 hover:text-gray-800 hover:bg-gray-200/50"
                     }`}
                   >
                     {tabItem.icon}
@@ -777,7 +859,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             </div>
 
             {/* Wide Panel Content */}
-            <div className="w-60 flex flex-col h-full bg-[#111118] overflow-hidden">
+            <div className={`${activeTab === "layers" ? "w-[420px]" : "w-64"} flex flex-shrink-0 flex-col h-full bg-white border-r border-gray-200 overflow-hidden transition-all duration-200`}>
               {activeTab === "layers" && (
                 <LayersPanel
                   blocks={data.blocks}
@@ -788,460 +870,60 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 />
               )}
               {activeTab === "brand" && (
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-800/60">
-                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-1.178-.256H5.25a2.25 2.25 0 00-2.25 2.25v1.875c0 .345.029.689.086 1.026a3.385 3.385 0 006.084 1.15l.982-1.656a3 3 0 00.57-1.56h.03c.105 0 .21-.005.312-.015" />
-                    </svg>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cấu hình Brand & Trang</h3>
-                  </div>
-                  <PageSettingsPanel settings={data.pageSettings} onUpdateSettings={handleUpdatePageSettings} />
-                </div>
+                <BrandingPanel settings={data.pageSettings} onUpdateSettings={handleUpdatePageSettings} />
               )}
               {activeTab === "pages" && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Danh sách Trang</h3>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const name = prompt("Nhập tên trang mới:");
-                        if (name && name.trim()) {
-                          const newPg = onCreatePage?.(name.trim());
-                          if (newPg && onSwitchPage) onSwitchPage(newPg);
-                        }
-                      }}
-                      className="cursor-pointer text-xs font-bold text-purple-400 hover:text-purple-300 transition"
-                    >
-                      + Mới
-                    </button>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto space-y-1.5">
-                    {pages?.map((p) => {
-                      const isCurrent = p.id === page.id;
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => {
-                            if (!isCurrent && onSwitchPage) {
-                              onSwitchPage(p);
-                            }
-                          }}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer border transition-all ${
-                            isCurrent
-                              ? "bg-purple-600/20 text-purple-300 border-purple-500/40 font-semibold"
-                              : "border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-300"
-                          }`}
-                        >
-                          <span className="truncate flex-1">{p.name}</span>
-                          {isCurrent ? (
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500 flex-shrink-0 ml-2" />
-                          ) : onDeletePage ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm(`Bạn có chắc chắn muốn xóa trang "${p.name}"?`)) {
-                                  onDeletePage(p.id);
-                                }
-                              }}
-                              className="text-gray-600 hover:text-red-450 p-1 transition ml-2 cursor-pointer"
-                              title="Xóa trang"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <PageListingPanel
+                  page={page}
+                  pages={pages}
+                  onSwitchPage={onSwitchPage}
+                  onCreatePage={onCreatePage}
+                  onDeletePage={onDeletePage}
+                />
               )}
               {activeTab === "images" && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
-                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
-                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M21 3H3" />
-                    </svg>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thư viện Ảnh</h3>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto grid grid-cols-2 gap-2">
-                    {[
-                      { name: "Cosmetics", url: "/images/template_cosmetics.png" },
-                      { name: "Wedding", url: "/images/template_wedding.png" },
-                      { name: "Herb Tea", url: "/images/template_tea.png" },
-                      { name: "Smartwatch", url: "/images/template_electronics.png" },
-                    ].map((img, i) => (
-                      <div
-                        key={i}
-                        onClick={() => {
-                          navigator.clipboard.writeText(img.url);
-                          showToast(`Đã copy link ảnh: ${img.name}`);
-                        }}
-                        className="group relative cursor-pointer aspect-square rounded-lg border border-gray-850 overflow-hidden bg-gray-900 hover:border-purple-500/50 transition"
-                        title="Click để copy URL ảnh"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img.url} alt={img.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
-                        <div className="absolute inset-x-0 bottom-0 bg-black/75 px-1.5 py-1 text-[9px] text-gray-300 truncate">
-                          {img.name}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <TemplatesAssetsPanel onApplyTemplate={handleApplyTemplate} onUseAsset={handleUseAsset} />
               )}
               {activeTab === "funnel" && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
-                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
-                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h15l-6 7.125v4.875l-3 1.5v-6.375L4.5 5.25z" />
-                    </svg>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Funnel / Logic</h3>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto space-y-4">
-                    <div className="rounded-lg border border-purple-500/20 bg-purple-950/10 p-3 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300">GrowthBook Feature</div>
-                          <div className="mt-1 text-[11px] leading-relaxed text-gray-500">Bind a flag to this page or selected funnel component.</div>
-                        </div>
-                        <button
-                          onClick={() => handleUpdatePageSettings("funnelEnabled", !data.pageSettings.funnelEnabled)}
-                          className={`relative h-5 w-9 rounded-full transition ${data.pageSettings.funnelEnabled ? "bg-purple-600" : "bg-gray-700"}`}
-                        >
-                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${data.pageSettings.funnelEnabled ? "left-4" : "left-0.5"}`} />
-                        </button>
-                      </div>
-
-                      <select
-                        value={data.pageSettings.funnelFeatureFlag}
-                        onChange={(e) => handleUpdatePageSettings("funnelFeatureFlag", e.target.value)}
-                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                      >
-                        {FUNNELX_FLAGS.map((flag) => (
-                          <option key={flag} value={flag}>{flag}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3 space-y-3">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Behavior Trigger</div>
-                      <select
-                        value={data.pageSettings.funnelTrigger}
-                        onChange={(e) => handleUpdatePageSettings("funnelTrigger", e.target.value)}
-                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="immediate">Immediate</option>
-                        <option value="time_on_page">Time on page</option>
-                        <option value="scroll_progress">Scroll progress</option>
-                        <option value="exit_intent">Exit intent</option>
-                        <option value="inactivity">Inactivity</option>
-                      </select>
-                      <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Threshold</label>
-                        <input
-                          type="number"
-                          value={data.pageSettings.funnelTriggerThreshold}
-                          onChange={(e) => handleUpdatePageSettings("funnelTriggerThreshold", Number(e.target.value))}
-                          className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                        />
-                      </div>
-                      <select
-                        value={data.pageSettings.funnelFrequency}
-                        onChange={(e) => handleUpdatePageSettings("funnelFrequency", e.target.value)}
-                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="once">Once</option>
-                        <option value="session">Once per session</option>
-                        <option value="always">Always</option>
-                      </select>
-                    </div>
-
-                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3 space-y-3">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">PostHog Tracking</div>
-                      <label className="flex items-center justify-between gap-3 text-xs text-gray-300">
-                        Capture funnel events
-                        <input
-                          type="checkbox"
-                          checked={data.pageSettings.posthogEnabled}
-                          onChange={(e) => handleUpdatePageSettings("posthogEnabled", e.target.checked)}
-                          className="h-4 w-4 accent-purple-500"
-                        />
-                      </label>
-                      <input
-                        type="text"
-                        value={data.pageSettings.posthogProjectKey}
-                        onChange={(e) => handleUpdatePageSettings("posthogProjectKey", e.target.value)}
-                        placeholder="PostHog project key"
-                        className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                      />
-                      <label className="flex items-center justify-between gap-3 text-xs text-gray-300">
-                        Session replay
-                        <input
-                          type="checkbox"
-                          checked={data.pageSettings.sessionReplayEnabled}
-                          onChange={(e) => handleUpdatePageSettings("sessionReplayEnabled", e.target.checked)}
-                          className="h-4 w-4 accent-purple-500"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3">
-                      <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Event taxonomy</div>
-                      <div className="space-y-1.5">
-                        {Object.values(FUNNELX_EVENTS).slice(0, 7).map((eventName) => (
-                          <div key={eventName} className="rounded-md bg-black/20 px-2 py-1 font-mono text-[10px] text-gray-500">
-                            {eventName}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <FunnelPanel settings={data.pageSettings} onUpdateSettings={handleUpdatePageSettings} />
               )}
               {activeTab === "sandbox" && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25M21 7.5v9l-9 5.25m0-9L3 7.5m9 5.25v9M3 7.5v9l9 5.25" />
-                      </svg>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sandbox & Publish</h3>
-                    </div>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                      data.pageSettings.sandboxStatus === "ready"
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : data.pageSettings.sandboxStatus === "error"
-                        ? "bg-red-500/15 text-red-300"
-                        : "bg-amber-500/15 text-amber-300"
-                    }`}>
-                      {data.pageSettings.sandboxStatus}
-                    </span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto space-y-4">
-                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3 space-y-3">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Preview Environment</div>
-                      <select
-                        value={data.pageSettings.sandboxProvider}
-                        onChange={(e) => handleUpdatePageSettings("sandboxProvider", e.target.value)}
-                        className="w-full rounded-lg border border-gray-700/50 bg-[#1a1a26] px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="local">Local iframe</option>
-                        <option value="codesandbox">CodeSandbox</option>
-                        <option value="vercel">Vercel Sandbox</option>
-                      </select>
-                      <input
-                        value={data.pageSettings.sandboxId}
-                        onChange={(e) => handleUpdatePageSettings("sandboxId", e.target.value)}
-                        placeholder="sandbox id"
-                        className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          value={data.pageSettings.sandboxPort}
-                          onChange={(e) => handleUpdatePageSettings("sandboxPort", Number(e.target.value) || 3000)}
-                          className="rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                        />
-                        <input
-                          value={data.pageSettings.previewPath}
-                          onChange={(e) => handleUpdatePageSettings("previewPath", e.target.value)}
-                          placeholder="/landing-page"
-                          className="rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                        />
-                      </div>
-                      <div className="rounded-lg bg-black/30 p-2 font-mono text-[10px] text-gray-500 break-all">
-                        {sandboxPreviewUrl}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => {
-                            handleUpdatePageSettings("sandboxStatus", "ready");
-                            showToast("Sandbox ready", "success");
-                          }}
-                          className="rounded-lg border border-purple-500/30 py-2 text-xs font-bold text-purple-300 hover:bg-purple-500/10"
-                        >
-                          Connect
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleUpdatePageSettings("sandboxStatus", "connecting");
-                            setTimeout(() => handleUpdatePageSettings("sandboxStatus", "ready"), 600);
-                            showToast("Restart sandbox", "info");
-                          }}
-                          className="rounded-lg border border-gray-700 py-2 text-xs font-bold text-gray-300 hover:bg-white/5"
-                        >
-                          Restart
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-3 space-y-3">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">SEO & Tracking</div>
-                      <input
-                        value={data.pageSettings.seoTitle}
-                        onChange={(e) => handleUpdatePageSettings("seoTitle", e.target.value)}
-                        placeholder="SEO title"
-                        className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                      />
-                      <textarea
-                        value={data.pageSettings.seoDescription}
-                        onChange={(e) => handleUpdatePageSettings("seoDescription", e.target.value)}
-                        placeholder="SEO description"
-                        rows={3}
-                        className="w-full resize-none rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                      />
-                      <input
-                        value={data.pageSettings.customDomain}
-                        onChange={(e) => handleUpdatePageSettings("customDomain", e.target.value)}
-                        placeholder="custom domain"
-                        className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                      />
-                      <input
-                        value={data.pageSettings.pixelId}
-                        onChange={(e) => handleUpdatePageSettings("pixelId", e.target.value)}
-                        placeholder="Meta pixel / verification id"
-                        className="w-full rounded-lg border border-gray-700/50 bg-white/5 px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <SandboxPanel
+                  settings={data.pageSettings}
+                  onUpdateSettings={handleUpdatePageSettings}
+                  sandboxPreviewUrl={sandboxPreviewUrl}
+                  showToast={showToast}
+                />
               )}
               {activeTab === "history" && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3.75 2.25M3.75 12a8.25 8.25 0 111.833 5.197M3.75 18v-4.5h4.5" />
-                      </svg>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Action History</h3>
-                    </div>
-                    <span className="text-[10px] text-gray-500">{actionLog.length}</span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto space-y-2">
-                    <div className="rounded-lg border border-purple-500/20 bg-purple-950/10 p-3">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300">Versions</span>
-                        <button
-                          onClick={() => handleCreateRevision()}
-                          className="text-[10px] font-bold text-purple-300 hover:text-purple-200"
-                        >
-                          + Save
-                        </button>
-                      </div>
-                      {revisions.length === 0 ? (
-                        <p className="text-[11px] text-gray-500">Chua co version nao.</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {revisions.slice(0, 8).map((revision) => (
-                            <div key={revision.id} className="flex items-center justify-between gap-2 rounded-md bg-white/[0.03] px-2 py-1.5">
-                              <div className="min-w-0">
-                                <div className="truncate text-[11px] font-semibold text-gray-300">{revision.name}</div>
-                                <div className="text-[10px] text-gray-600">{new Date(revision.createdAt).toLocaleString("vi-VN")}</div>
-                              </div>
-                              <button
-                                onClick={() => handleRestoreRevision(revision)}
-                                className="flex-shrink-0 text-[10px] font-bold text-purple-300 hover:text-purple-200"
-                              >
-                                Restore
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {actionLog.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-gray-800 p-4 text-xs text-gray-500 leading-relaxed">
-                        Chua co thao tac nao.
-                      </div>
-                    ) : (
-                      [...actionLog].reverse().map((action, index) => (
-                        <div key={`${action.timestamp}-${index}`} className="rounded-lg border border-gray-800 bg-white/[0.03] p-2.5 text-xs">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-semibold text-gray-300 truncate">{formatActionLabel(action)}</span>
-                            <span className="text-[10px] text-gray-600 flex-shrink-0">
-                              {new Date(action.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          </div>
-                          {"blockId" in action && (
-                            <div className="mt-1 truncate font-mono text-[10px] text-gray-600">{action.blockId}</div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <HistoryPanel
+                  actionLog={actionLog}
+                  revisions={revisions}
+                  onCreateRevision={() => handleCreateRevision()}
+                  onRestoreRevision={handleRestoreRevision}
+                  formatActionLabel={formatActionLabel}
+                />
               )}
               {activeTab === "branches" && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden p-4">
-                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800/60 flex-shrink-0">
-                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <circle cx="18" cy="18" r="3" />
-                      <circle cx="6" cy="6" r="3" />
-                      <circle cx="6" cy="18" r="3" />
-                      <path d="M18 15V9a4 4 0 0 0-4-4H9" />
-                      <line x1="6" y1="9" x2="6" y2="15" />
-                    </svg>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Git Branches</h3>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto space-y-2">
-                    <div className="bg-purple-950/20 border border-purple-500/20 p-2.5 rounded-lg text-xs flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="font-mono text-purple-300 font-semibold">main</span>
-                      </div>
-                      <span className="text-[10px] text-purple-400 font-bold bg-purple-500/10 px-1.5 py-0.5 rounded uppercase">Active</span>
-                    </div>
-
-                    {["development", "feature-puck-editor", "staging"].map((br) => (
-                      <div key={br} className="border border-gray-800 p-2.5 rounded-lg text-xs text-gray-500 hover:border-gray-700 hover:text-gray-400 transition cursor-pointer flex items-center justify-between">
-                        <span className="font-mono">{br}</span>
-                        <span className="text-[9px] text-gray-650 font-semibold">Offline</span>
-                      </div>
-                    ))}
-
-                    <button
-                      onClick={() => {
-                        const name = prompt("Nhập tên branch mới:");
-                        if (name) alert(`Đã tạo branch mới: ${name}`);
-                      }}
-                      className="w-full text-center text-xs text-purple-400 py-2 border border-purple-500/20 rounded-lg hover:bg-purple-500/5 transition mt-2 cursor-pointer"
-                    >
-                      + Create Branch
-                    </button>
-                  </div>
-                </div>
+                <BranchesPanel />
               )}
             </div>
           </div>
 
           {/* CENTER — Canvas */}
           {activeViewMode === "code" ? (
-            <div className="flex-1 overflow-auto bg-[#07070b] p-6">
-              <pre className="min-h-full rounded-lg border border-gray-800 bg-[#0f0f16] p-4 text-xs leading-relaxed text-gray-300 whitespace-pre-wrap">
+            <div className="flex-1 overflow-auto bg-gray-100 p-6">
+              <pre className="min-h-full rounded-lg border border-gray-200 bg-white p-4 text-xs leading-relaxed text-gray-800 whitespace-pre-wrap font-mono shadow-sm">
                 {codeView}
               </pre>
             </div>
           ) : activeViewMode === "preview" ? (
-            <div className="flex-1 overflow-auto bg-[#07070b] p-8">
-              <div className="mx-auto mb-4 flex max-w-5xl items-center justify-between gap-3 rounded-lg border border-gray-800 bg-[#111118] px-3 py-2 text-xs">
+            <div className="flex-1 overflow-auto bg-gray-150 p-8">
+              <div className="mx-auto mb-4 flex max-w-5xl items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm">
                 <div className="min-w-0 truncate font-mono text-gray-500">{sandboxPreviewUrl}</div>
                 <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${data.pageSettings.sandboxStatus === "ready" ? "bg-emerald-400" : "bg-amber-400"}`} />
-                  <span className="font-bold text-gray-400">{data.pageSettings.sandboxProvider}</span>
+                  <span className={`h-2 w-2 rounded-full ${data.pageSettings.sandboxStatus === "ready" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  <span className="font-bold text-gray-600">{data.pageSettings.sandboxProvider.toUpperCase()}</span>
                 </div>
               </div>
               <div className="flex items-start justify-center">
@@ -1250,7 +932,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   srcDoc={previewHtml}
                   sandbox="allow-modals allow-forms allow-same-origin allow-scripts allow-popups allow-downloads"
                   allow="geolocation; microphone; camera; midi; encrypted-media"
-                  className="bg-white shadow-2xl"
+                  className="bg-white shadow-2xl rounded-lg border border-gray-200"
                   style={{
                     width: DEVICE_WIDTHS[deviceMode],
                     minHeight: 720,
@@ -1279,18 +961,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           )}
 
           {/* RIGHT — Inspector / AI Copilot */}
-          <div className="w-[344px] flex-shrink-0 flex flex-col bg-[#101016] border-l border-[#252535] h-full overflow-hidden">
+          <div className="w-[344px] flex-shrink-0 flex flex-col bg-white border-l border-gray-200 h-full overflow-hidden">
             {/* Tab selector header */}
-            <div className="px-3 py-2 border-b border-[#252535] flex items-center justify-between flex-shrink-0 bg-[#0b0b11] select-none">
-              <div className="flex rounded-md border border-[#252535] bg-[#0e0e15] p-0.5">
+            <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-gray-50 select-none">
+              <div className="flex rounded-md border border-gray-250 bg-gray-100 p-0.5">
                 {(["chat", "inspector"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setRightTab(tab)}
-                    className={`rounded px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition ${
+                    className={`rounded px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition ${
                       rightTab === tab
-                        ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                        : "text-gray-500 hover:text-gray-300"
+                        ? "bg-purple-600 text-white shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
                     }`}
                   >
                     {tab === "chat" ? "Chat AI" : "Inspect"}
@@ -1301,7 +983,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               {rightTab === "chat" && (
                 <button
                   onClick={() => setChatHistory([])}
-                  className="cursor-pointer rounded-md border border-purple-500/20 px-2 py-1 text-[10px] font-bold text-purple-300 hover:bg-purple-500/10 transition"
+                  className="cursor-pointer rounded-md border border-purple-500/20 bg-purple-50 px-2 py-1 text-[10px] font-bold text-purple-700 hover:bg-purple-100 transition shadow-sm"
                 >
                   New
                 </button>
@@ -1318,137 +1000,44 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   onUpdatePageSettings={handleUpdatePageSettings}
                 />
               ) : (
-                /* Chat view */
-                <div className="flex-1 flex flex-col overflow-hidden bg-[#0b0b12] relative">
-                  {/* Messages Area */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {chatHistory.length === 0 ? (
-                      /* Empty state: Select element to chat with AI */
-                      <div className="flex flex-col items-center justify-center h-full text-center p-6 select-none">
-                        <div className="w-14 h-14 border border-dashed border-[#3a3a4d] rounded-xl flex items-center justify-center mb-4 text-purple-300/70 bg-purple-500/5">
-                          <svg className="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m0 0l-1.5-1.5M12 4.5l1.5-1.5" />
-                          </svg>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-300">Select an element</p>
-                        <p className="text-xs text-gray-500 mt-1.5 max-w-[220px] leading-relaxed">
-                          Chọn một khối trên Canvas hoặc nhập yêu cầu chỉnh sửa giao diện ở dưới!
-                        </p>
-                      </div>
-                    ) : (
-                      /* Chat message history */
-                      <div className="space-y-3.5">
-                        {selectedBlock && (
-                          <div className="bg-purple-950/20 border border-purple-500/20 p-2 rounded-lg text-[10px] text-purple-300 flex items-center gap-1.5 select-none">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                            Đang chọn chỉnh sửa: <span className="font-bold">{selectedBlock.label || selectedBlock.type}</span>
-                          </div>
-                        )}
-                        
-                        {chatHistory.map((msg, i) => {
-                          const isUser = msg.sender === "user";
-                          return (
-                            <div key={i} className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
-                              <div className={`max-w-[85%] p-3 rounded-xl text-xs leading-relaxed ${
-                                isUser
-                                  ? "bg-purple-600 text-white rounded-tr-none"
-                                  : "bg-white/5 text-gray-300 border border-gray-800/80 rounded-tl-none"
-                              }`}>
-                                {msg.text}
-                              </div>
-                              <span className="text-[9px] text-gray-500 mt-1 px-1">{msg.timestamp}</span>
-                            </div>
-                          );
-                        })}
-
-                        {isAiTyping && (
-                          <div className="flex items-center gap-1 text-gray-500 text-xs pl-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "300ms" }} />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Input area */}
-                  <div className="p-3 border-t border-[#252535] bg-[#0b0b11] flex-shrink-0">
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (chatInput.trim()) {
-                          handleSendChatMessage(chatInput);
-                          setChatInput("");
-                        }
-                      }}
-                      className="relative flex items-center rounded-lg border border-[#2b2b3c] bg-[#101018] px-3 py-2 focus-within:border-purple-500 transition-all"
-                    >
-                      <textarea
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        placeholder={selectedBlock ? `Yêu cầu sửa block này...` : `Hỏi AI chỉnh sửa giao diện...`}
-                        rows={1}
-                        className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 focus:outline-none resize-none no-scrollbar py-1 pr-6"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            if (chatInput.trim()) {
-                              handleSendChatMessage(chatInput);
-                              setChatInput("");
-                            }
-                          }
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        disabled={!chatInput.trim()}
-                        className="cursor-pointer absolute right-2 text-purple-400 hover:text-purple-300 transition-all disabled:opacity-30"
-                      >
-                        <svg className="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                        </svg>
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* Quick AI action */}
-                  <div className="absolute right-4 bottom-16 select-none cursor-pointer group">
-                    <div className="w-9 h-9 rounded-md border border-purple-500/30 bg-[#141421] flex items-center justify-center shadow-lg shadow-black/30 hover:border-purple-400 transition-all">
-                      <svg className="h-4 w-4 text-purple-300" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v4m0 10v4m9-9h-4M7 12H3m14.657-5.657-2.829 2.829M9.172 14.828l-2.829 2.829m11.314 0-2.829-2.829M9.172 9.172 6.343 6.343" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+                <AIChatPanel
+                  chatHistory={chatHistory}
+                  setChatHistory={setChatHistory}
+                  selectedBlock={selectedBlock}
+                  chatInput={chatInput}
+                  setChatInput={setChatInput}
+                  isAiTyping={isAiTyping}
+                  handleSendChatMessage={handleSendChatMessage}
+                />
               )}
             </div>
           </div>
         </div>
 
+        {/* Command Palette */}
         {isCommandOpen && (
-          <div className="absolute inset-0 z-[9998] flex items-start justify-center bg-black/50 pt-24" onClick={() => setIsCommandOpen(false)}>
+          <div className="absolute inset-0 z-[9998] flex items-start justify-center bg-black/30 pt-24" onClick={() => setIsCommandOpen(false)}>
             <div
-              className="w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-xl border border-gray-800 bg-[#111118] shadow-2xl"
+              className="w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-gray-800 px-4 py-3">
-                <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Command Palette</div>
-                <div className="mt-1 text-sm font-semibold text-gray-200">{pageName}</div>
+              <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Command Palette</div>
+                <div className="mt-1 text-sm font-bold text-gray-850">{pageName}</div>
               </div>
-              <div className="grid grid-cols-2 gap-2 p-3">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-white">
                 {[
-                  { label: "Add Hero", action: () => handleAddBlock("hero") },
-                  { label: "Add Form", action: () => handleAddBlock("form_capture") },
-                  { label: "Save", action: handleManualSave },
-                  { label: "Create Version", action: () => handleCreateRevision() },
-                  { label: "Preview", action: () => setActiveViewMode("preview") },
-                  { label: "Code", action: () => setActiveViewMode("code") },
-                  { label: "Open Sandbox Panel", action: () => setActiveTab("sandbox") },
+                  { label: "Add Hero Section", action: () => handleAddBlock("hero") },
+                  { label: "Add Form Capture", action: () => handleAddBlock("form_capture") },
+                  { label: "Save Design", action: handleManualSave },
+                  { label: "Create Revision Point", action: () => handleCreateRevision() },
+                  { label: "Preview Mode", action: () => setActiveViewMode("preview") },
+                  { label: "Code View Mode", action: () => setActiveViewMode("code") },
+                  { label: "Open Sandbox Config", action: () => setActiveTab("sandbox") },
                   { label: "Connect Sandbox", action: () => handleUpdatePageSettings("sandboxStatus", "ready") },
-                  { label: "Export JSON", action: handleExportJson },
-                  { label: "Export HTML", action: handleExportHtml },
-                  { label: "Clear Canvas", action: handleClearCanvas },
+                  { label: "Export JSON Design", action: handleExportJson },
+                  { label: "Export HTML Bundle", action: handleExportHtml },
+                  { label: "Clear Canvas Blocks", action: handleClearCanvas },
                 ].map((command) => (
                   <button
                     key={command.label}
@@ -1456,22 +1045,24 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       command.action();
                       setIsCommandOpen(false);
                     }}
-                    className="rounded-lg border border-gray-800 bg-white/[0.03] px-3 py-2 text-left text-xs font-semibold text-gray-300 transition hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-white"
+                    className="cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:border-purple-500/50 hover:bg-purple-50 hover:text-purple-700"
                   >
                     {command.label}
                   </button>
                 ))}
               </div>
-              <div className="border-t border-gray-800 px-4 py-2 text-[10px] text-gray-600">Ctrl+K de mo nhanh</div>
+              <div className="border-t border-gray-200 bg-gray-50 px-4 py-2.5 text-[10px] text-gray-400 font-semibold">
+                Bấm Ctrl+K để mở nhanh
+              </div>
             </div>
           </div>
         )}
 
-        {/* Toast */}
+        {/* Toast notifications */}
         {toast && <Toast message={toast.message} type={toast.type} />}
 
-        {/* Keyboard shortcuts hint (bottom of canvas) */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-gray-700 pointer-events-none select-none hidden lg:block">
+        {/* Keyboard shortcuts hint */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-gray-500 font-semibold pointer-events-none select-none bg-white/90 border border-gray-200 shadow px-3 py-1 rounded-full hidden lg:block">
           Delete — xóa block &nbsp;·&nbsp; Ctrl+D — nhân đôi &nbsp;·&nbsp; Ctrl+Z — hoàn tác &nbsp;·&nbsp; Esc — bỏ chọn
         </div>
       </div>

@@ -34,7 +34,24 @@ export type BlockType =
   | "divider"
   | "countdown"
   | "video"
-  | "form_capture";
+  | "form_capture"
+  | "chat_widget"
+  | "funnel_popup"
+  | "smartwatch_landing"
+  | "tea_landing"
+  | "gallery"
+  | "box"
+  | "icon"
+  | "product_card"
+  | "collection_list"
+  | "carousel"
+  | "tabs"
+  | "frame"
+  | "accordion"
+  | "table"
+  | "survey"
+  | "menu"
+  | "html_code";
 
 // ── Block Palette Categories ─────────────────────────────────
 export interface PaletteCategory {
@@ -74,6 +91,12 @@ export const PALETTE_CATEGORIES: PaletteCategory[] = [
     label: "Social Proof",
     icon: "star",
     blocks: ["feature_card", "testimonial"],
+  },
+  {
+    id: "widgets",
+    label: "Widget",
+    icon: "plug",
+    blocks: ["chat_widget", "funnel_popup"],
   },
 ];
 
@@ -115,7 +138,7 @@ export interface ImageProps {
 export interface ButtonProps {
   label: string;
   url: string;
-  style: "filled" | "outline" | "ghost";
+  style: "filled" | "outline" | "ghost" | "text";
   color: string;
   textColor: string;
   size: "sm" | "md" | "lg";
@@ -195,6 +218,185 @@ export interface FormCaptureProps {
   borderRadius: number;
 }
 
+export interface TeaLandingProps {
+  brand: string;
+  navItems: string[];
+  headline: string;
+  subheadline: string;
+  ctaText: string;
+  ctaUrl: string;
+  heroImage: string;
+  philosophyTitle: string;
+  philosophyText: string;
+  blends: { id: string; name: string; description: string; icon: string }[];
+  ingredients: { id: string; name: string; description: string; icon: string }[];
+  brewSteps: { id: string; label: string; value: string }[];
+  reviewQuote: string;
+  reviewAuthor: string;
+  signupTitle: string;
+  signupPlaceholder: string;
+  signupButton: string;
+  accentColor: string;
+  bgColor: string;
+}
+
+export interface ChatWidgetProps {
+  title: string;
+  greeting: string;
+  agentName: string;
+  replyTime: string;
+  primaryChannel: string;
+  secondaryChannel: string;
+  buttonLabel: string;
+  accentColor: string;
+  bgColor: string;
+  position: "right" | "left";
+  showSurvey: boolean;
+}
+
+export interface FunnelPopupProps {
+  title: string;
+  description: string;
+  ctaText: string;
+  ctaUrl: string;
+  trigger: "immediate" | "time_on_page" | "scroll_progress" | "exit_intent" | "inactivity";
+  triggerValue: number;
+  frequency: "once" | "session" | "always";
+  accentColor: string;
+  bgColor: string;
+  imageUrl: string;
+  showBackdrop: boolean;
+}
+
+export interface SmartwatchLandingProps {
+  brand: string;
+  eyebrow: string;
+  headline: string;
+  subheadline: string;
+  ctaText: string;
+  ctaUrl: string;
+  productImage: string;
+  cards: { id: string; kicker: string; title: string; description: string; accentColor: string }[];
+  countdownTitle: string;
+  accentColor: string;
+  bgColor: string;
+}
+
+export interface GalleryProps {
+  images: string[];
+  columns: number;
+  gap: number;
+  borderRadius: number;
+  aspectRatio: "1/1" | "16/9" | "4/3" | "auto";
+}
+
+export interface BoxProps {
+  bgColor: string;
+  borderColor: string;
+  borderWidth: number;
+  borderRadius: number;
+  paddingX: number;
+  paddingY: number;
+  shadow: "none" | "sm" | "md" | "lg";
+  title: string;
+  description: string;
+}
+
+export interface IconProps {
+  icon: string;
+  size: number;
+  color: string;
+  bgColor: string;
+  borderRadius: number;
+  align: "left" | "center" | "right";
+}
+
+export interface ProductCardProps {
+  title: string;
+  description: string;
+  price: string;
+  oldPrice: string;
+  image: string;
+  badge: string;
+  ctaText: string;
+  bgColor: string;
+  borderColor: string;
+  borderRadius: number;
+  items?: {
+    id: string;
+    title: string;
+    description: string;
+    price: string;
+    oldPrice?: string;
+    image: string;
+    badge?: string;
+  }[];
+  columns?: number;
+}
+
+export interface CollectionListProps {
+  items: { id: string; title: string; desc: string; icon: string; image?: string }[];
+  columns: number;
+  layout: "grid" | "list";
+  bgColor: string;
+}
+
+export interface CarouselProps {
+  images: string[];
+  autoplay: boolean;
+  interval: number;
+  showIndicators: boolean;
+  showArrows: boolean;
+  height: number;
+}
+
+export interface TabsProps {
+  tabs: { id: string; label: string; content: string }[];
+  activeTabId: string;
+  style: "pills" | "underline" | "solid";
+  accentColor: string;
+}
+
+export interface FrameProps {
+  url: string;
+  height: number;
+  title: string;
+  browserMockup: boolean;
+}
+
+export interface AccordionProps {
+  items: { id: string; question: string; answer: string }[];
+  allowMultiple: boolean;
+  accentColor: string;
+}
+
+export interface TableProps {
+  headers: string[];
+  rows: string[][];
+  bgColor: string;
+  borderColor: string;
+}
+
+export interface SurveyProps {
+  question: string;
+  options: string[];
+  accentColor: string;
+  submitLabel: string;
+}
+
+export interface MenuProps {
+  logoText: string;
+  logoUrl: string;
+  items: { label: string; url: string }[];
+  bgColor: string;
+  textColor: string;
+}
+
+export interface HtmlCodeProps {
+  code: string;
+  height: number;
+}
+
 // ── Union of all block props ─────────────────────────────────
 export type BlockProps =
   | { type: "hero"; props: HeroProps }
@@ -208,7 +410,24 @@ export type BlockProps =
   | { type: "testimonial"; props: TestimonialProps }
   | { type: "countdown"; props: CountdownProps }
   | { type: "video"; props: VideoProps }
-  | { type: "form_capture"; props: FormCaptureProps };
+  | { type: "form_capture"; props: FormCaptureProps }
+  | { type: "chat_widget"; props: ChatWidgetProps }
+  | { type: "funnel_popup"; props: FunnelPopupProps }
+  | { type: "smartwatch_landing"; props: SmartwatchLandingProps }
+  | { type: "tea_landing"; props: TeaLandingProps }
+  | { type: "gallery"; props: GalleryProps }
+  | { type: "box"; props: BoxProps }
+  | { type: "icon"; props: IconProps }
+  | { type: "product_card"; props: ProductCardProps }
+  | { type: "collection_list"; props: CollectionListProps }
+  | { type: "carousel"; props: CarouselProps }
+  | { type: "tabs"; props: TabsProps }
+  | { type: "frame"; props: FrameProps }
+  | { type: "accordion"; props: AccordionProps }
+  | { type: "table"; props: TableProps }
+  | { type: "survey"; props: SurveyProps }
+  | { type: "menu"; props: MenuProps }
+  | { type: "html_code"; props: HtmlCodeProps };
 
 // ── Editor Block (single canvas item) ───────────────────────
 export interface EditorBlock {
@@ -419,6 +638,205 @@ export function createDefaultBlock(blockType: BlockType): EditorBlock {
       bgColor: "#ffffff",
       borderRadius: 12,
     } as FormCaptureProps,
+    chat_widget: {
+      title: "LadiChat hỗ trợ",
+      greeting: "Xin chào, bạn cần tư vấn sản phẩm hay hỗ trợ đơn hàng?",
+      agentName: "Tư vấn viên",
+      replyTime: "Phản hồi trong vài phút",
+      primaryChannel: "Chat ngay",
+      secondaryChannel: "Zalo",
+      buttonLabel: "Bắt đầu trò chuyện",
+      accentColor: "#2511d9",
+      bgColor: "#ffffff",
+      position: "right",
+      showSurvey: true,
+    } as ChatWidgetProps,
+    funnel_popup: {
+      title: "Nhận ưu đãi trước khi rời trang",
+      description: "Để lại thông tin để nhận mã giảm giá và tài liệu tư vấn phù hợp.",
+      ctaText: "Nhận ưu đãi",
+      ctaUrl: "#lead-form",
+      trigger: "exit_intent",
+      triggerValue: 60,
+      frequency: "session",
+      accentColor: "#65a30d",
+      bgColor: "#ffffff",
+      imageUrl: "",
+      showBackdrop: true,
+    } as FunnelPopupProps,
+    smartwatch_landing: {
+      brand: "Titan Watch",
+      eyebrow: "Titan Watch 7",
+      headline: "NEXT-LEVEL SMARTWATCH. UNMATCHED ENDURANCE.",
+      subheadline: "The ultimate companion for performance, health tracking and everyday connection.",
+      ctaText: "Buy now | $499",
+      ctaUrl: "#order",
+      productImage: "/images/product/smartwatch_product.png",
+      cards: [
+        { id: "processor", kicker: "(1) Performance", title: "Chronos X1 Processor", description: "Lightning-fast, smooth interface.", accentColor: "#22d3ee" },
+        { id: "health", kicker: "(2) Health tracking", title: "Advanced Biometrics", description: "ECG, SpO2, heart rate.", accentColor: "#ef4444" },
+        { id: "battery", kicker: "(3) Battery", title: "24-day battery life", description: "Power that lasts. Magnetic quick charge.", accentColor: "#22c55e" },
+        { id: "design", kicker: "(4) Design", title: "Military-grade durability", description: "Titanium body, water resistant.", accentColor: "#94a3b8" },
+        { id: "connect", kicker: "(5) Connectivity", title: "Stay connected always", description: "LTE, GPS, smart notifications.", accentColor: "#38bdf8" },
+      ],
+      countdownTitle: "Ready to elevate your performance?",
+      accentColor: "#facc15",
+      bgColor: "#05070b",
+    } as SmartwatchLandingProps,
+    tea_landing: {
+      brand: "Pure Leaf",
+      navItems: ["Shop", "About", "FAQ", "Contact"],
+      headline: "Pure Leaf Organic Green Tea",
+      subheadline: "Revitalize your mind and body, naturally.",
+      ctaText: "Shop Now",
+      ctaUrl: "#order",
+      heroImage: "/images/product/green_tea_product.png",
+      philosophyTitle: "Our Philosophy",
+      philosophyText: "Source organic ingredients and effortless sales. We build a landing page that tells the product story clearly.",
+      blends: [
+        { id: "zen", name: "Zen Green Tea", description: "Lower caffeine blend for calm focus.", icon: "leaf" },
+        { id: "mint", name: "Mint Fresh", description: "Refreshing mint profile for daily energy.", icon: "mint" },
+        { id: "jasmine", name: "Jasmine Blossom", description: "Soft floral notes for relaxing rituals.", icon: "flower" },
+      ],
+      ingredients: [
+        { id: "tea", name: "Tea Leaf", description: "Natural green tea leaves.", icon: "leaf" },
+        { id: "mint", name: "Mint Fresh", description: "Cool and refreshing.", icon: "mint" },
+        { id: "ginger", name: "Ginger Root", description: "Warm herbal balance.", icon: "ginger" },
+      ],
+      brewSteps: [
+        { id: "temp", label: "Temperature", value: "80C" },
+        { id: "time", label: "Time", value: "3 min" },
+        { id: "enjoy", label: "Enjoy", value: "Sip slow" },
+      ],
+      reviewQuote: "The freshest tea I have ever tasted.",
+      reviewAuthor: "Verified customer",
+      signupTitle: "Join Our Community",
+      signupPlaceholder: "Your email address",
+      signupButton: "Subscribe",
+      accentColor: "#6f8f22",
+      bgColor: "#f5f2e7",
+    } as TeaLandingProps,
+    gallery: {
+      images: [
+        "/images/product/green_tea_product.png",
+        "/images/product/skincare_product.png",
+        "/images/product/smartwatch_product.png",
+      ],
+      columns: 3,
+      gap: 16,
+      borderRadius: 12,
+      aspectRatio: "1/1",
+    } as GalleryProps,
+    box: {
+      bgColor: "#f3f4f6",
+      borderColor: "#e5e7eb",
+      borderWidth: 1,
+      borderRadius: 12,
+      paddingX: 24,
+      paddingY: 24,
+      shadow: "md",
+      title: "Hộp Tiêu Chuẩn",
+      description: "Hộp này có thể chứa nội dung hoặc các phần tử khác.",
+    } as BoxProps,
+    icon: {
+      icon: "⭐",
+      size: 40,
+      color: "#f59e0b",
+      bgColor: "#fef3c7",
+      borderRadius: 9999,
+      align: "center",
+    } as IconProps,
+    product_card: {
+      title: "Sản phẩm Premium",
+      description: "Mô tả tính năng vượt trội của sản phẩm này mang lại lợi ích gì cho bạn.",
+      price: "499.000đ",
+      oldPrice: "799.000đ",
+      image: "/images/product/skincare_product.png",
+      badge: "Bán chạy",
+      ctaText: "MUA NGAY",
+      bgColor: "#ffffff",
+      borderColor: "#e5e7eb",
+      borderRadius: 16,
+    } as ProductCardProps,
+    collection_list: {
+      items: [
+        { id: "1", title: "Tính năng 1", desc: "Mô tả chi tiết tính năng 1 cực kỳ hấp dẫn.", icon: "⚡" },
+        { id: "2", title: "Tính năng 2", desc: "Mô tả chi tiết tính năng 2 cực kỳ hấp dẫn.", icon: "💎" },
+        { id: "3", title: "Tính năng 3", desc: "Mô tả chi tiết tính năng 3 cực kỳ hấp dẫn.", icon: "🛡️" },
+      ],
+      columns: 3,
+      layout: "grid",
+      bgColor: "transparent",
+    } as CollectionListProps,
+    carousel: {
+      images: [
+        "/images/product/green_tea_product.png",
+        "/images/product/skincare_product.png",
+        "/images/product/smartwatch_product.png",
+      ],
+      autoplay: true,
+      interval: 3000,
+      showIndicators: true,
+      showArrows: true,
+      height: 350,
+    } as CarouselProps,
+    tabs: {
+      tabs: [
+        { id: "desc", label: "Mô tả", content: "Đây là thông tin chi tiết về sản phẩm chất lượng cao." },
+        { id: "spec", label: "Thông số", content: "Chất liệu: Tự nhiên 100%. Xuất xứ: Việt Nam." },
+        { id: "review", label: "Đánh giá", content: "Được đánh giá 5 sao từ hơn 1000 khách hàng." },
+      ],
+      activeTabId: "desc",
+      style: "pills",
+      accentColor: "#65a30d",
+    } as TabsProps,
+    frame: {
+      url: "https://example.com",
+      height: 400,
+      title: "Trang web liên kết",
+      browserMockup: true,
+    } as FrameProps,
+    accordion: {
+      items: [
+        { id: "q1", question: "Sản phẩm có chính sách bảo hành thế nào?", answer: "Chúng tôi bảo hành 12 tháng 1 đổi 1 nếu có lỗi từ nhà sản xuất." },
+        { id: "q2", question: "Thời gian giao hàng mất bao lâu?", answer: "Thời gian giao hàng từ 2-4 ngày làm việc tùy khu vực." },
+        { id: "q3", question: "Tôi có thể thanh toán khi nhận hàng không?", answer: "Có, bạn hoàn toàn có thể chọn hình thức COD thanh toán khi nhận hàng." },
+      ],
+      allowMultiple: false,
+      accentColor: "#65a30d",
+    } as AccordionProps,
+    table: {
+      headers: ["Gói dịch vụ", "Tính năng", "Giá"],
+      rows: [
+        ["Cơ bản", "Hỗ trợ email, 1 domain", "Miễn phí"],
+        ["Nâng cao", "Hỗ trợ 24/7, 5 domain, CDN", "299K / tháng"],
+        ["Doanh nghiệp", "Tất cả tính năng, không giới hạn", "999K / tháng"],
+      ],
+      bgColor: "#ffffff",
+      borderColor: "#e5e7eb",
+    } as TableProps,
+    survey: {
+      question: "Bạn đánh giá thế nào về chất lượng sản phẩm?",
+      options: ["Rất hài lòng", "Hài lòng", "Bình thường", "Chưa hài lòng"],
+      accentColor: "#65a30d",
+      submitLabel: "Gửi khảo sát",
+    } as SurveyProps,
+    menu: {
+      logoText: "LADI-APP",
+      logoUrl: "#",
+      items: [
+        { label: "Trang chủ", url: "#" },
+        { label: "Tính năng", url: "#features" },
+        { label: "Bảng giá", url: "#pricing" },
+        { label: "Liên hệ", url: "#contact" },
+      ],
+      bgColor: "#ffffff",
+      textColor: "#1f2937",
+    } as MenuProps,
+    html_code: {
+      code: "<div style='padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; text-align: center; font-weight: bold;'>HTML Custom Code Block</div>",
+      height: 100,
+    } as HtmlCodeProps,
   };
 
   const label: Record<BlockType, string> = {
@@ -434,6 +852,23 @@ export function createDefaultBlock(blockType: BlockType): EditorBlock {
     countdown: "Đếm ngược",
     video: "Video",
     form_capture: "Form thu thập",
+    chat_widget: "Chat widget",
+    funnel_popup: "Funnel popup",
+    smartwatch_landing: "Smartwatch Landing",
+    tea_landing: "Herb Tea Template",
+    gallery: "Gallery",
+    box: "Hình hộp",
+    icon: "Biểu tượng",
+    product_card: "Sản phẩm mẫu",
+    collection_list: "Collection List",
+    carousel: "Carousel",
+    tabs: "Tabs",
+    frame: "Frame",
+    accordion: "Accordion",
+    table: "Table",
+    survey: "Survey",
+    menu: "Menu",
+    html_code: "Mã HTML",
   };
 
   return ensureOnlookBlockMeta({ id, type: blockType, props: defaults[blockType], label: label[blockType] });
@@ -464,6 +899,23 @@ function labelFromBlockType(blockType: BlockType): string {
     countdown: "CountdownBlock",
     video: "VideoBlock",
     form_capture: "FormCaptureBlock",
+    chat_widget: "ChatWidgetBlock",
+    funnel_popup: "FunnelPopupBlock",
+    smartwatch_landing: "SmartwatchLandingBlock",
+    tea_landing: "TeaLandingBlock",
+    gallery: "GalleryBlock",
+    box: "BoxBlock",
+    icon: "IconBlock",
+    product_card: "ProductCardBlock",
+    collection_list: "CollectionListBlock",
+    carousel: "CarouselBlock",
+    tabs: "TabsBlock",
+    frame: "FrameBlock",
+    accordion: "AccordionBlock",
+    table: "TableBlock",
+    survey: "SurveyBlock",
+    menu: "MenuBlock",
+    html_code: "HtmlCodeBlock",
   };
 
   return componentNames[blockType];

@@ -2,73 +2,9 @@
 import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import { BlockType, PALETTE_CATEGORIES, DND_TYPES, PaletteDragItem, EditorBlock } from "./types";
+import { BLOCK_ICONS, getCategoryPresets, PaletteItem } from "./presets/CategoryPresets";
 
-// ── Palette block icon map ──────────────────────────────────
-const BLOCK_ICONS: Record<BlockType, React.ReactNode> = {
-  hero: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M21 3H3m18 9H3" />
-    </svg>
-  ),
-  text: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-    </svg>
-  ),
-  image: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-    </svg>
-  ),
-  button: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" />
-    </svg>
-  ),
-  spacer: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75M3 18h14.25M17.25 18.75V9.75m0 9l2.25-2.25M17.25 18.75l-2.25-2.25M17.25 9.75l2.25 2.25m-2.25-2.25l-2.25 2.25" />
-    </svg>
-  ),
-  divider: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.499 11.998h15" />
-    </svg>
-  ),
-  columns: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
-    </svg>
-  ),
-  feature_card: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-    </svg>
-  ),
-  testimonial: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-    </svg>
-  ),
-  countdown: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  video: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
-    </svg>
-  ),
-  form_capture: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ),
-};
-
-const BLOCK_LABELS: Record<BlockType, string> = {
+export const BLOCK_LABELS: Record<BlockType, string> = {
   hero: "Hero Section",
   text: "Văn bản",
   image: "Hình ảnh",
@@ -81,9 +17,25 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   countdown: "Đếm ngược",
   video: "Video",
   form_capture: "Thu thập leads",
+  chat_widget: "Chat widget",
+  funnel_popup: "Funnel popup",
+  tea_landing: "Herb Tea Page",
+  smartwatch_landing: "Smartwatch Page",
+  gallery: "Gallery",
+  box: "Hình hộp",
+  icon: "Biểu tượng",
+  product_card: "Sản phẩm mẫu",
+  collection_list: "Collection List",
+  carousel: "Carousel",
+  tabs: "Tabs",
+  frame: "Frame",
+  accordion: "Accordion",
+  table: "Table",
+  survey: "Survey",
+  menu: "Menu",
+  html_code: "Mã HTML",
 };
 
-// ── Draggable Palette Item ────────────────────────────────────
 const LAYER_CHILDREN: Partial<Record<BlockType, string[]>> = {
   hero: ["Headline", "Subheadline", "CTA Button"],
   text: ["Text"],
@@ -95,36 +47,13 @@ const LAYER_CHILDREN: Partial<Record<BlockType, string[]>> = {
   countdown: ["Title", "Timer Units"],
   video: ["Embed"],
   form_capture: ["Title", "Fields", "Submit Button"],
+  chat_widget: ["Header", "Agent", "Channels", "Survey"],
+  funnel_popup: ["Trigger", "Content", "CTA", "Frequency"],
+  tea_landing: ["Navigation", "Hero", "Blends", "Ingredients", "Reviews", "Signup"],
+  smartwatch_landing: ["Header", "Hero", "Specs Card", "Countdown", "Reviews", "Order Form"],
 };
 
-const PaletteItem: React.FC<{
-  blockType: BlockType;
-  onClickAdd: (bt: BlockType) => void;
-}> = ({ blockType, onClickAdd }) => {
-  const [{ isDragging }, drag] = useDrag<PaletteDragItem, unknown, { isDragging: boolean }>({
-    type: DND_TYPES.PALETTE_BLOCK,
-    item: { type: DND_TYPES.PALETTE_BLOCK, blockType },
-    collect: (m) => ({ isDragging: m.isDragging() }),
-  });
-
-  return (
-    <div
-      ref={drag as unknown as React.Ref<HTMLDivElement>}
-      onClick={() => onClickAdd(blockType)}
-      title={`Kéo hoặc click để thêm ${BLOCK_LABELS[blockType]}`}
-      className={`group flex items-center gap-2.5 rounded-md border px-2.5 py-2.5 cursor-grab active:cursor-grabbing transition-all select-none ${
-        isDragging
-          ? "border-purple-500 bg-purple-900/30 opacity-50"
-          : "border-[#242433] bg-[#0d0d14] hover:border-purple-500/60 hover:bg-purple-600/10"
-      }`}
-    >
-      <span className="text-gray-500 flex-shrink-0 transition group-hover:text-purple-300">{BLOCK_ICONS[blockType]}</span>
-      <span className="text-xs font-medium text-gray-300 truncate">{BLOCK_LABELS[blockType]}</span>
-    </div>
-  );
-};
-
-// ── Layers Panel Item ─────────────────────────────────────────
+// ── Layers Panel Item (Light Theme) ─────────────────────────────────────────
 const LayerItem: React.FC<{
   block: EditorBlock;
   isSelected: boolean;
@@ -135,43 +64,43 @@ const LayerItem: React.FC<{
   const children = LAYER_CHILDREN[block.type] ?? [];
 
   return (
-    <div>
+    <div className="text-gray-800">
       <button
         onClick={onSelect}
-        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-left transition group ${
+        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-left transition border group ${
           isSelected
-            ? "bg-purple-600 text-white border border-purple-400/70"
-            : "text-gray-400 hover:bg-white/5 border border-transparent"
+            ? "bg-purple-50 text-purple-750 border-purple-200 font-semibold shadow-sm"
+            : "text-gray-650 hover:bg-gray-50 border-transparent"
         }`}
       >
-        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${isSelected ? "border-white/70" : "border-gray-600"}`} />
-        <span className="text-gray-500 flex-shrink-0 w-4 h-4">{BLOCK_ICONS[block.type]}</span>
+        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${isSelected ? "border-purple-300 bg-purple-100" : "border-gray-300 bg-white"}`} />
+        <span className="text-gray-400 flex-shrink-0 w-4 h-4 group-hover:text-purple-600 transition">{BLOCK_ICONS[block.type]}</span>
         <span className="flex-1 truncate text-xs">
           {block.label || BLOCK_LABELS[block.type]}
         </span>
-        <span className="text-[10px] text-gray-500 font-mono">{index + 1}</span>
+        <span className="text-[9px] text-gray-400 font-mono font-bold bg-gray-100 px-1 rounded">{index + 1}</span>
         <span
           onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
-          className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition ml-1"
+          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition ml-1"
           role="button"
           tabIndex={0}
         >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </span>
       </button>
 
       {children.length > 0 && (
-        <div className="ml-7 mt-1 space-y-1 border-l border-gray-800/80 pl-3">
+        <div className="ml-7 mt-1 space-y-1 border-l border-gray-200 pl-3">
           {children.map((child) => (
             <button
               key={`${block.id}-${child}`}
               onClick={onSelect}
-              className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[11px] text-gray-500 transition hover:bg-white/5 hover:text-gray-300"
+              className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[11px] text-gray-500 transition hover:bg-gray-50 hover:text-gray-800"
             >
-              <span className="h-3 w-3 rounded-[3px] border border-gray-700" />
-              <span className="truncate">{child}</span>
+              <span className="h-2.5 w-2.5 rounded-[3px] border border-gray-300 bg-white" />
+              <span className="truncate font-medium">{child}</span>
             </button>
           ))}
         </div>
@@ -180,13 +109,13 @@ const LayerItem: React.FC<{
   );
 };
 
-// ── Main Left Panel ───────────────────────────────────────────
+// ── Main Left Panel (Light Theme) ───────────────────────────────────────────
 interface LayersPanelProps {
   blocks: EditorBlock[];
   selectedId: string | null;
-  onSelectBlock: (id: string) => void;
+  onSelectBlock: (id: string | null) => void;
   onDeleteBlock: (id: string) => void;
-  onAddBlock: (blockType: BlockType) => void;
+  onAddBlock: (blockType: BlockType, customProps?: Record<string, unknown>) => void;
 }
 
 export const LayersPanel: React.FC<LayersPanelProps> = ({
@@ -198,117 +127,169 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
 }) => {
   const [tab, setTab] = useState<"layers" | "components">("components");
   const [search, setSearch] = useState("");
-  const [openCategories, setOpenCategories] = useState<Set<string>>(
-    new Set(["layout", "typography", "cta"])
-  );
-
-  const toggleCategory = (id: string) => {
-    setOpenCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const [activeCategory, setActiveCategory] = useState<string>("text");
 
   const categoryIcons: Record<string, React.ReactNode> = {
-    layout: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>,
-    typography: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>,
-    media: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" /></svg>,
-    cta: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" /></svg>,
-    social: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>,
+    text: BLOCK_ICONS.text,
+    button: BLOCK_ICONS.button,
+    image: BLOCK_ICONS.image,
+    gallery: BLOCK_ICONS.gallery,
+    box: BLOCK_ICONS.box,
+    icon: BLOCK_ICONS.icon,
+    divider: BLOCK_ICONS.divider,
+    form: BLOCK_ICONS.form_capture,
+    product: BLOCK_ICONS.product_card,
+    video: BLOCK_ICONS.video,
+    collection: BLOCK_ICONS.collection_list,
+    carousel: BLOCK_ICONS.carousel,
+    tabs: BLOCK_ICONS.tabs,
+    frame: BLOCK_ICONS.frame,
+    accordion: BLOCK_ICONS.accordion,
+    table: BLOCK_ICONS.table,
+    survey: BLOCK_ICONS.survey,
+    menu: BLOCK_ICONS.menu,
+    html: BLOCK_ICONS.html_code,
+  };
+
+  const renderCategoryContent = (category: string, q: string) => {
+    const query = q.trim().toLowerCase();
+    const items = getCategoryPresets(category);
+
+    const filtered = query
+      ? items.filter(
+          (item) =>
+            item.label.toLowerCase().includes(query) ||
+            item.sub.toLowerCase().includes(query)
+        )
+      : items;
+
+    if (filtered.length === 0) {
+      return (
+        <div className="text-center py-8 text-xs text-gray-400 font-medium">
+          Không tìm thấy phần tử phù hợp
+        </div>
+      );
+    }
+
+    return filtered.map((item) => (
+      <div
+        key={item.id}
+        onClick={() => onAddBlock(item.blockType, item.props)}
+        className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 bg-gray-50 p-2.5 hover:border-purple-500 hover:bg-purple-50/20 transition duration-150 cursor-pointer select-none shadow-sm"
+        title="Click để chèn vào cuối trang"
+      >
+        <div className="w-full pointer-events-none">{item.element}</div>
+        <div className="flex items-center justify-between mt-1 select-none">
+          <span className="text-[9px] font-extrabold text-gray-700 group-hover:text-purple-750 uppercase tracking-wider truncate max-w-[170px]">
+            {item.label}
+          </span>
+          <span className="text-[9px] text-gray-400 group-hover:text-purple-650 font-black transition">
+            + Thêm
+          </span>
+        </div>
+      </div>
+    ));
   };
 
   return (
-    <div className="w-full flex flex-col bg-[#101016] h-full overflow-hidden">
+    <div className="w-full flex flex-col bg-white h-full overflow-hidden border-r border-gray-200">
       {/* Tabs */}
-      <div className="flex border-b border-[#252535] bg-[#0b0b11] flex-shrink-0 px-3 pt-2">
+      <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 px-3 pt-2">
         {(["components", "layers"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 rounded-t-md py-2 text-[11px] font-semibold tracking-wide transition uppercase ${
+            className={`cursor-pointer flex-1 rounded-t-md py-2.5 text-[11px] font-bold tracking-wider transition uppercase ${
               tab === t
-                ? "bg-[#151522] text-purple-300 shadow-[inset_0_-2px_0_#a855f7]"
-                : "text-gray-500 hover:text-gray-300"
+                ? "bg-white text-purple-700 shadow-[inset_0_-2px_0_#8b5cf6]"
+                : "text-gray-550 hover:text-gray-800"
             }`}
           >
-            {t === "components" ? "Components" : "Layers"}
+            {t === "components" ? "Thêm phần tử" : "Quản lý Layers"}
           </button>
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+      <div className="flex-1 flex overflow-hidden">
         {tab === "components" ? (
           <>
-            {/* Search */}
-            <div className="relative mb-2">
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Tìm component..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-md border border-[#242433] bg-[#0d0d14] py-2 pl-8 pr-3 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none"
-              />
+            {/* Split panel: Left Sub-sidebar for element categories */}
+            <div className="w-[100px] bg-gray-50 border-r border-gray-200 flex flex-col py-2 flex-shrink-0 select-none overflow-y-auto no-scrollbar">
+              {([
+                "text", "button", "image", "gallery", "box", "icon", "divider", "form",
+                "product", "video", "collection", "carousel", "tabs", "frame", "accordion",
+                "table", "survey", "menu", "html"
+              ] as const).map((catId) => {
+                const labelMap: Record<string, string> = {
+                  text: "Văn bản",
+                  button: "Nút bấm",
+                  image: "Ảnh",
+                  gallery: "Gallery",
+                  box: "Hình hộp",
+                  icon: "Biểu tượng",
+                  divider: "Đường kẻ",
+                  form: "Form",
+                  product: "Sản phẩm",
+                  video: "Video",
+                  collection: "Collection",
+                  carousel: "Carousel",
+                  tabs: "Tabs",
+                  frame: "Frame",
+                  accordion: "Accordion",
+                  table: "Table",
+                  survey: "Survey",
+                  menu: "Menu",
+                  html: "Mã HTML",
+                };
+                const isActive = activeCategory === catId;
+                return (
+                  <button
+                    key={catId}
+                    onClick={() => setActiveCategory(catId)}
+                    className={`w-full py-3.5 px-1 flex flex-col items-center gap-1.5 transition-all text-center border-l-2 cursor-pointer ${
+                      isActive
+                        ? "bg-white text-purple-600 border-purple-500 font-bold"
+                        : "border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/70"
+                    }`}
+                  >
+                    <span className="flex-shrink-0 transition">{categoryIcons[catId]}</span>
+                    <span className="text-[9px] tracking-wide uppercase font-bold truncate max-w-[80px]">{labelMap[catId]}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Categories */}
-            {PALETTE_CATEGORIES.map((cat) => {
-              const filtered = search
-                ? cat.blocks.filter((bt) =>
-                    BLOCK_LABELS[bt].toLowerCase().includes(search.toLowerCase())
-                  )
-                : cat.blocks;
-              if (filtered.length === 0) return null;
-              const isOpen = openCategories.has(cat.id);
+            {/* Split panel: Right Content for element options */}
+            <div className="flex-1 bg-white p-3 overflow-y-auto flex flex-col gap-3">
+              {/* Active category search box */}
+              <div className="relative flex-shrink-0">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-md border border-gray-250 bg-gray-50 py-1.5 pl-8 pr-3 text-xs text-gray-800 placeholder-gray-400 focus:border-purple-500 focus:outline-none shadow-inner"
+                />
+              </div>
 
-              return (
-                <div key={cat.id}>
-                  <button
-                    onClick={() => toggleCategory(cat.id)}
-                    className="w-full flex items-center justify-between px-1 py-2 mb-1 text-[10px] font-bold text-gray-500 tracking-widest uppercase hover:text-gray-300 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-600">{categoryIcons[cat.id]}</span>
-                      {cat.label}
-                    </div>
-                    <svg
-                      className={`w-3 h-3 transition-transform ${isOpen ? "rotate-90" : ""}`}
-                      fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                  </button>
-                  {isOpen && (
-                    <div className="grid grid-cols-1 gap-1 mb-2">
-                      {filtered.map((bt) => (
-                        <PaletteItem key={bt} blockType={bt} onClickAdd={onAddBlock} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Tip */}
-            <div className="mt-4 p-2.5 rounded-lg bg-purple-900/20 border border-purple-800/40">
-              <p className="text-[10px] text-purple-400/80 leading-relaxed">
-                💡 <strong>Kéo</strong> component vào canvas hoặc <strong>click</strong> để thêm vào cuối trang
-              </p>
+              <div className="flex-1 flex flex-col gap-2.5">
+                {renderCategoryContent(activeCategory, search)}
+              </div>
             </div>
           </>
         ) : (
-          /* Layers tab */
-          <>
+          /* Layers tab - single scrollable column list of existing blocks */
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1 bg-white">
             {blocks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <svg className="w-10 h-10 text-gray-700 mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <div className="flex flex-col items-center justify-center py-12 text-center select-none">
+                <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
                 </svg>
-                <p className="text-xs text-gray-600">Chưa có block nào.<br/>Thêm từ tab Components.</p>
+                <p className="text-xs text-gray-400 font-bold">Chưa có block nào trên canvas.</p>
+                <p className="text-[10px] text-gray-450 mt-1 max-w-[160px] leading-relaxed">Hãy thêm khối từ bảng phần tử bên trái.</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -324,7 +305,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

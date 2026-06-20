@@ -2,12 +2,12 @@
 import React, { useCallback } from "react";
 import { EditorBlock, BlockType, EditorData } from "./types";
 
-// ── Field sub-components ──────────────────────────────────────
+// ── Field sub-components (Light Theme) ──────────────────────────────────────
 
 const FieldLabel: React.FC<{ label: string; hint?: string }> = ({ label, hint }) => (
-  <label className="block text-[11px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">
+  <label className="block text-[11px] font-bold text-gray-500 mb-1 uppercase tracking-wide">
     {label}
-    {hint && <span className="ml-1 text-gray-600 normal-case font-normal text-[10px]">({hint})</span>}
+    {hint && <span className="ml-1 text-gray-400 normal-case font-medium text-[10px]">({hint})</span>}
   </label>
 );
 
@@ -25,14 +25,14 @@ const TextField: React.FC<{
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        className="w-full px-2.5 py-2 text-xs bg-white/5 border border-gray-700/50 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500 resize-none"
+        className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 resize-none shadow-sm"
       />
     ) : (
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-2.5 py-2 text-xs bg-white/5 border border-gray-700/50 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500"
+        className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 shadow-sm"
       />
     )}
   </div>
@@ -56,17 +56,17 @@ const NumberField: React.FC<{
         min={min} max={max} step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-purple-500 h-1"
+        className="flex-1 accent-purple-600 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
       />
-      <div className="flex items-center gap-1 bg-white/5 border border-gray-700/50 rounded-md px-2 py-1 min-w-[52px]">
+      <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 min-w-[56px] shadow-sm">
         <input
           type="number"
           min={min} max={max} step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-10 text-xs bg-transparent text-gray-200 focus:outline-none text-right"
+          className="w-10 text-xs bg-transparent text-gray-800 font-bold focus:outline-none text-right"
         />
-        {unit && <span className="text-[10px] text-gray-500">{unit}</span>}
+        {unit && <span className="text-[10px] text-gray-400 font-bold">{unit}</span>}
       </div>
     </div>
   </div>
@@ -84,13 +84,13 @@ const ColorField: React.FC<{
         type="color"
         value={value.startsWith("#") ? value : "#000000"}
         onChange={(e) => onChange(e.target.value)}
-        className="w-8 h-8 rounded-md border border-gray-700/50 cursor-pointer bg-transparent p-0.5 flex-shrink-0"
+        className="w-8 h-8 rounded-md border border-gray-250 cursor-pointer bg-transparent p-0.5 flex-shrink-0"
       />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 px-2.5 py-1.5 text-xs bg-white/5 border border-gray-700/50 rounded-lg text-gray-200 focus:outline-none focus:border-purple-500 font-mono"
+        className="flex-1 px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 font-mono shadow-sm"
         placeholder="#000000"
       />
     </div>
@@ -108,7 +108,7 @@ const SelectField: React.FC<{
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-2.5 py-2 text-xs bg-[#1a1a26] border border-gray-700/50 rounded-lg text-gray-200 focus:outline-none focus:border-purple-500 cursor-pointer"
+      className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 cursor-pointer shadow-sm"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -123,10 +123,10 @@ const ToggleField: React.FC<{
   onChange: (v: boolean) => void;
 }> = ({ label, value, onChange }) => (
   <div className="flex items-center justify-between">
-    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</span>
+    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{label}</span>
     <button
       onClick={() => onChange(!value)}
-      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${value ? "bg-purple-600" : "bg-gray-700"}`}
+      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${value ? "bg-purple-650" : "bg-gray-300"}`}
     >
       <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${value ? "translate-x-4" : ""}`} />
     </button>
@@ -135,8 +135,8 @@ const ToggleField: React.FC<{
 
 const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
   <div className="flex items-center gap-2 mt-5 mb-3 first:mt-0">
-    <span className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{title}</span>
-    <div className="flex-1 h-px bg-gray-800" />
+    <span className="text-[10px] font-extrabold text-gray-400 tracking-widest uppercase">{title}</span>
+    <div className="flex-1 h-px bg-gray-200" />
   </div>
 );
 
@@ -226,7 +226,6 @@ const DividerInspector: React.FC<{ props: Record<string, unknown>; update: Updat
     <NumberField label="Độ dày" value={p.thickness as number} onChange={(v) => update("thickness", v)} min={1} max={10} unit="px" />
     <SelectField label="Kiểu đường" value={p.style as string} options={[{value:"solid",label:"Liền"},{value:"dashed",label:"Gạch"},{value:"dotted",label:"Chấm"}]} onChange={(v) => update("style", v)} />
     <SectionHeader title="Khoảng cách" />
-    <NumberField label="Padding trái/phải" value={p.paddingX as number} onChange={(v) => update("paddingX", v)} max={200} unit="px" />
     <NumberField label="Padding trên/dưới" value={p.paddingY as number} onChange={(v) => update("paddingY", v)} max={100} unit="px" />
   </>
 );
@@ -236,7 +235,6 @@ const ColumnsInspector: React.FC<{ props: Record<string, unknown>; update: Updat
     <SectionHeader title="Bố cục" />
     <NumberField label="Số cột" value={p.columns as number} onChange={(v) => update("columns", v)} min={2} max={4} step={1} />
     <NumberField label="Khoảng cách giữa cột" value={p.gap as number} onChange={(v) => update("gap", v)} min={0} max={80} unit="px" />
-    <SelectField label="Phân phối chiều rộng" value={p.distribution as string} options={[{value:"equal",label:"Đồng đều"},{value:"60-40",label:"60% - 40%"},{value:"40-60",label:"40% - 60%"},{value:"70-30",label:"70% - 30%"},{value:"30-70",label:"30% - 70%"}]} onChange={(v) => update("distribution", v)} />
   </>
 );
 
@@ -280,7 +278,7 @@ const CountdownInspector: React.FC<{ props: Record<string, unknown>; update: Upd
         type="date"
         value={(p.targetDate as string).slice(0, 10)}
         onChange={(e) => update("targetDate", e.target.value)}
-        className="w-full px-2.5 py-2 text-xs bg-white/5 border border-gray-700/50 rounded-lg text-gray-200 focus:outline-none focus:border-purple-500"
+        className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 shadow-sm"
       />
     </div>
     <TextField label="Văn bản khi hết hạn" value={p.expiredText as string} onChange={(v) => update("expiredText", v)} />
@@ -317,7 +315,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
       <NumberField label="Bo góc" value={p.borderRadius as number} onChange={(v) => update("borderRadius", v)} max={32} unit="px" />
       <SectionHeader title={`Trường nhập (${fields.length})`} />
       {fields.map((f, i) => (
-        <div key={f.id} className="p-2.5 bg-white/5 rounded-lg border border-gray-700/40 mb-2">
+        <div key={f.id} className="p-2.5 bg-gray-50 border border-gray-250 rounded-lg mb-2 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold text-gray-500 uppercase">Trường {i + 1}</span>
             {fields.length > 1 && (
@@ -326,7 +324,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
                   const next = fields.filter((_, fi) => fi !== i);
                   update("fields", next);
                 }}
-                className="text-red-500 text-[10px] hover:text-red-400"
+                className="text-red-500 text-[10px] hover:text-red-650 font-bold"
               >
                 Xóa
               </button>
@@ -341,7 +339,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
               next[i] = { ...next[i], label: e.target.value };
               update("fields", next);
             }}
-            className="w-full px-2 py-1.5 text-xs bg-white/5 border border-gray-700/50 rounded-lg text-gray-200 focus:outline-none focus:border-purple-500 mb-1.5"
+            className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 mb-1.5 shadow-inner"
           />
           <select
             value={f.type}
@@ -350,7 +348,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
               next[i] = { ...next[i], type: e.target.value };
               update("fields", next);
             }}
-            className="w-full px-2 py-1.5 text-xs bg-[#1a1a26] border border-gray-700/50 rounded-lg text-gray-200 focus:outline-none focus:border-purple-500"
+            className="w-full px-2 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 cursor-pointer shadow-sm"
           >
             <option value="text">Văn bản</option>
             <option value="email">Email</option>
@@ -360,7 +358,7 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
       ))}
       <button
         onClick={() => update("fields", [...fields, { id: `f_${Date.now()}`, label: "Trường mới", type: "text", required: false }])}
-        className="w-full text-xs text-purple-400 border border-purple-500/30 rounded-lg py-2 hover:bg-purple-600/10 transition"
+        className="cursor-pointer w-full text-xs text-purple-600 border border-purple-300 rounded-lg py-2 hover:bg-purple-50 transition bg-white shadow-sm font-semibold"
       >
         + Thêm trường
       </button>
@@ -368,12 +366,265 @@ const FormCaptureInspector: React.FC<{ props: Record<string, unknown>; update: U
   );
 };
 
-// ── Page settings ─────────────────────────────────────────────
+const TeaLandingInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn }> = ({ props: p, update }) => (
+  <>
+    <SectionHeader title="Template Herb Tea" />
+    <TextField label="Brand Name" value={p.brand as string} onChange={(v) => update("brand", v)} />
+    <TextField label="Hero Image Link" value={p.heroImage as string} onChange={(v) => update("heroImage", v)} hint="URL" />
+    <SectionHeader title="Màu sắc" />
+    <ColorField label="Màu Accent" value={p.accentColor as string} onChange={(v) => update("accentColor", v)} />
+    <ColorField label="Nền trang" value={p.bgColor as string} onChange={(v) => update("bgColor", v)} />
+  </>
+);
+
+const ChatWidgetInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn }> = ({ props: p, update }) => (
+  <>
+    <SectionHeader title="Chat widget" />
+    <TextField label="Tiêu đề" value={p.title as string} onChange={(v) => update("title", v)} />
+    <TextField label="Lời chào" value={p.greeting as string} onChange={(v) => update("greeting", v)} multiline />
+    <TextField label="Tên tư vấn viên" value={p.agentName as string} onChange={(v) => update("agentName", v)} />
+    <TextField label="Thời gian phản hồi" value={p.replyTime as string} onChange={(v) => update("replyTime", v)} />
+    <SectionHeader title="Kênh liên hệ" />
+    <TextField label="Kênh chính" value={p.primaryChannel as string} onChange={(v) => update("primaryChannel", v)} />
+    <TextField label="Kênh phụ" value={p.secondaryChannel as string} onChange={(v) => update("secondaryChannel", v)} />
+    <TextField label="Nút bắt đầu" value={p.buttonLabel as string} onChange={(v) => update("buttonLabel", v)} />
+    <SectionHeader title="Hiển thị" />
+    <SelectField label="Vị trí" value={p.position as string} options={[{ value: "right", label: "Phải" }, { value: "left", label: "Trái" }]} onChange={(v) => update("position", v)} />
+    <ToggleField label="Hiện câu hỏi nhanh" value={p.showSurvey as boolean} onChange={(v) => update("showSurvey", v)} />
+    <ColorField label="Màu chính" value={p.accentColor as string} onChange={(v) => update("accentColor", v)} />
+    <ColorField label="Màu nền" value={p.bgColor as string} onChange={(v) => update("bgColor", v)} />
+  </>
+);
+
+const FunnelPopupInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn }> = ({ props: p, update }) => (
+  <>
+    <SectionHeader title="Funnel popup" />
+    <TextField label="Tiêu đề" value={p.title as string} onChange={(v) => update("title", v)} />
+    <TextField label="Mô tả" value={p.description as string} onChange={(v) => update("description", v)} multiline />
+    <TextField label="Nút CTA" value={p.ctaText as string} onChange={(v) => update("ctaText", v)} />
+    <TextField label="Đường dẫn CTA" value={p.ctaUrl as string} onChange={(v) => update("ctaUrl", v)} />
+    <SectionHeader title="Trigger" />
+    <SelectField
+      label="Kiểu kích hoạt"
+      value={p.trigger as string}
+      options={[
+        { value: "immediate", label: "Ngay lập tức" },
+        { value: "time_on_page", label: "Theo thời gian" },
+        { value: "scroll_progress", label: "Theo cuộn trang" },
+        { value: "exit_intent", label: "Thoát trang" },
+        { value: "inactivity", label: "Không hoạt động" },
+      ]}
+      onChange={(v) => update("trigger", v)}
+    />
+    <NumberField label="Ngưỡng trigger" value={p.triggerValue as number} onChange={(v) => update("triggerValue", v)} min={0} max={10000} step={100} />
+    <SelectField label="Tần suất" value={p.frequency as string} options={[{ value: "once", label: "Một lần" }, { value: "session", label: "Mỗi phiên" }, { value: "always", label: "Luôn hiện" }]} onChange={(v) => update("frequency", v)} />
+    <SectionHeader title="Giao diện" />
+    <TextField label="Ảnh popup" value={p.imageUrl as string} onChange={(v) => update("imageUrl", v)} hint="URL" />
+    <ToggleField label="Nền mờ" value={p.showBackdrop as boolean} onChange={(v) => update("showBackdrop", v)} />
+    <ColorField label="Màu CTA" value={p.accentColor as string} onChange={(v) => update("accentColor", v)} />
+    <ColorField label="Màu nền popup" value={p.bgColor as string} onChange={(v) => update("bgColor", v)} />
+  </>
+);
+
+// ── NEW: Product Card / Grid Inspector ────────────────────────
+const ProductCardInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn }> = ({ props: p, update }) => {
+  const items = p.items as { id: string; title: string; description: string; price: string; oldPrice?: string; image: string; badge?: string }[] | undefined;
+  const isGrid = Array.isArray(items) && items.length > 0;
+
+  const convertToGrid = () => {
+    update("items", [
+      {
+        id: `p_${Date.now()}_1`,
+        title: (p.title as string) || "Sản phẩm 1",
+        description: (p.description as string) || "Mô tả sản phẩm 1",
+        price: (p.price as string) || "399.000đ",
+        oldPrice: (p.oldPrice as string) || "550.000đ",
+        image: (p.image as string) || "/images/product/skincare_product.png",
+        badge: (p.badge as string) || "Bán chạy"
+      },
+      {
+        id: `p_${Date.now()}_2`,
+        title: "Sản phẩm 2",
+        description: "Mô tả sản phẩm 2",
+        price: "249.000đ",
+        oldPrice: "320.000đ",
+        image: "/images/product/green_tea_product.png",
+        badge: "Mới"
+      }
+    ]);
+    update("columns", 2);
+  };
+
+  const convertToSingle = () => {
+    if (isGrid && items.length > 0) {
+      const first = items[0];
+      update("title", first.title);
+      update("description", first.description);
+      update("price", first.price);
+      update("oldPrice", first.oldPrice || "");
+      update("image", first.image);
+      update("badge", first.badge || "");
+    }
+    update("items", undefined);
+    update("columns", undefined);
+  };
+
+  return (
+    <>
+      <SectionHeader title="Cài đặt khối sản phẩm" />
+      <TextField label="Văn bản nút mua" value={(p.ctaText as string) || "MUA NGAY"} onChange={(v) => update("ctaText", v)} />
+      <ColorField label="Màu nền khối" value={(p.bgColor as string) || "#ffffff"} onChange={(v) => update("bgColor", v)} />
+      <ColorField label="Màu viền" value={(p.borderColor as string) || "#e2e8f0"} onChange={(v) => update("borderColor", v)} />
+      <NumberField label="Bo góc thẻ" value={(p.borderRadius as number) || 16} onChange={(v) => update("borderRadius", v)} max={32} unit="px" />
+
+      {isGrid ? (
+        <>
+          <SectionHeader title="Cấu hình lưới (Grid)" />
+          <NumberField label="Số cột hiển thị" value={(p.columns as number) || 2} onChange={(v) => update("columns", v)} min={1} max={4} step={1} />
+          <button
+            onClick={convertToSingle}
+            className="cursor-pointer w-full text-center text-xs font-semibold text-purple-650 bg-purple-50 border border-purple-200 py-2 rounded-lg hover:bg-purple-100 transition mt-2 mb-4 shadow-sm"
+          >
+            Chuyển về 1 sản phẩm đơn lẻ
+          </button>
+
+          <SectionHeader title={`Danh sách sản phẩm (${items.length})`} />
+          {items.map((item, idx) => (
+            <div key={item.id} className="p-3 bg-gray-50 border border-gray-200 rounded-xl mb-3 space-y-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-gray-500">Sản phẩm #{idx + 1}</span>
+                {items.length > 1 && (
+                  <button
+                    onClick={() => {
+                      const next = items.filter((_, i) => i !== idx);
+                      update("items", next);
+                    }}
+                    className="text-red-500 text-[10px] hover:text-red-650 font-bold"
+                  >
+                    Xóa
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={item.title}
+                placeholder="Tên sản phẩm"
+                onChange={(e) => {
+                  const next = [...items];
+                  next[idx] = { ...next[idx], title: e.target.value };
+                  update("items", next);
+                }}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 shadow-sm"
+              />
+              <textarea
+                value={item.description}
+                placeholder="Mô tả chi tiết"
+                rows={2}
+                onChange={(e) => {
+                  const next = [...items];
+                  next[idx] = { ...next[idx], description: e.target.value };
+                  update("items", next);
+                }}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 resize-none shadow-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={item.price}
+                  placeholder="Giá bán (399.000đ)"
+                  onChange={(e) => {
+                    const next = [...items];
+                    next[idx] = { ...next[idx], price: e.target.value };
+                    update("items", next);
+                  }}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 shadow-sm"
+                />
+                <input
+                  type="text"
+                  value={item.oldPrice || ""}
+                  placeholder="Giá cũ (nếu có)"
+                  onChange={(e) => {
+                    const next = [...items];
+                    next[idx] = { ...next[idx], oldPrice: e.target.value };
+                    update("items", next);
+                  }}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 shadow-sm"
+                />
+              </div>
+              <input
+                type="text"
+                value={item.image}
+                placeholder="Đường dẫn ảnh sản phẩm"
+                onChange={(e) => {
+                  const next = [...items];
+                  next[idx] = { ...next[idx], image: e.target.value };
+                  update("items", next);
+                }}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 shadow-sm"
+              />
+              <input
+                type="text"
+                value={item.badge || ""}
+                placeholder="Nhãn (ví dụ: Bán chạy, Mới)"
+                onChange={(e) => {
+                  const next = [...items];
+                  next[idx] = { ...next[idx], badge: e.target.value };
+                  update("items", next);
+                }}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500 shadow-sm"
+              />
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newId = `p_${Date.now()}`;
+              update("items", [
+                ...items,
+                {
+                  id: newId,
+                  title: `Sản phẩm #${items.length + 1}`,
+                  description: "Mô tả sản phẩm mới thêm.",
+                  price: "299.000đ",
+                  oldPrice: "",
+                  image: "/images/product/skincare_product.png",
+                  badge: ""
+                }
+              ]);
+            }}
+            className="cursor-pointer w-full text-xs text-purple-650 border border-purple-300 rounded-lg py-2 hover:bg-purple-50 transition bg-white shadow-sm font-semibold"
+          >
+            + Thêm sản phẩm vào lưới
+          </button>
+        </>
+      ) : (
+        <>
+          <SectionHeader title="Thông tin sản phẩm" />
+          <button
+            onClick={convertToGrid}
+            className="cursor-pointer w-full text-center text-xs font-semibold text-purple-650 bg-purple-50 border border-purple-250 py-2 rounded-lg hover:bg-purple-100 transition mt-1 mb-4 shadow-sm"
+          >
+            Chuyển sang dạng lưới nhiều sản phẩm
+          </button>
+          <TextField label="Tên sản phẩm" value={(p.title as string) || ""} onChange={(v) => update("title", v)} />
+          <TextField label="Mô tả sản phẩm" value={(p.description as string) || ""} onChange={(v) => update("description", v)} multiline />
+          <div className="grid grid-cols-2 gap-2">
+            <TextField label="Giá bán" value={(p.price as string) || ""} onChange={(v) => update("price", v)} />
+            <TextField label="Giá cũ" value={(p.oldPrice as string) || ""} onChange={(v) => update("oldPrice", v)} />
+          </div>
+          <TextField label="Ảnh sản phẩm" value={(p.image as string) || ""} onChange={(v) => update("image", v)} hint="URL hoặc đường dẫn" />
+          <TextField label="Nhãn nổi bật" value={(p.badge as string) || ""} onChange={(v) => update("badge", v)} hint="Ví dụ: Bán chạy" />
+        </>
+      )}
+    </>
+  );
+};
+
+// ── Page settings (Light Theme) ─────────────────────────────────────────────
 export const PageSettingsPanel: React.FC<{
   settings: EditorData["pageSettings"];
   onUpdateSettings: (key: string, value: string | number | boolean) => void;
 }> = ({ settings, onUpdateSettings }) => (
-  <div className="space-y-4">
+  <div className="space-y-4 text-gray-800">
     <SectionHeader title="Cài đặt trang" />
     <ColorField label="Màu nền trang" value={settings.bgColor} onChange={(v) => onUpdateSettings("bgColor", v)} />
     <NumberField label="Chiều rộng tối đa" value={settings.maxWidth} onChange={(v) => onUpdateSettings("maxWidth", v)} min={800} max={1920} step={40} unit="px" />
@@ -393,7 +644,7 @@ export const PageSettingsPanel: React.FC<{
   </div>
 );
 
-// ── Main Inspector Panel ──────────────────────────────────────
+// ── Main Inspector Panel (Light Theme) ──────────────────────────────────────
 
 const INSPECTOR_MAP: Partial<Record<BlockType, React.FC<{ props: Record<string, unknown>; update: UpdateFn }>>> = {
   hero: HeroInspector,
@@ -408,6 +659,10 @@ const INSPECTOR_MAP: Partial<Record<BlockType, React.FC<{ props: Record<string, 
   countdown: CountdownInspector,
   video: VideoInspector,
   form_capture: FormCaptureInspector,
+  chat_widget: ChatWidgetInspector,
+  funnel_popup: FunnelPopupInspector,
+  tea_landing: TeaLandingInspector,
+  product_card: ProductCardInspector,
 };
 
 interface InspectorPanelProps {
@@ -434,19 +689,19 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const InspectorComponent = selectedBlock ? INSPECTOR_MAP[selectedBlock.type] : null;
 
   return (
-    <div className="w-full flex flex-col bg-[#111118] h-full overflow-hidden">
+    <div className="w-full flex flex-col bg-white h-full overflow-hidden border-l border-gray-200">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-800/80 flex-shrink-0">
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Inspector</p>
+      <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0 bg-gray-50">
+        <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Inspector</p>
         {selectedBlock && (
-          <p className="text-sm font-semibold text-purple-300 mt-0.5">
-            {selectedBlock.label || selectedBlock.type}
+          <p className="text-sm font-bold text-purple-700 mt-0.5">
+            {selectedBlock.label || selectedBlock.type.replace("_", " ").toUpperCase()}
           </p>
         )}
       </div>
 
       {/* Fields */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 bg-white">
         {selectedBlock && InspectorComponent ? (
           <InspectorComponent props={selectedBlock.props} update={update} />
         ) : (
@@ -456,9 +711,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
       {/* Bottom hint */}
       {!selectedBlock && (
-        <div className="px-4 py-3 border-t border-gray-800/80 flex-shrink-0">
-          <p className="text-[10px] text-gray-600 leading-relaxed">
-            Click vào một block trên canvas để chỉnh sửa thuộc tính.
+        <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0 bg-gray-50">
+          <p className="text-[10px] text-gray-500 leading-relaxed font-semibold">
+            Chọn một khối trên canvas để chỉnh sửa thuộc tính.
           </p>
         </div>
       )}

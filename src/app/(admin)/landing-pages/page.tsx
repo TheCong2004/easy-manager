@@ -119,6 +119,16 @@ const initialTags: TagItem[] = [
   },
 ];
 
+function mapTemplateToEditorPreset(template: TemplateItem): string {
+  const value = `${template.id} ${template.name} ${template.category}`.toLowerCase();
+  if (value.includes("112306") || value.includes("wedding") || value.includes("cưới")) return "wedding-invite";
+  if (value.includes("112305") || value.includes("112309") || value.includes("mỹ phẩm") || value.includes("spa")) return "beauty-shop";
+  if (value.includes("112307") || value.includes("trà") || value.includes("tea")) return "herb-tea";
+  if (value.includes("112308") || value.includes("smartwatch") || value.includes("đồng hồ")) return "smartwatch-performance";
+  if (value.includes("112312") || value.includes("khóa học") || value.includes("course")) return "webinar-lead";
+  return "product-launch";
+}
+
 export default function LandingPagesManagement() {
   const [pages, setPages] = useState<LandingPageItem[]>(initialPages);
   const [activeSubTab, setActiveSubTab] = useState("pages");
@@ -133,6 +143,7 @@ export default function LandingPagesManagement() {
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPageName, setNewPageName] = useState("");
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | undefined>();
 
   // Templates Sub-View States
   const [activeTemplateTab, setActiveTemplateTab] = useState("sample"); 
@@ -176,6 +187,7 @@ export default function LandingPagesManagement() {
     const newPage: LandingPageItem = {
       id: String(Date.now()),
       name: newPageName.trim().toLowerCase(),
+      templateId: pendingTemplateId,
       status: "UNPUBLISHED",
       updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
       views: 0,
@@ -185,6 +197,7 @@ export default function LandingPagesManagement() {
 
     setPages(prev => [newPage, ...prev]);
     setNewPageName("");
+    setPendingTemplateId(undefined);
     setIsCreateModalOpen(false);
     setActiveSubTab("pages"); // Redirect to pages list
   };
@@ -192,6 +205,7 @@ export default function LandingPagesManagement() {
   // Create page from template
   const handleUseTemplate = (template: TemplateItem) => {
     setNewPageName(template.name.split("-")[0].trim().toLowerCase() + "-copy");
+    setPendingTemplateId(mapTemplateToEditorPreset(template));
     setIsCreateModalOpen(true);
   };
 
@@ -350,7 +364,10 @@ export default function LandingPagesManagement() {
             selectedIds={selectedIds}
             handleSelectAll={handleSelectAll}
             handleSelectRow={handleSelectRow}
-            setIsCreateModalOpen={setIsCreateModalOpen}
+            setIsCreateModalOpen={(open) => {
+              if (open) setPendingTemplateId(undefined);
+              setIsCreateModalOpen(open);
+            }}
             onEdit={handleEditPage}
           />
         )}
@@ -359,7 +376,10 @@ export default function LandingPagesManagement() {
       {/* 3. Modal for creating a new Landing Page */}
       <CreatePageModal 
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setPendingTemplateId(undefined);
+          setIsCreateModalOpen(false);
+        }}
         newPageName={newPageName}
         setNewPageName={setNewPageName}
         onCreatePage={handleCreatePage}

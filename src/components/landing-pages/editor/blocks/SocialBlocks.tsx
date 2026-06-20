@@ -7,9 +7,10 @@ interface FeatureCardBlockProps {
   props: FeatureCardProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
-export const FeatureCardBlock: React.FC<FeatureCardBlockProps> = ({ props, isSelected, onSelect }) => {
+export const FeatureCardBlock: React.FC<FeatureCardBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { icon, iconColor, iconBg, title, description, bgColor, borderColor, borderRadius } = props;
 
   return (
@@ -28,12 +29,44 @@ export const FeatureCardBlock: React.FC<FeatureCardBlockProps> = ({ props, isSel
           className="w-12 h-12 flex items-center justify-center text-2xl rounded-xl flex-shrink-0"
           style={{ backgroundColor: iconBg, color: iconColor }}
         >
-          {icon}
+          <span
+            contentEditable={isSelected}
+            suppressContentEditableWarning
+            onBlur={(e) => onUpdate?.({ ...props, icon: e.currentTarget.textContent || "" })}
+            onClick={(e) => {
+              if (isSelected) e.stopPropagation();
+            }}
+            style={{ outline: "none" }}
+          >
+            {icon}
+          </span>
         </div>
         {/* Text */}
         <div>
-          <h3 className="font-bold text-lg mb-1" style={{ color: "#0f172a" }}>{title}</h3>
-          <p className="text-sm leading-relaxed" style={{ color: "#64748b" }}>{description}</p>
+          <h3
+            contentEditable={isSelected}
+            suppressContentEditableWarning
+            onBlur={(e) => onUpdate?.({ ...props, title: e.currentTarget.textContent || "" })}
+            onClick={(e) => {
+              if (isSelected) e.stopPropagation();
+            }}
+            className="font-bold text-lg mb-1"
+            style={{ color: "#0f172a", outline: "none" }}
+          >
+            {title}
+          </h3>
+          <p
+            contentEditable={isSelected}
+            suppressContentEditableWarning
+            onBlur={(e) => onUpdate?.({ ...props, description: e.currentTarget.textContent || "" })}
+            onClick={(e) => {
+              if (isSelected) e.stopPropagation();
+            }}
+            className="text-sm leading-relaxed"
+            style={{ color: "#64748b", outline: "none" }}
+          >
+            {description}
+          </p>
         </div>
       </div>
       {isSelected && (
@@ -50,9 +83,10 @@ interface TestimonialBlockProps {
   props: TestimonialProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (props: Record<string, unknown>) => void;
 }
 
-export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSelected, onSelect }) => {
+export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
   const { quote, authorName, authorRole, authorAvatar, rating, bgColor, textColor, showRating } = props;
 
   return (
@@ -83,7 +117,16 @@ export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSel
         )}
 
         {/* Quote */}
-        <p className="text-base leading-relaxed mb-5 italic" style={{ color: textColor }}>
+        <p
+          contentEditable={isSelected}
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate?.({ ...props, quote: e.currentTarget.textContent?.replace(/^"|"$/g, "") || "" })}
+          onClick={(e) => {
+            if (isSelected) e.stopPropagation();
+          }}
+          className="text-base leading-relaxed mb-5 italic"
+          style={{ color: textColor, outline: "none" }}
+        >
           &ldquo;{quote}&rdquo;
         </p>
 
@@ -97,8 +140,30 @@ export const TestimonialBlock: React.FC<TestimonialBlockProps> = ({ props, isSel
             </div>
           )}
           <div>
-            <p className="font-semibold text-sm">{authorName}</p>
-            <p className="text-xs opacity-60">{authorRole}</p>
+            <p
+              contentEditable={isSelected}
+              suppressContentEditableWarning
+              onBlur={(e) => onUpdate?.({ ...props, authorName: e.currentTarget.textContent || "" })}
+              onClick={(e) => {
+                if (isSelected) e.stopPropagation();
+              }}
+              className="font-semibold text-sm"
+              style={{ outline: "none" }}
+            >
+              {authorName}
+            </p>
+            <p
+              contentEditable={isSelected}
+              suppressContentEditableWarning
+              onBlur={(e) => onUpdate?.({ ...props, authorRole: e.currentTarget.textContent || "" })}
+              onClick={(e) => {
+                if (isSelected) e.stopPropagation();
+              }}
+              className="text-xs opacity-60"
+              style={{ outline: "none" }}
+            >
+              {authorRole}
+            </p>
           </div>
         </div>
       </div>

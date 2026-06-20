@@ -1,11 +1,19 @@
 import React from "react";
 import { TemplateItem } from "../dung-chung/types";
-import { IconX, IconPlus } from "../dung-chung/icons";
+import { IconDownload, IconEye, IconPlus, IconX } from "../dung-chung/icons";
 
 interface TemplatePreviewModalProps {
   template: TemplateItem | null;
   onClose: () => void;
   onUseTemplate: (template: TemplateItem) => void;
+}
+
+function compactTemplateName(name: string): { code: string; title: string } {
+  const [rawCode, ...rest] = name.split(" - ");
+  return {
+    code: rawCode?.trim() || "LDP",
+    title: rest.join(" - ").trim() || name,
+  };
 }
 
 export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
@@ -15,61 +23,78 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
 }) => {
   if (!template) return null;
 
+  const name = compactTemplateName(template.name);
+
   return (
-    <div className="fixed inset-0 z-999999 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-theme-xl max-w-4xl w-full h-[85vh] flex flex-col justify-between overflow-hidden animate-scale-up">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 p-4">
-          <div>
-            <h3 className="text-base font-bold text-slate-800 dark:text-white">
-              Xem trước: {template.name}
-            </h3>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">
-              Lượt xem: {template.views.toLocaleString()} | Tải về: {template.likes.toLocaleString()}
-            </span>
+    <div className="fixed inset-0 z-999999 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm">
+      <div className="flex h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl dark:bg-slate-950">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                {name.code}
+              </span>
+              <span className={`rounded-md px-2 py-1 text-[10px] font-black text-white ${template.isPro ? "bg-orange-500" : "bg-lime-500"}`}>
+                {template.isPro ? "PRO" : "FREE"}
+              </span>
+            </div>
+            <h3 className="mt-2 truncate text-lg font-black text-slate-950 dark:text-white">{name.title}</h3>
+            <div className="mt-1 flex items-center gap-4 text-xs font-bold text-slate-400">
+              <span className="inline-flex items-center gap-1">
+                <IconEye size={13} />
+                {template.views.toLocaleString()} lượt xem
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <IconDownload size={13} />
+                {template.likes.toLocaleString()} lượt tải
+              </span>
+            </div>
           </div>
-          <button 
+
+          <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+            aria-label="Đóng preview"
           >
             <IconX size={20} />
           </button>
-        </div>
+        </header>
 
-        {/* Modal Scrollable Body */}
-        <div className="flex-1 bg-gray-100 dark:bg-gray-950 overflow-y-auto p-6 flex justify-center">
-          <div className="w-full max-w-[480px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-md h-fit">
-            {/* Browser bar mock */}
-            <div className="bg-slate-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-2 flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-              <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-              <span className="ml-4 text-[10px] font-medium text-slate-400 bg-white dark:bg-gray-900 px-6 py-0.5 rounded border border-gray-150 dark:border-gray-700 select-none">ladi.page/preview</span>
+        <div className="flex-1 overflow-y-auto bg-slate-100 p-6 dark:bg-slate-900">
+          <div className="mx-auto max-w-[760px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
+            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+              <span className="h-3 w-3 rounded-full bg-red-400" />
+              <span className="h-3 w-3 rounded-full bg-yellow-400" />
+              <span className="h-3 w-3 rounded-full bg-green-400" />
+              <span className="ml-4 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-4 py-1 text-center text-xs font-bold text-slate-400 dark:border-slate-800 dark:bg-slate-950">
+                ladi.page/preview/{template.id}
+              </span>
             </div>
-            <img
-              src={template.image}
-              alt={template.name}
-              className="w-full h-auto object-top"
-            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={template.image} alt={template.name} className="h-auto w-full object-top" />
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="border-t border-gray-100 dark:border-gray-800 p-4 flex justify-end gap-3 bg-gray-50/50 dark:bg-gray-900/10">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-slate-650 hover:bg-gray-100 rounded-lg dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
-          >
-            Đóng
-          </button>
-          <button
-            onClick={() => onUseTemplate(template)}
-            className="px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1.5"
-          >
-            <IconPlus size={16} />
-            <span>Sử dụng Template này</span>
-          </button>
-        </div>
+        <footer className="flex flex-col gap-3 border-t border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-slate-500">
+            Sử dụng template sẽ tạo một landing page mới và mở được trong editor.
+          </p>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="h-10 rounded-lg px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+            >
+              Đóng
+            </button>
+            <button
+              onClick={() => onUseTemplate(template)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-lime-500 px-5 text-sm font-black text-white shadow-sm transition hover:bg-lime-600"
+            >
+              <IconPlus size={16} />
+              Sử dụng template này
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   );

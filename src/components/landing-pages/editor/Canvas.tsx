@@ -12,6 +12,13 @@ import { ButtonBlock } from "./blocks/ButtonBlock";
 import { SpacerBlock, DividerBlock } from "./blocks/SpacerBlock";
 import { FeatureCardBlock, TestimonialBlock } from "./blocks/SocialBlocks";
 import { CountdownBlock, VideoBlock, FormCaptureBlock } from "./blocks/AdvancedBlocks";
+import { TeaLandingBlock } from "./blocks/TeaLandingBlock";
+import { ChatWidgetBlock, FunnelPopupBlock } from "./blocks/WidgetBlocks";
+import {
+  GalleryBlock, BoxBlock, IconBlock, ProductCardBlock, CollectionListBlock,
+  CarouselBlock, TabsBlock, FrameBlock, AccordionBlock, TableBlock,
+  SurveyBlock, MenuBlock, HtmlCodeBlock
+} from "./blocks/NewLadiBlocks";
 
 // ── Block Renderer ────────────────────────────────────────────
 const BlockRenderer: React.FC<{
@@ -29,11 +36,27 @@ const BlockRenderer: React.FC<{
     case "button": return <ButtonBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "spacer": return <SpacerBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "divider": return <DividerBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "feature_card": return <FeatureCardBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "testimonial": return <TestimonialBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "countdown": return <CountdownBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "feature_card": return <FeatureCardBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "testimonial": return <TestimonialBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "countdown": return <CountdownBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "video": return <VideoBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "form_capture": return <FormCaptureBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "form_capture": return <FormCaptureBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "chat_widget": return <ChatWidgetBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "funnel_popup": return <FunnelPopupBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "tea_landing": return <TeaLandingBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "gallery": return <GalleryBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "box": return <BoxBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "icon": return <IconBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "product_card": return <ProductCardBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "collection_list": return <CollectionListBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "carousel": return <CarouselBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "tabs": return <TabsBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "frame": return <FrameBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "accordion": return <AccordionBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "table": return <TableBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "survey": return <SurveyBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "menu": return <MenuBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "html_code": return <HtmlCodeBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "columns":
       return (
         <div
@@ -286,8 +309,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     <div
       className="flex-1 overflow-auto"
       style={{
-        backgroundColor: "#07070d",
-        backgroundImage: "radial-gradient(circle, rgba(129, 140, 248, 0.16) 1px, transparent 1px)",
+        backgroundColor: "#f3f4f6",
+        backgroundImage: "radial-gradient(circle, rgba(107, 114, 128, 0.08) 1px, transparent 1px)",
         backgroundSize: "32px 32px",
       }}
       onClick={handleCanvasBgClick}
@@ -301,13 +324,13 @@ export const Canvas: React.FC<CanvasProps> = ({
           }}
         >
           <div
-            className="origin-top-left overflow-hidden rounded-[10px] border border-[#2a2a38] bg-[#101018] shadow-2xl shadow-black/60"
+            className="origin-top-left overflow-hidden rounded-[10px] border border-gray-250 bg-white shadow-xl shadow-gray-300/40"
             style={{
               width: canvasWidth,
               transform: `scale(${zoom})`,
             }}
           >
-            <div className="flex h-8 items-center justify-between border-b border-[#262636] bg-[#11111a] px-3 text-[10px] text-gray-500">
+            <div className="flex h-8 items-center justify-between border-b border-gray-200 bg-gray-50 px-3 text-[10px] text-gray-500">
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-red-500/70" />
                 <span className="h-2 w-2 rounded-full bg-amber-500/70" />
@@ -359,7 +382,7 @@ export const Canvas: React.FC<CanvasProps> = ({
             </div>
           </div>
 
-          <div className="pointer-events-auto absolute left-1/2 top-full z-40 mt-5 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-[#2b2b3b] bg-[#08080d]/95 p-1.5 shadow-2xl shadow-black/50 backdrop-blur">
+          <div className="pointer-events-auto absolute left-1/2 top-full z-40 mt-5 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 p-1.5 shadow-lg shadow-gray-200/50 backdrop-blur">
             {[
               { title: "Select", path: "M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" },
               { title: "Pan", path: "M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" },
@@ -370,7 +393,7 @@ export const Canvas: React.FC<CanvasProps> = ({
               <button
                 key={tool.title}
                 title={tool.title}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-300 transition hover:bg-white/10 hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d={tool.path} />

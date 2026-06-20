@@ -1,6 +1,7 @@
 export type LandingPageItem = {
   id: string;
   name: string;
+  templateId?: string;
   status: "PUBLISHED" | "UNPUBLISHED";
   updatedAt: string;
   views: number;
@@ -45,5 +46,4 @@ export type DomainItem = {
   sslStatus: "ACTIVE" | "INACTIVE";
   updatedAt: string;
 };
-
 

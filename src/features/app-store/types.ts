@@ -1,10 +1,8 @@
-import React from "react";
-
 export interface AppItem {
   id: string;
   name: string;
   description: string;
-  iconName: "website" | "store" | "link" | "blog" | "dynamic" | "elearning" | "affiliate" | "popup" | "access" | "fbads" | "cloudphone";
+  iconName: "website" | "store" | "link" | "blog" | "dynamic" | "elearning" | "affiliate" | "popup" | "access" | "fbads" | "cloudphone" | "offerkit";
   status: "INSTALLED" | "NOT_INSTALLED";
   category: "marketing" | "sales" | "conversion" | "content" | "upcoming";
   downloads?: string;
