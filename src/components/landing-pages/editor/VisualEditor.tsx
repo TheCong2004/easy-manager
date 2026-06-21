@@ -20,6 +20,7 @@ import { InspectorPanel } from "./InspectorPanel";
 import { LANDING_ASSETS, LANDING_TEMPLATE_PRESETS, instantiateTemplateBlocks, resolveTemplatePresetId } from "./template-library";
 import { LandingPageItem } from "../dung-chung/types";
 import { FUNNELX_FLAGS } from "@onlook/funnel";
+import { useEditorBlockActions } from "./hooks/useEditorBlockActions";
 
 // Import modular split sub-panels
 import { PageListingPanel } from "./panels/PageListingPanel";
@@ -380,105 +381,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   // ── Block mutations ──────────────────────────────────────────
 
-  const handleDropFromPalette = useCallback((blockType: BlockType, insertIndex?: number) => {
-    const newBlock = ensureOnlookBlockMeta(createDefaultBlock(blockType));
-    const newBlocks = [...data.blocks];
-    const nextIndex = insertIndex ?? newBlocks.length;
-    if (insertIndex !== undefined) {
-      newBlocks.splice(insertIndex, 0, newBlock);
-    } else {
-      newBlocks.push(newBlock);
-    }
-    push(normalizeEditorData({ ...data, blocks: newBlocks }));
-    recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: nextIndex, timestamp: Date.now() });
-    handleSelectBlock(newBlock.id);
-    showToast(`Đã thêm ${newBlock.label}`);
-  }, [data, push, recordAction, handleSelectBlock]);
-
-  const handleAddBlock = useCallback((blockType: BlockType, customProps?: Record<string, unknown>) => {
-    const defaultBlock = createDefaultBlock(blockType);
-    const newBlock = ensureOnlookBlockMeta({
-      ...defaultBlock,
-      props: {
-        ...defaultBlock.props,
-        ...customProps,
-      },
-    });
-    const newBlocks = [...data.blocks, newBlock];
-    push(normalizeEditorData({ ...data, blocks: newBlocks }));
-    recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: newBlocks.length - 1, timestamp: Date.now() });
-    handleSelectBlock(newBlock.id);
-    showToast(`Đã thêm ${newBlock.label}`);
-  }, [data, push, recordAction, handleSelectBlock]);
-
-  const handleMoveBlock = useCallback((fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return;
-    const newBlocks = [...data.blocks];
-    const [moved] = newBlocks.splice(fromIndex, 1);
-    newBlocks.splice(toIndex, 0, moved);
-    push(normalizeEditorData({ ...data, blocks: newBlocks }));
-    recordAction({ type: "move-element", blockId: moved.id, fromIndex, toIndex, timestamp: Date.now() });
-  }, [data, push, recordAction]);
-
-  const handleMoveUp = useCallback((index: number) => {
-    if (index === 0) return;
-    handleMoveBlock(index, index - 1);
-  }, [handleMoveBlock]);
-
-  const handleMoveDown = useCallback((index: number) => {
-    if (index === data.blocks.length - 1) return;
-    handleMoveBlock(index, index + 1);
-  }, [data, handleMoveBlock]);
-
-  const handleDeleteBlock = useCallback((id: string) => {
-    const removed = data.blocks.find((b) => b.id === id);
-    const newBlocks = data.blocks.filter((b) => b.id !== id);
-    push(normalizeEditorData({ ...data, blocks: newBlocks }));
-    if (removed) {
-      recordAction({ type: "remove-element", blockId: removed.id, blockType: removed.type, timestamp: Date.now() });
-    }
-    if (selectedId === id) handleSelectBlock(null);
-    showToast("Đã xóa khối", "info");
-  }, [data, push, recordAction, selectedId, handleSelectBlock]);
-
-  const handleDuplicateBlock = useCallback((id: string) => {
-    const index = data.blocks.findIndex((b) => b.id === id);
-    if (index === -1) return;
-    const original = data.blocks[index];
-    const cloned: EditorBlock = {
-      ...original,
-      id: `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      props: JSON.parse(JSON.stringify(original.props)), // deep copy props
-      oid: undefined,
-      instanceId: undefined,
-      domId: undefined,
-    };
-    const normalizedClone = ensureOnlookBlockMeta(cloned);
-    const newBlocks = [...data.blocks];
-    newBlocks.splice(index + 1, 0, normalizedClone);
-    push(normalizeEditorData({ ...data, blocks: newBlocks }));
-    recordAction({ type: "insert-element", blockId: normalizedClone.id, blockType: normalizedClone.type, index: index + 1, timestamp: Date.now() });
-    handleSelectBlock(normalizedClone.id);
-    showToast(`Đã nhân đôi ${cloned.label}`);
-  }, [data, push, recordAction, handleSelectBlock]);
-
-  const handleUpdateBlock = useCallback((id: string, newProps: Record<string, unknown>) => {
-    const current = data.blocks.find((b) => b.id === id);
-    const newBlocks = data.blocks.map((b) =>
-      b.id === id ? { ...b, props: newProps } : b
-    );
-    push(normalizeEditorData({ ...data, blocks: newBlocks }));
-    if (current) {
-      const oldProps = current.props as Record<string, unknown>;
-      const keys = Object.keys(newProps).filter((key) => oldProps[key] !== newProps[key]);
-      recordAction({ type: "update-props", blockId: id, blockType: current.type, keys, timestamp: Date.now() });
-    }
-  }, [data, push, recordAction]);
-
-  const handleUpdatePageSettings = useCallback((key: string, value: string | number | boolean) => {
-    push({ ...data, pageSettings: { ...data.pageSettings, [key]: value } });
-    recordAction({ type: "update-page-settings", key, timestamp: Date.now() });
-  }, [data, push, recordAction]);
+  const {
+    handleAddBlock,
+    handleApplyTemplate,
+    handleClearCanvas,
+    handleDeleteBlock,
+    handleDropFromPalette,
+    handleDropItem,
+    handleMoveWithinParent,
+    handleDuplicateBlock,
+    handleMoveBlock,
+    handleMoveDown,
+    handleMoveUp,
+    handleUpdateBlock,
+    handleUpdatePageSettings,
+    handleUseAsset,
+  } = useEditorBlockActions({
+    data,
+    handleSelectBlock,
+    push,
+    recordAction,
+    selectedId,
+    setSelectedId,
+    showToast,
+  });
 
   const handleSendChatMessage = useCallback((text: string) => {
     if (!text.trim()) return;
@@ -733,57 +659,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     showToast("Đã khôi phục thiết kế", "success");
   }, [applySnapshot, saveSnapshot]);
 
-  const handleClearCanvas = useCallback(() => {
-    if (!confirm("Bạn có muốn xóa tất cả các block trên trang này?")) return;
-    push(normalizeEditorData({ ...data, blocks: [] }));
-    setSelectedId(null);
-    recordAction({ type: "update-page-settings", key: "clear-canvas", timestamp: Date.now() });
-    showToast("Đã dọn sạch canvas", "info");
-  }, [data, push, recordAction]);
-
-  const handleApplyTemplate = useCallback((templateId: string, mode: "append" | "replace" = "append") => {
-    const templateBlocks = instantiateTemplateBlocks(templateId);
-    if (templateBlocks.length === 0) return;
-    if (mode === "replace" && data.blocks.length > 0 && !confirm("Thay toàn bộ canvas bằng mẫu này?")) return;
-
-    const nextBlocks = mode === "replace" ? templateBlocks : [...data.blocks, ...templateBlocks];
-    push(normalizeEditorData({ ...data, blocks: nextBlocks }));
-    templateBlocks.forEach((block, offset) => {
-      recordAction({
-        type: "insert-element",
-        blockId: block.id,
-        blockType: block.type,
-        index: mode === "replace" ? offset : data.blocks.length + offset,
-        timestamp: Date.now(),
-      });
-    });
-    handleSelectBlock(templateBlocks[0].id);
-    showToast(mode === "replace" ? "Đã áp dụng mẫu trang mới" : "Đã chèn mẫu thiết kế", "success");
-  }, [data, handleSelectBlock, push, recordAction]);
-
-  const handleUseAsset = useCallback((url: string, name: string) => {
-    if (selectedId) {
-      const current = data.blocks.find((block) => block.id === selectedId);
-      if (current?.type === "image") {
-        handleUpdateBlock(current.id, { ...current.props, src: url, alt: name });
-        showToast(`Đã gán ảnh ${name}`, "success");
-        return;
-      }
-      if (current?.type === "hero") {
-        handleUpdateBlock(current.id, { ...current.props, bgImage: url });
-        showToast(`Đã gán ảnh nền ${name}`, "success");
-        return;
-      }
-      if (current?.type === "testimonial") {
-        handleUpdateBlock(current.id, { ...current.props, authorAvatar: url });
-        showToast(`Đã gán avatar ${name}`, "success");
-        return;
-      }
-    }
-
-    navigator.clipboard?.writeText(url);
-    showToast(`Đã copy link ảnh: ${name}`, "info");
-  }, [data.blocks, handleUpdateBlock, selectedId]);
+  // Removed duplicate block actions (now handled by useEditorBlockActions hook)
 
   const selectedBlock = selectedId ? data.blocks.find((b) => b.id === selectedId) ?? null : null;
   const sandboxPreviewUrl = data.pageSettings.sandboxUrl
@@ -950,8 +826,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               zoom={zoom}
               pageBgColor={data.pageSettings.bgColor}
               onSelectBlock={handleSelectBlock}
-              onDropFromPalette={handleDropFromPalette}
+              onDropItem={handleDropItem}
               onMoveBlock={handleMoveBlock}
+              onMoveWithinParent={handleMoveWithinParent}
               onDeleteBlock={handleDeleteBlock}
               onDuplicateBlock={handleDuplicateBlock}
               onMoveUp={handleMoveUp}

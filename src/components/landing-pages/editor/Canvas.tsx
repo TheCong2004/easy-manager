@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDrop, useDrag } from "react-dnd";
 import {
   EditorBlock, BlockType, DND_TYPES, PaletteDragItem, CanvasDragItem,
-  DeviceMode, DEVICE_WIDTHS, ONLOOK_ATTRIBUTES, ensureOnlookBlockMeta,
+  DeviceMode, DEVICE_WIDTHS, ONLOOK_ATTRIBUTES, ensureOnlookBlockMeta, canNodeHaveChildren,
 } from "./types";
 import { HeroBlock } from "./blocks/HeroBlock";
 import { TextBlock } from "./blocks/TextBlock";
@@ -48,6 +48,10 @@ const BlockRenderer: React.FC<{
     case "funnel_popup": return <FunnelPopupBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "tea_landing": return <TeaLandingBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "gallery": return <GalleryBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "product_section":
+    case "form_section":
+    case "footer":
+    case "custom_section":
     case "box": return <BoxBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "icon": return <IconBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "product_card": return <ProductCardBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
@@ -97,23 +101,56 @@ const BlockRenderer: React.FC<{
 const SortableBlock: React.FC<{
   block: EditorBlock;
   index: number;
+  parentId?: string;
+  columnIndex?: number;
+  depth?: number;
+  selectedId: string | null;
   isSelected: boolean;
   onSelect: () => void;
+  onSelectBlock: (id: string | null) => void;
   onMove: (fromIndex: number, toIndex: number) => void;
+  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onDropItem: (
+    item: { id?: string; type?: BlockType; isPalette?: boolean },
+    containerId?: string,
+    columnIndex?: number,
+    index?: number
+  ) => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
   isFirst: boolean;
   isLast: boolean;
-}> = ({ block, index, isSelected, onSelect, onMove, onDelete, onDuplicate, onMoveUp, onMoveDown, onUpdateBlock, isFirst, isLast }) => {
+}> = ({
+  block,
+  index,
+  parentId,
+  columnIndex,
+  depth = 0,
+  selectedId,
+  isSelected,
+  onSelect,
+  onSelectBlock,
+  onMove,
+  onMoveWithinParent,
+  onDelete,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  onDropItem,
+  onUpdateBlock,
+  isFirst,
+  isLast,
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const metaBlock = ensureOnlookBlockMeta(block);
+  const canHaveChildren = canNodeHaveChildren(metaBlock);
 
   const [{ isDragging }, drag] = useDrag<CanvasDragItem, unknown, { isDragging: boolean }>({
     type: DND_TYPES.CANVAS_BLOCK,
-    item: { type: DND_TYPES.CANVAS_BLOCK, blockId: block.id, index },
+    item: { type: DND_TYPES.CANVAS_BLOCK, blockId: block.id, index, parentId, columnIndex },
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
   });
 
@@ -121,7 +158,12 @@ const SortableBlock: React.FC<{
     accept: DND_TYPES.CANVAS_BLOCK,
     hover: (dragItem) => {
       if (dragItem.index === index) return;
-      onMove(dragItem.index, index);
+      if (dragItem.parentId !== parentId || dragItem.columnIndex !== columnIndex) return;
+      if (parentId || typeof columnIndex === "number") {
+        onMoveWithinParent(parentId, columnIndex, dragItem.index, index);
+      } else {
+        onMove(dragItem.index, index);
+      }
       dragItem.index = index;
     },
     collect: (monitor) => ({
@@ -151,6 +193,37 @@ const SortableBlock: React.FC<{
 
       {/* Block content */}
       <BlockRenderer block={block} isSelected={isSelected} onSelect={onSelect} onUpdateBlock={onUpdateBlock} />
+
+      {canHaveChildren && block.type !== "columns" && (
+        <NodeChildren
+          parentId={block.id}
+          blocks={block.children ?? []}
+          selectedId={selectedId}
+          onSelectBlock={onSelectBlock}
+          onDropItem={onDropItem}
+          onMove={onMove}
+          onMoveWithinParent={onMoveWithinParent}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onUpdateBlock={onUpdateBlock}
+          depth={depth + 1}
+        />
+      )}
+
+      {block.type === "columns" && (
+        <ColumnsChildren
+          block={block}
+          selectedId={selectedId}
+          onSelectBlock={onSelectBlock}
+          onDropItem={onDropItem}
+          onMove={onMove}
+          onMoveWithinParent={onMoveWithinParent}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onUpdateBlock={onUpdateBlock}
+          depth={depth + 1}
+        />
+      )}
 
       {/* Hover toolbar — shows on hover or selected */}
       <div
@@ -217,15 +290,200 @@ const SortableBlock: React.FC<{
 };
 
 // ── Drop Zone (empty canvas or between blocks) ────────────────
+const NodeChildren: React.FC<{
+  parentId: string;
+  blocks: EditorBlock[];
+  selectedId: string | null;
+  onSelectBlock: (id: string | null) => void;
+  onDropItem: (
+    item: { id?: string; type?: BlockType; isPalette?: boolean },
+    containerId?: string,
+    columnIndex?: number,
+    index?: number
+  ) => void;
+  onMove: (fromIndex: number, toIndex: number) => void;
+  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  depth: number;
+}> = ({
+  parentId,
+  blocks,
+  selectedId,
+  onSelectBlock,
+  onDropItem,
+  onMove,
+  onMoveWithinParent,
+  onDelete,
+  onDuplicate,
+  onUpdateBlock,
+  depth,
+}) => (
+  <div className="px-3 pb-3">
+    {blocks.length === 0 ? (
+      <DropZone
+        containerId={parentId}
+        index={0}
+        onDropItem={onDropItem}
+      />
+    ) : (
+      <>
+        {blocks.map((child, childIndex) => (
+          <React.Fragment key={child.id}>
+            <DropZone
+              isCompact
+              containerId={parentId}
+              index={childIndex}
+              onDropItem={onDropItem}
+            />
+            <SortableBlock
+              block={child}
+              index={childIndex}
+              parentId={parentId}
+              depth={depth}
+              selectedId={selectedId}
+              isSelected={selectedId === child.id}
+              onSelect={() => onSelectBlock(child.id)}
+              onSelectBlock={onSelectBlock}
+              onMove={onMove}
+              onMoveWithinParent={onMoveWithinParent}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
+              onMoveUp={(index) => onMoveWithinParent(parentId, undefined, index, index - 1)}
+              onMoveDown={(index) => onMoveWithinParent(parentId, undefined, index, index + 1)}
+              onDropItem={onDropItem}
+              onUpdateBlock={onUpdateBlock}
+              isFirst={childIndex === 0}
+              isLast={childIndex === blocks.length - 1}
+            />
+          </React.Fragment>
+        ))}
+        <DropZone
+          isCompact
+          containerId={parentId}
+          index={blocks.length}
+          onDropItem={onDropItem}
+        />
+      </>
+    )}
+  </div>
+);
+
+const ColumnsChildren: React.FC<{
+  block: EditorBlock;
+  selectedId?: string | null;
+  onSelectBlock: (id: string | null) => void;
+  onDropItem: (
+    item: { id?: string; type?: BlockType; isPalette?: boolean },
+    containerId?: string,
+    columnIndex?: number,
+    index?: number
+  ) => void;
+  onMove: (fromIndex: number, toIndex: number) => void;
+  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  depth: number;
+}> = ({ block, selectedId, onSelectBlock, onDropItem, onMove, onMoveWithinParent, onDelete, onDuplicate, onUpdateBlock, depth }) => {
+  const columns = Array.isArray(block.props.children) ? block.props.children as EditorBlock[][] : [];
+  const count = Number(block.props.columns) || Math.max(2, columns.length);
+
+  return (
+    <div className="grid gap-3 px-3 pb-3" style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
+      {Array.from({ length: count }).map((_, columnIndex) => {
+        const children = columns[columnIndex] ?? [];
+        return (
+          <div key={columnIndex} className="min-h-20 rounded-xl border border-dashed border-gray-250 bg-white/70 p-2">
+            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-gray-400">Column {columnIndex + 1}</div>
+            {children.length === 0 ? (
+              <DropZone
+                containerId={block.id}
+                columnIndex={columnIndex}
+                index={0}
+                onDropItem={onDropItem}
+              />
+            ) : (
+              <>
+                {children.map((child, childIndex) => (
+                  <React.Fragment key={child.id}>
+                    <DropZone
+                      isCompact
+                      containerId={block.id}
+                      columnIndex={columnIndex}
+                      index={childIndex}
+                      onDropItem={onDropItem}
+                    />
+                    <SortableBlock
+                      block={child}
+                      index={childIndex}
+                      parentId={block.id}
+                      columnIndex={columnIndex}
+                      depth={depth}
+                      selectedId={selectedId ?? null}
+                      isSelected={selectedId === child.id}
+                      onSelect={() => onSelectBlock(child.id)}
+                      onSelectBlock={onSelectBlock}
+                      onMove={onMove}
+                      onMoveWithinParent={onMoveWithinParent}
+                      onDelete={onDelete}
+                      onDuplicate={onDuplicate}
+                      onMoveUp={(index) => onMoveWithinParent(block.id, columnIndex, index, index - 1)}
+                      onMoveDown={(index) => onMoveWithinParent(block.id, columnIndex, index, index + 1)}
+                      onDropItem={onDropItem}
+                      onUpdateBlock={onUpdateBlock}
+                      isFirst={childIndex === 0}
+                      isLast={childIndex === children.length - 1}
+                    />
+                  </React.Fragment>
+                ))}
+                <DropZone
+                  isCompact
+                  containerId={block.id}
+                  columnIndex={columnIndex}
+                  index={children.length}
+                  onDropItem={onDropItem}
+                />
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ── Drop Zone (recursive canvas & container drops) ────────────────
 const DropZone: React.FC<{
-  onDrop: (blockType: BlockType) => void;
+  containerId?: string;
+  columnIndex?: number;
+  index: number;
+  onDropItem: (
+    item: { id?: string; type?: BlockType; isPalette?: boolean },
+    containerId?: string,
+    columnIndex?: number,
+    index?: number
+  ) => void;
   isCompact?: boolean;
-}> = ({ onDrop, isCompact = false }) => {
-  const [{ isOver, canDrop }, drop] = useDrop<PaletteDragItem, unknown, { isOver: boolean; canDrop: boolean }>({
-    accept: DND_TYPES.PALETTE_BLOCK,
-    drop: (item) => onDrop(item.blockType),
+}> = ({ containerId, columnIndex, index, onDropItem, isCompact = false }) => {
+  const [{ isOver, canDrop }, drop] = useDrop<
+    { type: string; blockType?: BlockType; blockId?: string },
+    unknown,
+    { isOver: boolean; canDrop: boolean }
+  >({
+    accept: [DND_TYPES.PALETTE_BLOCK, DND_TYPES.CANVAS_BLOCK],
+    drop: (item, monitor) => {
+      if (monitor.didDrop()) return;
+      if (item.type === DND_TYPES.PALETTE_BLOCK && item.blockType) {
+        onDropItem({ type: item.blockType, isPalette: true }, containerId, columnIndex, index);
+      } else if (item.type === DND_TYPES.CANVAS_BLOCK && item.blockId) {
+        if (item.blockId === containerId) return;
+        onDropItem({ id: item.blockId }, containerId, columnIndex, index);
+      }
+    },
     collect: (monitor) => ({
-      isOver: monitor.isOver(),
+      isOver: monitor.isOver({ shallow: true }),
       canDrop: monitor.canDrop(),
     }),
   });
@@ -234,8 +492,8 @@ const DropZone: React.FC<{
     return (
       <div
         ref={drop as unknown as React.Ref<HTMLDivElement>}
-        className={`transition-all h-2 mx-4 my-0.5 rounded-full ${
-          isOver && canDrop ? "bg-purple-500 h-4" : canDrop ? "bg-purple-400/20" : ""
+        className={`transition-all h-2.5 mx-4 my-1 rounded-full ${
+          isOver && canDrop ? "bg-purple-600 h-5 shadow-sm" : canDrop ? "bg-purple-400/20" : "bg-transparent"
         }`}
       />
     );
@@ -244,23 +502,22 @@ const DropZone: React.FC<{
   return (
     <div
       ref={drop as unknown as React.Ref<HTMLDivElement>}
-      className={`flex flex-col items-center justify-center gap-4 transition-all rounded-2xl border-2 border-dashed mx-4 my-8 ${
+      className={`flex flex-col items-center justify-center gap-3 transition-all rounded-xl border-2 border-dashed mx-3 my-4 ${
         isOver && canDrop
           ? "border-purple-500 bg-purple-500/10 scale-[1.01]"
           : canDrop
           ? "border-purple-400/40 bg-purple-500/5"
-          : "border-gray-300/40 bg-transparent"
+          : "border-gray-300/40 bg-transparent text-gray-400 hover:border-purple-250 hover:bg-purple-50/55 hover:text-purple-500"
       }`}
-      style={{ minHeight: 200 }}
+      style={{ minHeight: 120 }}
     >
-      <div className="w-14 h-14 rounded-2xl bg-gray-100/10 flex items-center justify-center">
-        <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <div className="w-10 h-10 rounded-xl bg-gray-100/10 flex items-center justify-center pointer-events-none">
+        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
       </div>
-      <div className="text-center">
-        <p className="text-sm font-semibold text-gray-400">Kéo component vào đây</p>
-        <p className="text-xs text-gray-500 mt-1">hoặc chọn từ bảng Component ở bên trái</p>
+      <div className="text-center pointer-events-none">
+        <p className="text-xs font-semibold text-gray-400">Kéo thả phần tử vào đây</p>
       </div>
     </div>
   );
@@ -294,8 +551,14 @@ interface CanvasProps {
   zoom: number;
   pageBgColor: string;
   onSelectBlock: (id: string | null) => void;
-  onDropFromPalette: (blockType: BlockType, insertIndex?: number) => void;
+  onDropItem: (
+    item: { id?: string; type?: BlockType; isPalette?: boolean },
+    containerId?: string,
+    columnIndex?: number,
+    index?: number
+  ) => void;
   onMoveBlock: (fromIndex: number, toIndex: number) => void;
+  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
   onMoveUp: (index: number) => void;
@@ -310,8 +573,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   zoom,
   pageBgColor,
   onSelectBlock,
-  onDropFromPalette,
+  onDropItem,
   onMoveBlock,
+  onMoveWithinParent,
   onDeleteBlock,
   onDuplicateBlock,
   onMoveUp,
@@ -407,23 +671,34 @@ export const Canvas: React.FC<CanvasProps> = ({
                 onClick={handleCanvasBgClick}
               >
                 {blocks.length === 0 ? (
-                  <DropZone onDrop={(bt) => onDropFromPalette(bt, 0)} />
+                  <DropZone
+                    index={0}
+                    onDropItem={onDropItem}
+                  />
                 ) : (
                   <>
                     {blocks.map((block, index) => (
                       <React.Fragment key={block.id}>
                         {/* Inter-block drop zone (compact) */}
-                        <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, index)} />
+                        <DropZone
+                          isCompact
+                          index={index}
+                          onDropItem={onDropItem}
+                        />
                         <SortableBlock
                           block={block}
                           index={index}
+                          selectedId={selectedId}
                           isSelected={selectedId === block.id}
                           onSelect={() => onSelectBlock(block.id)}
+                          onSelectBlock={onSelectBlock}
                           onMove={onMoveBlock}
+                          onMoveWithinParent={onMoveWithinParent}
                           onDelete={onDeleteBlock}
                           onDuplicate={onDuplicateBlock}
                           onMoveUp={onMoveUp}
                           onMoveDown={onMoveDown}
+                          onDropItem={onDropItem}
                           onUpdateBlock={onUpdateBlock}
                           isFirst={index === 0}
                           isLast={index === blocks.length - 1}
@@ -431,7 +706,11 @@ export const Canvas: React.FC<CanvasProps> = ({
                       </React.Fragment>
                     ))}
                     {/* Drop zone at the end */}
-                    <DropZone isCompact onDrop={(bt) => onDropFromPalette(bt, blocks.length)} />
+                    <DropZone
+                      isCompact
+                      index={blocks.length}
+                      onDropItem={onDropItem}
+                    />
                   </>
                 )}
               </div>

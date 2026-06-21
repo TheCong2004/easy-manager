@@ -7,6 +7,7 @@
     "dev:webpack": "next dev --webpack",
     "build": "next build",
     "build:cf": "opennextjs-cloudflare build",
+    "seed:builder-elements": "node scripts/seed-builder-elements.mjs",
     "preview": "pnpm build:cf && wrangler dev .open-next/worker.js",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",

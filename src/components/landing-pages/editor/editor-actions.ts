@@ -122,8 +122,38 @@ function renderBlockHtml(block: EditorBlock): string {
       return renderFunnelPopupHtml(attrs, props);
     case "tea_landing":
       return renderTeaLandingHtml(attrs, props);
-    case "columns":
-      return `<section ${attrs} style="padding:32px;"><div style="display:grid;grid-template-columns:repeat(${num(props.columns, 2)},minmax(0,1fr));gap:${num(props.gap, 24)}px;"><div style="min-height:120px;border:1px dashed #cbd5e1;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#94a3b8;">Column 1</div><div style="min-height:120px;border:1px dashed #cbd5e1;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#94a3b8;">Column 2</div></div></section>`;
+    case "columns": {
+      const cols = Array.isArray(props.children) ? (props.children as EditorBlock[][]) : [[], []];
+      const colsHtml = cols.map((colBlocks) => {
+        const colContent = colBlocks.map(renderBlockHtml).join("\n");
+        return `<div style="display:flex;flex-direction:column;gap:12px;min-height:48px;">${colContent}</div>`;
+      }).join("");
+      return `<section ${attrs} style="padding:32px;"><div style="display:grid;grid-template-columns:repeat(${num(props.columns, 2)},minmax(0,1fr));gap:${num(props.gap, 24)}px;">${colsHtml}</div></section>`;
+    }
+    case "product_section":
+    case "form_section":
+    case "footer":
+    case "custom_section":
+    case "box": {
+      const shadowClass = props.shadow === "sm" ? "rgba(0,0,0,0.05) 0px 1px 2px 0px" : props.shadow === "md" ? "rgba(0,0,0,0.1) 0px 4px 6px -1px" : props.shadow === "lg" ? "rgba(0,0,0,0.1) 0px 10px 15px -3px" : "none";
+      const borderStyle = num(props.borderWidth, 0) > 0 ? `border:${num(props.borderWidth, 0)}px solid ${str(props.borderColor, "#e5e7eb")};` : "";
+      const childrenHtml = (block.children || []).map(renderBlockHtml).join("\n");
+      const tag = b.type === "box" ? "div" : "section";
+      
+      const containerStyle = [
+        `background-color:${str(props.bgColor, "transparent")}`,
+        borderStyle,
+        `border-radius:${num(props.borderRadius, 0)}px`,
+        `padding:${num(props.paddingY, 16)}px ${num(props.paddingX, 16)}px`,
+        `box-shadow:${shadowClass}`,
+      ].filter(Boolean).join(";");
+
+      return `<${tag} ${attrs} style="${containerStyle}">` +
+        (props.title ? `<h4 style="margin:0 0 4px;font-size:16px;font-weight:750;color:#1f2937;">${escapeHtml(str(props.title))}</h4>` : "") +
+        (props.description ? `<p style="margin:0 0 12px;font-size:14px;color:#6b7280;">${escapeHtml(str(props.description))}</p>` : "") +
+        childrenHtml +
+        `</${tag}>`;
+    }
     default:
       return `<section ${attrs} style="padding:32px;border:1px solid #e5e7eb;"><strong>${escapeHtml(b.label ?? b.type)}</strong></section>`;
   }

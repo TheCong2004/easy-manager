@@ -24,6 +24,10 @@ export const DEVICE_WIDTHS: Record<DeviceMode, number> = {
 // ── Block Types (Component Palette) ─────────────────────────
 export type BlockType =
   | "hero"
+  | "product_section"
+  | "form_section"
+  | "footer"
+  | "custom_section"
   | "text"
   | "image"
   | "button"
@@ -52,6 +56,75 @@ export type BlockType =
   | "survey"
   | "menu"
   | "html_code";
+
+export type EditorNodeKind = "section" | "container" | "element" | "widget";
+export type DropPosition = "before" | "after" | "inside";
+
+const SECTION_NODE_TYPES = new Set<BlockType>([
+  "hero",
+  "product_section",
+  "form_section",
+  "footer",
+  "custom_section",
+  "smartwatch_landing",
+  "tea_landing",
+  "menu",
+]);
+
+const CONTAINER_NODE_TYPES = new Set<BlockType>([
+  "box",
+  "columns",
+  "frame",
+  "card" as BlockType,
+  "tabs",
+  "accordion",
+  "carousel",
+  "gallery",
+  "collection_list",
+  "product_card",
+  "feature_card",
+  "testimonial",
+]);
+
+const ELEMENT_NODE_TYPES = new Set<BlockType>([
+  "text",
+  "button",
+  "image",
+  "icon",
+  "divider",
+  "spacer",
+  "html_code",
+]);
+
+const WIDGET_NODE_TYPES = new Set<BlockType>([
+  "form_capture",
+  "countdown",
+  "chat_widget",
+  "funnel_popup",
+  "video",
+  "table",
+  "survey",
+]);
+
+export function getNodeKind(blockType: BlockType, explicitKind?: EditorNodeKind): EditorNodeKind {
+  if (explicitKind) return explicitKind;
+  if (SECTION_NODE_TYPES.has(blockType)) return "section";
+  if (CONTAINER_NODE_TYPES.has(blockType)) return "container";
+  if (ELEMENT_NODE_TYPES.has(blockType)) return "element";
+  if (WIDGET_NODE_TYPES.has(blockType)) return "widget";
+  return "container";
+}
+
+export function isElementNodeType(blockType: BlockType): boolean {
+  return getNodeKind(blockType) === "element";
+}
+
+export function canNodeHaveChildren(nodeOrType: EditorBlock | BlockType): boolean {
+  const kind = typeof nodeOrType === "string"
+    ? getNodeKind(nodeOrType)
+    : getNodeKind(nodeOrType.type, nodeOrType.kind);
+  return kind === "section" || kind === "container";
+}
 
 // ── Block Palette Categories ─────────────────────────────────
 export interface PaletteCategory {
@@ -430,11 +503,27 @@ export type BlockProps =
   | { type: "html_code"; props: HtmlCodeProps };
 
 // ── Editor Block (single canvas item) ───────────────────────
-export interface EditorBlock {
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+export interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+// The legacy renderer still narrows props at component boundaries.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EditorBlockProps = any;
+
+export type ResponsiveOverrides<TProps = EditorBlockProps> = Partial<
+  Record<DeviceMode, Partial<TProps>>
+>;
+
+export interface EditorBlock<TProps = EditorBlockProps> {
   id: string;
   type: BlockType;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  props: any;
+  kind?: EditorNodeKind;
+  props: TProps;
+  children?: EditorBlock[];
+  responsive?: ResponsiveOverrides<TProps>;
   label?: string;
   locked?: boolean;
   hidden?: boolean;
@@ -443,6 +532,8 @@ export interface EditorBlock {
   domId?: string;
   componentName?: string;
 }
+
+export type EditorNode<TProps = EditorBlockProps> = EditorBlock<TProps>;
 
 // ── Root editor data (serialisable state) ───────────────────
 export interface EditorData {
@@ -525,6 +616,8 @@ export interface CanvasDragItem {
   type: typeof DND_TYPES.CANVAS_BLOCK;
   blockId: string;
   index: number;
+  parentId?: string;
+  columnIndex?: number;
 }
 
 // ── Default props factory ───────────────────────────────────
@@ -837,10 +930,58 @@ export function createDefaultBlock(blockType: BlockType): EditorBlock {
       code: "<div style='padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; text-align: center; font-weight: bold;'>HTML Custom Code Block</div>",
       height: 100,
     } as HtmlCodeProps,
+    product_section: {
+      bgColor: "#f8fafc",
+      borderColor: "transparent",
+      borderWidth: 0,
+      borderRadius: 0,
+      paddingX: 32,
+      paddingY: 64,
+      shadow: "none",
+      title: "Danh mục sản phẩm",
+      description: "Khám phá các sản phẩm nổi bật của chúng tôi",
+    } as BoxProps,
+    form_section: {
+      bgColor: "#ffffff",
+      borderColor: "transparent",
+      borderWidth: 0,
+      borderRadius: 0,
+      paddingX: 32,
+      paddingY: 64,
+      shadow: "none",
+      title: "Đăng ký nhận tư vấn",
+      description: "Điền thông tin bên dưới để được liên hệ sớm nhất",
+    } as BoxProps,
+    footer: {
+      bgColor: "#0f172a",
+      borderColor: "transparent",
+      borderWidth: 0,
+      borderRadius: 0,
+      paddingX: 32,
+      paddingY: 48,
+      shadow: "none",
+      title: "Bản quyền © 2026",
+      description: "Mọi quyền được bảo lưu.",
+    } as BoxProps,
+    custom_section: {
+      bgColor: "#ffffff",
+      borderColor: "transparent",
+      borderWidth: 0,
+      borderRadius: 0,
+      paddingX: 32,
+      paddingY: 64,
+      shadow: "none",
+      title: "Khối tùy chỉnh",
+      description: "Kéo thả phần tử vào đây để thiết kế",
+    } as BoxProps,
   };
 
   const label: Record<BlockType, string> = {
     hero: "Hero Section",
+    product_section: "Section sản phẩm",
+    form_section: "Section biểu mẫu",
+    footer: "Footer trang",
+    custom_section: "Section tùy chỉnh",
     text: "Văn bản",
     image: "Hình ảnh",
     button: "Nút CTA",
@@ -871,13 +1012,27 @@ export function createDefaultBlock(blockType: BlockType): EditorBlock {
     html_code: "Mã HTML",
   };
 
-  return ensureOnlookBlockMeta({ id, type: blockType, props: defaults[blockType], label: label[blockType] });
+  return ensureOnlookBlockMeta({
+    id,
+    type: blockType,
+    kind: getNodeKind(blockType),
+    props: defaults[blockType],
+    label: label[blockType],
+    children: canNodeHaveChildren(blockType) ? [] : undefined,
+  });
 }
 
 export function ensureOnlookBlockMeta(block: EditorBlock): EditorBlock {
   const suffix = block.id.replace(/^block_/, "");
+  const kind = getNodeKind(block.type, block.kind);
+  const children = block.children?.map(ensureOnlookBlockMeta);
+  const props = normalizeNestedProps(block);
+
   return {
     ...block,
+    kind,
+    props,
+    children: children && children.length > 0 ? children : (canNodeHaveChildren({ ...block, kind }) ? block.children ?? [] : undefined),
     oid: block.oid ?? `lp_${block.type}_${suffix}`,
     instanceId: block.instanceId ?? `oiid_${suffix}`,
     domId: block.domId ?? block.id,
@@ -885,9 +1040,46 @@ export function ensureOnlookBlockMeta(block: EditorBlock): EditorBlock {
   };
 }
 
+export function createEmptySectionNode(children: EditorBlock[] = []): EditorBlock {
+  const base = createDefaultBlock("box");
+  return ensureOnlookBlockMeta({
+    ...base,
+    kind: "section",
+    label: "Section",
+    props: {
+      ...base.props,
+      bgColor: "transparent",
+      borderColor: "transparent",
+      borderWidth: 0,
+      borderRadius: 0,
+      paddingX: 32,
+      paddingY: 32,
+      shadow: "none",
+      title: "",
+      description: "",
+    },
+    children,
+  });
+}
+
+function normalizeNestedProps(block: EditorBlock): EditorBlock["props"] {
+  if (block.type !== "columns") return block.props;
+  const props = block.props as ColumnsProps;
+  return {
+    ...props,
+    children: Array.from({ length: props.columns || 2 }).map((_, index) =>
+      (props.children?.[index] ?? []).map(ensureOnlookBlockMeta)
+    ),
+  };
+}
+
 function labelFromBlockType(blockType: BlockType): string {
   const componentNames: Record<BlockType, string> = {
     hero: "HeroBlock",
+    product_section: "ProductSectionBlock",
+    form_section: "FormSectionBlock",
+    footer: "FooterBlock",
+    custom_section: "CustomSectionBlock",
     text: "TextBlock",
     image: "ImageBlock",
     button: "ButtonBlock",

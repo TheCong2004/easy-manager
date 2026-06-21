@@ -40,6 +40,10 @@ export const BLOCK_ICONS: Record<BlockType, React.ReactNode> = {
   survey: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M6 4h12v16H6zM9 9l1.5 1.5L14 7M9 15h6" />),
   menu: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />),
   html_code: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14" />),
+  product_section: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16v14H4zM12 5v14M4 12h16" />),
+  form_section: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M6 4h12v16H6zM9 8h6M9 12h6" />),
+  footer: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 16h16v4H4z" />),
+  custom_section: iconSvg(<path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16v16H4zM9 9h6v6H9z" />),
 };
 
 export const PaletteItem: React.FC<{

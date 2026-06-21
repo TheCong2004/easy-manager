@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useDrag } from "react-dnd";
-import { BlockType, PALETTE_CATEGORIES, DND_TYPES, PaletteDragItem, EditorBlock } from "./types";
+import { BlockType, PALETTE_CATEGORIES, DND_TYPES, PaletteDragItem, EditorBlock, canNodeHaveChildren } from "./types";
 import { BLOCK_ICONS, getCategoryPresets, PaletteItem } from "./presets/CategoryPresets";
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
@@ -34,6 +34,10 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   survey: "Survey",
   menu: "Menu",
   html_code: "Mã HTML",
+  product_section: "Section sản phẩm",
+  form_section: "Section biểu mẫu",
+  footer: "Footer trang",
+  custom_section: "Section tùy chỉnh",
 };
 
 const LAYER_CHILDREN: Partial<Record<BlockType, string[]>> = {
@@ -53,56 +57,134 @@ const LAYER_CHILDREN: Partial<Record<BlockType, string[]>> = {
   smartwatch_landing: ["Header", "Hero", "Specs Card", "Countdown", "Reviews", "Order Form"],
 };
 
-// ── Layers Panel Item (Light Theme) ─────────────────────────────────────────
+// ── Layers Panel Item (Recursive Tree View) ─────────────────────────────────
 const LayerItem: React.FC<{
   block: EditorBlock;
   isSelected: boolean;
-  index: number;
-  onSelect: () => void;
-  onDelete: (id: string) => void;
-}> = ({ block, isSelected, index, onSelect, onDelete }) => {
-  const children = LAYER_CHILDREN[block.type] ?? [];
+  selectedId: string | null;
+  onSelectBlock: (id: string | null) => void;
+  onDeleteBlock: (id: string) => void;
+  depth?: number;
+}> = ({ block, isSelected, selectedId, onSelectBlock, onDeleteBlock, depth = 0 }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const columns = block.type === "columns" && Array.isArray(block.props.children)
+    ? block.props.children as EditorBlock[][]
+    : null;
+
+  const childrenToRender: { block?: EditorBlock; label?: string; isVirtual?: boolean; children?: EditorBlock[] }[] = [];
+
+  if (columns) {
+    columns.forEach((col, colIdx) => {
+      if (col.length > 0) {
+        childrenToRender.push({
+          label: `Cột ${colIdx + 1}`,
+          isVirtual: true,
+          children: col,
+        });
+      }
+    });
+  } else if (block.children && block.children.length > 0) {
+    block.children.forEach((child) => {
+      childrenToRender.push({ block: child });
+    });
+  }
+
+  const toggleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
 
   return (
-    <div className="text-gray-800">
-      <button
-        onClick={onSelect}
-        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-left transition border group ${
+    <div className="text-gray-800" style={{ marginLeft: depth > 0 ? 6 : 0 }}>
+      <div
+        onClick={() => onSelectBlock(block.id)}
+        className={`w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-left transition border group cursor-pointer ${
           isSelected
             ? "bg-purple-50 text-purple-750 border-purple-200 font-semibold shadow-sm"
             : "text-gray-650 hover:bg-gray-50 border-transparent"
         }`}
       >
-        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${isSelected ? "border-purple-300 bg-purple-100" : "border-gray-300 bg-white"}`} />
-        <span className="text-gray-400 flex-shrink-0 w-4 h-4 group-hover:text-purple-600 transition">{BLOCK_ICONS[block.type]}</span>
-        <span className="flex-1 truncate text-xs">
-          {block.label || BLOCK_LABELS[block.type]}
+        {childrenToRender.length > 0 ? (
+          <button
+            onClick={toggleOpen}
+            className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded transition cursor-pointer"
+          >
+            <svg
+              className={`w-2.5 h-2.5 transform transition-transform ${isOpen ? "rotate-90" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        ) : (
+          <span className="w-4" />
+        )}
+
+        <span className="text-gray-400 flex-shrink-0 w-3.5 h-3.5 group-hover:text-purple-600 transition">
+          {BLOCK_ICONS[block.type] ?? BLOCK_ICONS.box}
         </span>
-        <span className="text-[9px] text-gray-400 font-mono font-bold bg-gray-100 px-1 rounded">{index + 1}</span>
-        <span
-          onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
+
+        <span className="flex-1 truncate text-xs">
+          {block.label || BLOCK_LABELS[block.type] || block.type}
+        </span>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteBlock(block.id);
+          }}
           className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition ml-1"
-          role="button"
-          tabIndex={0}
+          title="Xóa block"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
-        </span>
-      </button>
+        </button>
+      </div>
 
-      {children.length > 0 && (
-        <div className="ml-7 mt-1 space-y-1 border-l border-gray-200 pl-3">
-          {children.map((child) => (
-            <button
-              key={`${block.id}-${child}`}
-              onClick={onSelect}
-              className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[11px] text-gray-500 transition hover:bg-gray-50 hover:text-gray-800"
-            >
-              <span className="h-2.5 w-2.5 rounded-[3px] border border-gray-300 bg-white" />
-              <span className="truncate font-medium">{child}</span>
-            </button>
-          ))}
+      {isOpen && childrenToRender.length > 0 && (
+        <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-150 pl-1.5">
+          {childrenToRender.map((item, idx) => {
+            if (item.isVirtual && item.children) {
+              return (
+                <div key={idx} className="space-y-0.5">
+                  <div className="text-[9px] font-extrabold uppercase tracking-wider text-gray-400 px-2 py-0.5 select-none">
+                    {item.label}
+                  </div>
+                  <div className="ml-1 border-l border-gray-150 pl-1.5">
+                    {item.children.map((childBlock) => (
+                      <LayerItem
+                        key={childBlock.id}
+                        block={childBlock}
+                        isSelected={selectedId === childBlock.id}
+                        selectedId={selectedId}
+                        onSelectBlock={onSelectBlock}
+                        onDeleteBlock={onDeleteBlock}
+                        depth={depth + 1}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            } else if (item.block) {
+              return (
+                <LayerItem
+                  key={item.block.id}
+                  block={item.block}
+                  isSelected={selectedId === item.block.id}
+                  selectedId={selectedId}
+                  onSelectBlock={onSelectBlock}
+                  onDeleteBlock={onDeleteBlock}
+                  depth={depth + 1}
+                />
+              );
+            }
+            return null;
+          })}
         </div>
       )}
     </div>
@@ -295,14 +377,14 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
               </div>
             ) : (
               <div className="space-y-1">
-                {blocks.map((block, i) => (
+                {blocks.map((block) => (
                   <LayerItem
                     key={block.id}
                     block={block}
                     isSelected={selectedId === block.id}
-                    index={i}
-                    onSelect={() => onSelectBlock(block.id)}
-                    onDelete={onDeleteBlock}
+                    selectedId={selectedId}
+                    onSelectBlock={onSelectBlock}
+                    onDeleteBlock={onDeleteBlock}
                   />
                 ))}
               </div>
