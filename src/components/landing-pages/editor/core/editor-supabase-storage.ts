@@ -108,6 +108,15 @@ export async function loadLandingPage(pageId: string): Promise<EditorData | null
     return dbData;
   }
 
+  if (supabase && !dbError && !dbPage) {
+    try {
+      localStorage.removeItem(localKey);
+      console.info("[LandingEditor Clean] Cleaned local storage backup for page not found in Supabase:", pageId);
+    } catch (err) {
+      console.warn("Failed to delete local storage key:", err);
+    }
+  }
+
   if (!supabase && localBackup) {
     const localData = migrateEditorData(localBackup.editorData, pageId);
     logLoad("local-backup-no-supabase", localData);
