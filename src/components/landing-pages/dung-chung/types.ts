@@ -11,6 +11,7 @@ export type LandingPageItem = {
 
 export type TemplateItem = {
   id: string;
+  templateId?: string;
   name: string;
   image: string;
   category: "all" | "ecommerce" | "service" | "others";
@@ -46,4 +47,3 @@ export type DomainItem = {
   sslStatus: "ACTIVE" | "INACTIVE";
   updatedAt: string;
 };
-

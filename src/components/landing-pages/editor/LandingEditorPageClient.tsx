@@ -28,14 +28,15 @@ export function LandingEditorPageClient({ pageId }: Props) {
         if (supabase) {
           const { data, error: dbError } = await supabase
             .from("landing_pages")
-            .select("id, name, status, updated_at")
+            .select("id, name, status, updated_at, editor_data")
             .eq("id", pageId)
-            .single();
+            .maybeSingle();
 
           if (!dbError && data) {
             setPage({
               id: data.id,
               name: data.name || "Untitled Page",
+              templateId: data.editor_data?.templateId || undefined,
               status: data.status === "published" ? "PUBLISHED" : "UNPUBLISHED",
               updatedAt: data.updated_at
                 ? new Date(data.updated_at).toLocaleTimeString("vi-VN", {
@@ -51,6 +52,15 @@ export function LandingEditorPageClient({ pageId }: Props) {
             });
             return;
           }
+
+          if (!dbError && !data) {
+            setError(`Không tìm thấy landing page với ID: ${pageId}`);
+            return;
+          }
+
+          if (dbError) {
+            console.warn("Supabase page meta load failed, trying local backup only:", dbError);
+          }
         }
 
         // Fallback: check localStorage for this pageId
@@ -61,6 +71,7 @@ export function LandingEditorPageClient({ pageId }: Props) {
           setPage({
             id: pageId,
             name: backup?.editorData?.pageName || "Untitled Page",
+            templateId: backup?.editorData?.templateId || undefined,
             status: "UNPUBLISHED",
             updatedAt: backup?.savedAt
               ? new Date(backup.savedAt).toLocaleTimeString("vi-VN", {
@@ -77,16 +88,7 @@ export function LandingEditorPageClient({ pageId }: Props) {
           return;
         }
 
-        // No data found anywhere — create a blank stub so the editor can start fresh
-        setPage({
-          id: pageId,
-          name: "Trang mới",
-          status: "UNPUBLISHED",
-          updatedAt: "",
-          views: 0,
-          conversions: 0,
-          revenue: 0,
-        });
+        setError(`Không tìm thấy landing page với ID: ${pageId}`);
       } catch (err) {
         console.error("Failed to load page meta:", err);
         setError("Không thể tải thông tin trang. Vui lòng thử lại.");

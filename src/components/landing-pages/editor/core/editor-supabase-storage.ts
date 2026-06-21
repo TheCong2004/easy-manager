@@ -1,7 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { EditorData, createDefaultPageSettings } from "../types";
-import { migrateEditorData, CURRENT_EDITOR_SCHEMA_VERSION } from "./editor-migration";
+import { migrateEditorData, migrateTemplateFlatBlocks, CURRENT_EDITOR_SCHEMA_VERSION, getEditorDataFingerprint } from "./editor-migration";
 import { LandingEditorSnapshot } from "./editor-export-html";
+import { instantiateTemplateBlocks } from "../template-library";
 
 export interface LocalAutosaveBackup {
   pageId: string;
@@ -16,6 +17,19 @@ export function getLocalBackupKey(pageId: string): string {
 }
 
 export async function loadLandingPage(pageId: string): Promise<EditorData | null> {
+  const localKey = getLocalBackupKey(pageId);
+  const logLoad = (source: string, editorData: EditorData | null, extra?: Record<string, unknown>) => {
+    console.info("[LandingEditor Load]", {
+      routePageId: pageId,
+      localStorageKey: localKey,
+      source,
+      schemaVersion: editorData?.schemaVersion ?? null,
+      sectionsLength: editorData?.sections?.length ?? 0,
+      fingerprint: editorData ? getEditorDataFingerprint(editorData) : "null",
+      ...extra,
+    });
+  };
+
   // 1. Try to load from Supabase if configured
   let dbPage: any = null;
   let dbError: any = null;
@@ -26,7 +40,7 @@ export async function loadLandingPage(pageId: string): Promise<EditorData | null
         .from("landing_pages")
         .select("*")
         .eq("id", pageId)
-        .single();
+        .maybeSingle();
       if (error) {
         dbError = error;
       } else {
@@ -40,7 +54,7 @@ export async function loadLandingPage(pageId: string): Promise<EditorData | null
   // 2. Read from localStorage backup
   let localBackup: LocalAutosaveBackup | null = null;
   try {
-    const raw = localStorage.getItem(getLocalBackupKey(pageId));
+    const raw = localStorage.getItem(localKey);
     if (raw) {
       localBackup = JSON.parse(raw) as LocalAutosaveBackup;
     }
@@ -52,13 +66,28 @@ export async function loadLandingPage(pageId: string): Promise<EditorData | null
   if (dbError) {
     console.warn("Supabase load failed, falling back to local storage:", dbError);
     if (localBackup) {
-      return migrateEditorData(localBackup.editorData, pageId);
+      const localData = migrateEditorData(localBackup.editorData, pageId);
+      logLoad("local-backup-after-supabase-error", localData, { dbError: dbError?.message ?? String(dbError) });
+      return localData;
     }
+    logLoad("supabase-error-no-local", null, { dbError: dbError?.message ?? String(dbError) });
     return null;
   }
 
   if (dbPage) {
-    const dbData = migrateEditorData(dbPage.editor_data, pageId);
+    const dbData = migrateEditorData({ pageName: dbPage.name, ...(dbPage.editor_data || {}) }, pageId);
+    const templateId = dbPage.editor_data?.templateId;
+    if (
+      templateId === "herb-tea" &&
+      !dbData.sections.some((section) => section.type === "tea_landing")
+    ) {
+      dbData.sections = migrateTemplateFlatBlocks(instantiateTemplateBlocks("herb-tea"));
+      console.info("[LandingEditor Repair:template-core]", {
+        pageId,
+        templateId,
+        fingerprint: getEditorDataFingerprint(dbData),
+      });
+    }
     
     // If local backup is newer than database, we warn or return it
     if (localBackup && localBackup.savedAt) {
@@ -72,14 +101,20 @@ export async function loadLandingPage(pageId: string): Promise<EditorData | null
         (dbData as any).localBackupData = localBackup.editorData;
       }
     }
+    logLoad("supabase", dbData, {
+      supabaseRowId: dbPage.id,
+      rowSchemaVersion: dbPage.editor_data?.schemaVersion ?? null,
+    });
     return dbData;
   }
 
-  // Fallback to local if no db entry found (e.g. offline first use)
-  if (localBackup) {
-    return migrateEditorData(localBackup.editorData, pageId);
+  if (!supabase && localBackup) {
+    const localData = migrateEditorData(localBackup.editorData, pageId);
+    logLoad("local-backup-no-supabase", localData);
+    return localData;
   }
 
+  logLoad(supabase ? "page-not-found" : "no-data", null);
   return null;
 }
 
@@ -96,6 +131,11 @@ export async function saveLandingPage(pageId: string, editorData: EditorData): P
   };
   try {
     localStorage.setItem(getLocalBackupKey(pageId), JSON.stringify(backup));
+    console.info("[LandingEditor Save:local]", {
+      pageId,
+      localStorageKey: getLocalBackupKey(pageId),
+      fingerprint: getEditorDataFingerprint(editorData),
+    });
   } catch (err) {
     console.warn("Failed to write local backup:", err);
   }
@@ -144,6 +184,10 @@ export async function saveLandingPage(pageId: string, editorData: EditorData): P
           throw error;
         }
       }
+      console.info("[LandingEditor Save:supabase]", {
+        pageId,
+        fingerprint: getEditorDataFingerprint(editorData),
+      });
     } catch (err) {
       console.error("Failed to save to Supabase, local backup remains intact:", err);
       throw err;
@@ -161,13 +205,28 @@ export async function createLandingPage(input: {
 }): Promise<any> {
   const nowStr = new Date().toISOString();
   const pageId = input.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "page-" + Math.random().toString(36).substring(2, 11));
+  const editorData = input.editor_data
+    ? migrateEditorData({ ...input.editor_data, pageId, pageName: input.editor_data.pageName || input.name }, pageId)
+    : {
+        pageId,
+        pageName: input.name,
+        sections: [],
+        pageSettings: {
+          ...createDefaultPageSettings(input.name),
+          seoDescription: "",
+          bgColor: "#ffffff",
+          fontFamily: "Inter, sans-serif",
+          maxWidth: 1200,
+        },
+        schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+      };
 
   const pageData: any = {
     id: pageId,
     name: input.name,
     slug: input.slug,
     status: "draft",
-    editor_data: input.editor_data || {},
+    editor_data: editorData,
     created_at: nowStr,
     updated_at: nowStr,
   };
@@ -190,19 +249,7 @@ export async function createLandingPage(input: {
   const backup: LocalAutosaveBackup = {
     pageId,
     schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-    editorData: input.editor_data || {
-      pageId,
-      pageName: input.name,
-      sections: [],
-      pageSettings: {
-        ...createDefaultPageSettings(input.name),
-        seoDescription: "",
-        bgColor: "#ffffff",
-        fontFamily: "Inter, sans-serif",
-        maxWidth: 1200,
-      },
-      schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-    },
+    editorData,
     savedAt: nowStr,
     source: "local",
   };

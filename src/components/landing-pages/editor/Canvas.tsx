@@ -882,7 +882,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 // Let rich components render at their intrinsic height
                 position: "relative",
                 width: "100%",
-                minHeight: `${Math.min(naturalHeight, 200)}px`,
+                minHeight: `${naturalHeight}px`,
                 zIndex: section.frame?.zIndex ?? 1,
                 overflow: "visible",
                 border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",

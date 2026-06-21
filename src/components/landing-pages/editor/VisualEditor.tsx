@@ -3,8 +3,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import {
-  EditorBlock, EditorData, BlockType, DeviceMode, EditorViewMode, DEVICE_WIDTHS, createDefaultBlock,
-  createDefaultPageSettings, ensureOnlookBlockMeta,
+  EditorData, BlockType, DeviceMode, EditorViewMode, DEVICE_WIDTHS, createDefaultPageSettings,
 } from "./types";
 import {
   LandingEditorAction,
@@ -17,19 +16,19 @@ import { EditorTopBar } from "./EditorTopBar";
 import { LayersPanel } from "./LayersPanel";
 import { Canvas } from "./Canvas";
 import { InspectorPanel } from "./InspectorPanel";
-import { LANDING_ASSETS, LANDING_TEMPLATE_PRESETS, instantiateTemplateBlocks, resolveTemplatePresetId } from "./template-library";
 import { LandingPageItem } from "../dung-chung/types";
 import { FUNNELX_FLAGS } from "@onlook/funnel";
 import { useEditorBlockActions } from "./hooks/useEditorBlockActions";
 import {
   loadLandingPage,
   saveLandingPage,
+  getLocalBackupKey,
   publishLandingPage,
   createLandingPageVersion,
   listLandingPageVersions,
   restoreLandingPageVersion,
 } from "./core/editor-supabase-storage";
-import { migrateEditorData } from "./core/editor-migration";
+import { getEditorDataFingerprint, migrateEditorData } from "./core/editor-migration";
 import { findBlockRecursive } from "./core/editor-reducer";
 
 // Import modular split sub-panels
@@ -86,62 +85,6 @@ function useHistory<T>(initial: T) {
     canUndo: past.length > 0,
     canRedo: future.length > 0,
   };
-}
-
-function buildInitialData(page: LandingPageItem): EditorData {
-  const presetId = resolveTemplatePresetId(page);
-  const presetBlocks = instantiateTemplateBlocks(presetId);
-
-  return {
-    pageId: page.id,
-    pageName: page.name,
-    sections: presetBlocks.length > 0
-      ? presetBlocks
-      : [
-          ensureOnlookBlockMeta(createDefaultBlock("hero")),
-          ensureOnlookBlockMeta(createDefaultBlock("countdown")),
-          ensureOnlookBlockMeta(createDefaultBlock("box")),
-        ],
-    pageSettings: createDefaultPageSettings(page.name),
-    schemaVersion: 2,
-  };
-}
-
-function isUntouchedStarterData(data: EditorData): boolean {
-  const [first, second, third] = data.sections || [];
-  const defaultStarter = (data.sections || []).length === 3
-    && first?.type === "hero"
-    && second?.type === "countdown"
-    && third?.type === "box"
-    && (first.label === "Hero Section" || first.componentName === "HeroBlock");
-  const oldImageBackdropPreset = first?.type === "hero"
-    && typeof first.props?.bgImage === "string"
-    && first.props.bgImage.includes("template_");
-
-  return (defaultStarter || oldImageBackdropPreset)
-    && !data.pageSettings.customDomain
-    && !data.pageSettings.pixelId;
-}
-
-function isLegacyTemplateData(data: EditorData, page: LandingPageItem): boolean {
-  const presetId = resolveTemplatePresetId(page);
-  const pagePresetIds = new Set(LANDING_TEMPLATE_PRESETS.filter((preset) => preset.category === "page").map((preset) => preset.id));
-
-  if (page.templateId && pagePresetIds.has(page.templateId) && isUntouchedStarterData(data)) return true;
-
-  if (presetId === "herb-tea") {
-    const teaBlocks = (data.sections || []).filter((block) => block.type === "tea_landing");
-    if (teaBlocks.length !== 1 || (data.sections || []).length !== 1) return true;
-  }
-  if (presetId !== "herb-tea") return false;
-
-  return (data.sections || []).some((block) => {
-    const props = block.props as Record<string, unknown>;
-    return block.label?.toLowerCase().includes("herb")
-      || block.label?.toLowerCase().includes("zen green")
-      || String(props.src ?? props.bgImage ?? "").includes("template_tea")
-      || String(props.title ?? props.headline ?? "").toLowerCase().includes("green tea");
-  });
 }
 
 const Toast: React.FC<{ message: string; type: "success" | "info" }> = ({ message, type }) => (
@@ -212,10 +155,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onDeletePage,
 }) => {
   const { state: data, push, replace, undo, redo, canUndo, canRedo } = useHistory<EditorData>(
-    buildInitialData(page)
+    {
+      pageId: page.id,
+      pageName: page.name,
+      sections: [],
+      pageSettings: createDefaultPageSettings(page.name),
+      schemaVersion: 2,
+    }
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isEditorLoading, setIsEditorLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>("desktop");
   const [zoom, setZoom] = useState(1);
   const [pageName, setPageName] = useState(page.name);
@@ -230,8 +181,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<EditorRevision[]>([]);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
-  const storageKey = `landing-page-editor:${page.id}`;
-  const revisionsKey = `landing-page-editor-revisions:${page.id}`;
 
   const [activeTab, setActiveTab] = useState<"layers" | "brand" | "pages" | "images" | "funnel" | "sandbox" | "history" | "branches">("layers");
 
@@ -335,6 +284,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     setIsSaved(false);
     try {
       const snapshot = createEditorSnapshot({ ...nextData, pageName }, nextActions);
+      console.info("[LandingEditor Snapshot:save]", {
+        pageId: page.id,
+        localStorageKey: getLocalBackupKey(page.id),
+        fingerprint: getEditorDataFingerprint(snapshot.data),
+      });
       await saveLandingPage(page.id, snapshot.data);
       setLastSavedAt(snapshot.updatedAt);
       setIsSaved(true);
@@ -359,9 +313,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   // Load page on mount
   useEffect(() => {
+    let cancelled = false;
     async function loadData() {
+      setIsEditorLoading(true);
+      setLoadError(null);
+      console.info("[LandingEditor Route]", {
+        routePageId: page.id,
+        localStorageKey: getLocalBackupKey(page.id),
+      });
       try {
         const pageData = await loadLandingPage(page.id);
+        if (cancelled) return;
         if (pageData) {
           // If a newer local backup exists, prompt the user
           if ((pageData as any).hasNewerLocalBackup) {
@@ -370,24 +332,39 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             );
             if (recover && (pageData as any).localBackupData) {
               applySnapshot(createEditorSnapshot((pageData as any).localBackupData, []));
+              console.info("[LandingEditor Snapshot:recover-local]", {
+                pageId: page.id,
+                fingerprint: getEditorDataFingerprint((pageData as any).localBackupData),
+              });
               return;
             }
           }
+          console.info("[LandingEditor Snapshot:apply-load]", {
+            pageId: page.id,
+            fingerprint: getEditorDataFingerprint(pageData),
+          });
           applySnapshot(createEditorSnapshot(pageData, []));
         } else {
-          // Fallback to fresh default starter
-          applySnapshot(createEditorSnapshot(buildInitialData(page), []));
+          setLoadError("Không tải được dữ liệu trang này. Kiểm tra pageId hoặc kết nối Supabase.");
         }
       } catch (err) {
         console.error("Failed to load landing page data:", err);
-        applySnapshot(createEditorSnapshot(buildInitialData(page), []));
+        if (!cancelled) {
+          setLoadError("Không tải được dữ liệu trang này. Không dùng template mặc định để che lỗi.");
+        }
       } finally {
-        isHydratedRef.current = true;
-        void loadRevisions();
+        if (!cancelled) {
+          isHydratedRef.current = true;
+          setIsEditorLoading(false);
+          void loadRevisions();
+        }
       }
     }
     void loadData();
-  }, [page.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [page.id, applySnapshot]);
 
   // Load versions from Supabase/LocalStorage
   const loadRevisions = useCallback(async () => {
@@ -751,6 +728,37 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       : `${data.pageSettings.customDomain || "local-preview"}${data.pageSettings.previewPath || "/"}`);
   const previewHtml = renderLandingPageHtml({ ...data, pageName });
   const codeView = JSON.stringify(createEditorSnapshot({ ...data, pageName }, actionLog), null, 2);
+
+  if (isEditorLoading) {
+    return (
+      <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-gray-950 text-white">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center shadow-2xl">
+          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-white/30 border-t-white" />
+          <p className="text-sm font-bold">Đang tải dữ liệu editor...</p>
+          <p className="mt-1 text-xs text-gray-400">{page.id}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-gray-950 text-white">
+        <div className="max-w-md rounded-2xl border border-white/10 bg-white/5 p-7 text-center shadow-2xl">
+          <h2 className="text-xl font-black">Không mở được editor</h2>
+          <p className="mt-3 text-sm leading-6 text-gray-300">{loadError}</p>
+          <p className="mt-2 break-all text-xs text-gray-500">pageId: {page.id}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 rounded-xl bg-white px-5 py-2.5 text-sm font-black text-gray-950 hover:bg-gray-200"
+          >
+            Quay lại danh sách
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>

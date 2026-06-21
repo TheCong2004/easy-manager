@@ -7,6 +7,7 @@ function hasBlock(template: LandingTemplatePreset, type: EditorBlock["type"]) {
 
 export function conversionSectionsFor(template: LandingTemplatePreset): Omit<EditorBlock, "id">[] {
   if (template.category !== "page") return [];
+  if (hasBlock(template, "tea_landing") || hasBlock(template, "smartwatch_landing")) return [];
 
   const value = `${template.id} ${template.name} ${template.description}`.toLowerCase();
   const accent = PRODUCT_ACCENT;

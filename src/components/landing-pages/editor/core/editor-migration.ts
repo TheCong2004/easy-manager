@@ -10,6 +10,19 @@ import { LandingEditorSnapshot } from "./editor-export-html";
 
 export const CURRENT_EDITOR_SCHEMA_VERSION = 2;
 
+export function getEditorDataFingerprint(data: Partial<EditorData> | null | undefined): string {
+  const sections = Array.isArray(data?.sections) ? data.sections : [];
+  const sectionShape = sections
+    .map((section) => `${section.id}:${section.type}:${section.children?.length ?? 0}`)
+    .join("|");
+
+  return [
+    `schema:${data?.schemaVersion ?? "unknown"}`,
+    `sections:${sections.length}`,
+    `shape:${sectionShape || "empty"}`,
+  ].join(";");
+}
+
 export type VersionedLandingEditorSnapshot = {
   schemaVersion?: number;
   data: any;
@@ -73,7 +86,7 @@ export function migrateEditorData(data: any, pageId: string): EditorData {
             maxBottom = Math.max(maxBottom, c.frame.y + c.frame.height);
           }
         });
-        const currentMin = num(secMeta.props?.minHeight || secMeta.frame?.height, 500);
+        const currentMin = num(secMeta.props?.minHeight || secMeta.frame?.height, 120);
         const calculated = maxBottom + 80;
         if (secMeta.props) {
           secMeta.props.minHeight = Math.max(currentMin, calculated);
@@ -136,13 +149,13 @@ export function migrateEditorData(data: any, pageId: string): EditorData {
             bgColor: "#ffffff",
             paddingX: 0,
             paddingY: 0,
-            minHeight: 500,
+            minHeight: 120,
           },
           frame: {
             x: 0,
             y: 0,
             width: 1280,
-            height: 500,
+            height: 120,
             zIndex: 1,
             rotate: 0,
           },
@@ -179,7 +192,7 @@ export function migrateEditorData(data: any, pageId: string): EditorData {
           maxBottom = Math.max(maxBottom, c.frame.y + c.frame.height);
         }
       });
-      const currentMin = num(sec.props?.minHeight || sec.frame?.height, 500);
+      const currentMin = num(sec.props?.minHeight || sec.frame?.height, 120);
       const calculated = maxBottom + 80;
       if (sec.props) {
         sec.props.minHeight = Math.max(currentMin, calculated);
@@ -289,8 +302,8 @@ export function migrateTemplateFlatBlocks(flatBlocks: EditorBlock[]): EditorBloc
           kind: "section",
           parentId: null,
           label: "Section",
-          props: { bgColor: "#ffffff", minHeight: 500 },
-          frame: { x: 0, y: 0, width: 1280, height: 500, zIndex: sections.length + 1, rotate: 0 },
+          props: { bgColor: "#ffffff", minHeight: 120 },
+          frame: { x: 0, y: 0, width: 1280, height: 120, zIndex: sections.length + 1, rotate: 0 },
           children: [],
         });
         sections.push(lastSection);
@@ -354,6 +367,7 @@ function isSectionType(type: string): boolean {
 export function recalculateSectionHeights(sections: EditorBlock[]): EditorBlock[] {
   return sections.map((sec) => {
     const children = sec.children ?? [];
+    const currentMin = num(sec.props?.minHeight || sec.frame?.height, 120);
 
     if (children.length > 0) {
       let maxBottom = 0;
@@ -362,8 +376,7 @@ export function recalculateSectionHeights(sections: EditorBlock[]): EditorBlock[
           maxBottom = Math.max(maxBottom, c.frame.y + c.frame.height);
         }
       });
-      const minFromProps = num(sec.props?.minHeight, 0);
-      const calculated = Math.max(minFromProps, maxBottom + 80);
+      const calculated = Math.max(currentMin, maxBottom + 80);
 
       return {
         ...sec,
@@ -379,7 +392,7 @@ export function recalculateSectionHeights(sections: EditorBlock[]): EditorBlock[
     // No children
     if (isSectionType(sec.type)) {
       // Hero/footer/etc. with their own content — keep their natural height
-      const natural = num(sec.props?.minHeight, 500);
+      const natural = currentMin;
       return {
         ...sec,
         frame: {
@@ -399,4 +412,3 @@ export function recalculateSectionHeights(sections: EditorBlock[]): EditorBlock[
     };
   });
 }
-

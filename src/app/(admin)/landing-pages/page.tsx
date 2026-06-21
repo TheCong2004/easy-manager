@@ -21,17 +21,7 @@ import { supabase } from "@/lib/supabase";
 
 
 
-const initialPages: LandingPageItem[] = [
-  {
-    id: "1",
-    name: "daotao",
-    status: "UNPUBLISHED",
-    updatedAt: "21:46, 27/02/2026",
-    views: 0,
-    conversions: 0,
-    revenue: 0,
-  },
-];
+const initialPages: LandingPageItem[] = [];
 
 const templatesData: TemplateItem[] = [
   {
@@ -328,13 +318,14 @@ export default function LandingPagesManagement() {
         try {
           const { data, error } = await supabase
             .from("landing_pages")
-            .select("id, name, status, updated_at")
+            .select("id, name, status, updated_at, editor_data")
             .order("updated_at", { ascending: false });
 
           if (!error && data) {
             const dbPages: LandingPageItem[] = data.map((item: any) => ({
               id: item.id,
               name: item.name || "Untitled Page",
+              templateId: item.editor_data?.templateId || undefined,
               status: item.status === "published" ? "PUBLISHED" : "UNPUBLISHED",
               updatedAt: item.updated_at
                 ? new Date(item.updated_at).toLocaleTimeString("vi-VN", {
@@ -389,18 +380,7 @@ export default function LandingPagesManagement() {
         console.warn("Failed to read local storage pages:", err);
       }
 
-      // Add the mock "daotao" page if no pages exist, or as a default item
-      if (localPages.length === 0) {
-        localPages.push({
-          id: "daotao-mock",
-          name: "daotao",
-          status: "UNPUBLISHED",
-          updatedAt: "21:46, 27/02/2026",
-          views: 0,
-          conversions: 0,
-          revenue: 0,
-        });
-      }
+
 
       // Sort by updatedAt descending
       localPages.sort((a, b) => {
@@ -465,12 +445,18 @@ export default function LandingPagesManagement() {
 
     setIsCreating(true);
     try {
+      const pageId = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `page-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
       // Build initial editor data from template if provided
       let initialEditorData: any = {
+        pageId,
         pageName: newPageName.trim(),
         sections: [],
         pageSettings: createDefaultPageSettings(newPageName.trim()),
         schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+        templateId: pendingTemplateId ?? null,
       };
 
       if (pendingTemplateId) {
@@ -481,6 +467,12 @@ export default function LandingPagesManagement() {
             ...initialEditorData,
             sections,
           };
+          console.info("[LandingPage Create:template]", {
+            pageId,
+            templateId: pendingTemplateId,
+            sections: sections.length,
+            firstSection: sections[0]?.type ?? null,
+          });
         } catch (err) {
           console.warn("Template apply failed, starting blank:", err);
         }
@@ -488,6 +480,7 @@ export default function LandingPagesManagement() {
 
       const slug = newPageName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
       const created = await createLandingPage({
+        id: pageId,
         name: newPageName.trim(),
         slug: slug || `page-${Date.now()}`,
         editor_data: initialEditorData,
@@ -514,7 +507,31 @@ export default function LandingPagesManagement() {
     } catch (err) {
       console.error("Failed to create landing page:", err);
       // Fallback: create local-only page and redirect
-      const fallbackId = `local-${Date.now()}`;
+      const fallbackId = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `local-${Date.now()}`;
+      const presetId = pendingTemplateId;
+      const fallbackSections = presetId
+        ? migrateTemplateFlatBlocks(instantiateTemplateBlocks(presetId).map(ensureOnlookBlockMeta))
+        : [];
+      const fallbackEditorData = {
+        pageId: fallbackId,
+        pageName: newPageName.trim(),
+        sections: fallbackSections,
+        pageSettings: createDefaultPageSettings(newPageName.trim()),
+        schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+        templateId: presetId ?? null,
+      };
+      localStorage.setItem(
+        `landing-editor-autosave:${fallbackId}`,
+        JSON.stringify({
+          pageId: fallbackId,
+          schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+          editorData: fallbackEditorData,
+          savedAt: new Date().toISOString(),
+          source: "local",
+        })
+      );
       const newPg: LandingPageItem = {
         id: fallbackId,
         name: newPageName.trim().toLowerCase(),

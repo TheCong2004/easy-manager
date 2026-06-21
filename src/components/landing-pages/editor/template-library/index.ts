@@ -32,11 +32,17 @@ export function instantiateTemplateBlocks(templateId: string): EditorBlock[] {
 
   return preset.blocks.map((block) =>
     ensureOnlookBlockMeta({
-      ...block,
+      ...deepClone(block),
       id: id(),
-      props: { ...block.props },
     })
   );
+}
+
+function deepClone<T>(value: T): T {
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 export function resolveTemplatePresetId(input: { name: string; templateId?: string; id?: string }): string {
@@ -52,7 +58,7 @@ export function resolveTemplatePresetId(input: { name: string; templateId?: stri
       t2: "wedding-invite",
       t3: "herb-tea",
       t4: "smartwatch-performance",
-      t5: "beauty-shop",
+      t5: "beauty-spa",
       t6: "grand-opening",
       t7: "finance-consulting",
       t8: "webinar-lead",

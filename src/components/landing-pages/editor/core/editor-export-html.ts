@@ -167,10 +167,11 @@ function renderBlockHtml(block: EditorBlock): string {
   const b = ensureOnlookBlockMeta(block);
   const attrs = renderOnlookAttrs(b);
   const props = b.props as Record<string, unknown>;
+  const childrenHtml = (b.children || []).map(renderBlockHtml).join("\n");
 
   switch (b.type) {
     case "hero":
-      return `<section ${attrs} id="${b.id}" style="min-height:${num(props.minHeight, 480)}px;background:${styleBg(props)};position:relative;display:flex;align-items:center;justify-content:center;text-align:${str(props.textAlign, "center")};padding:64px 32px;"><div style="max-width:820px;position:relative;z-index:1;"><h1 style="font-size:clamp(32px,5vw,56px);line-height:1.05;margin:0 0 20px;font-weight:800;color:${heroTextColor(props)};">${escapeHtml(str(props.headline))}</h1><p style="font-size:18px;line-height:1.7;margin:0 0 28px;color:${heroSubTextColor(props)};">${escapeHtml(str(props.subheadline))}</p><a href="${escapeAttr(str(props.ctaUrl, "#"))}" style="display:inline-flex;padding:14px 28px;border-radius:12px;background:${str(props.ctaColor, "#65a30d")};color:#fff;text-decoration:none;font-weight:700;">${escapeHtml(str(props.ctaText, "CTA"))}</a></div></section>`;
+      return `<section ${attrs} id="${b.id}" style="min-height:${num(props.minHeight, 480)}px;background:${styleBg(props)};position:relative;display:flex;align-items:center;justify-content:center;text-align:${str(props.textAlign, "center")};padding:64px 32px;"><div style="max-width:820px;position:relative;z-index:1;"><h1 style="font-size:clamp(32px,5vw,56px);line-height:1.05;margin:0 0 20px;font-weight:800;color:${heroTextColor(props)};">${escapeHtml(str(props.headline))}</h1><p style="font-size:18px;line-height:1.7;margin:0 0 28px;color:${heroSubTextColor(props)};">${escapeHtml(str(props.subheadline))}</p><a href="${escapeAttr(str(props.ctaUrl, "#"))}" style="display:inline-flex;padding:14px 28px;border-radius:12px;background:${str(props.ctaColor, "#65a30d")};color:#fff;text-decoration:none;font-weight:700;">${escapeHtml(str(props.ctaText, "CTA"))}</a></div>${childrenHtml}</section>`;
     case "text":
       return `<div ${attrs} id="${b.id}" style="padding:${num(props.paddingY, 0)}px ${num(props.paddingX, 0)}px;"><p style="margin:0;font-size:${num(props.fontSize, 16)}px;line-height:${num(props.lineHeight, 1.7)};color:${str(props.color, "#374151")};text-align:${str(props.textAlign, "left")};">${escapeHtml(str(props.content))}</p></div>`;
     case "image":
@@ -212,7 +213,6 @@ function renderBlockHtml(block: EditorBlock): string {
     case "box": {
       const shadowClass = props.shadow === "sm" ? "rgba(0,0,0,0.05) 0px 1px 2px 0px" : props.shadow === "md" ? "rgba(0,0,0,0.1) 0px 4px 6px -1px" : props.shadow === "lg" ? "rgba(0,0,0,0.1) 0px 10px 15px -3px" : "none";
       const borderStyle = num(props.borderWidth, 0) > 0 ? `border:${num(props.borderWidth, 0)}px solid ${str(props.borderColor, "#e5e7eb")};` : "";
-      const childrenHtml = (b.children || []).map(renderBlockHtml).join("\n");
       const tag = b.type === "box" ? "div" : "section";
 
       const containerStyle = [
