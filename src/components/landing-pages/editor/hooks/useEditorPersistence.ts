@@ -130,7 +130,8 @@ export function useEditorPersistence({
     reader.onload = () => {
       try {
         const snapshot = JSON.parse(String(reader.result)) as LandingEditorSnapshot;
-        if (!snapshot?.data?.blocks || !snapshot?.data?.pageSettings) {
+        const snapshotData = snapshot?.data as any;
+        if ((!snapshotData?.blocks && !snapshotData?.sections) || !snapshotData?.pageSettings) {
           throw new Error("Invalid landing page snapshot");
         }
         applySnapshot({

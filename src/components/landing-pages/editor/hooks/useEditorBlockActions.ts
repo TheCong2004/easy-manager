@@ -35,11 +35,11 @@ export function useEditorBlockActions({
 }: UseEditorBlockActionsOptions) {
   const handleDropFromPalette = useCallback((blockType: BlockType, insertIndex?: number) => {
     const newBlock = ensureOnlookBlockMeta(createDefaultBlock(blockType));
-    const nextIndex = insertIndex ?? data.blocks.length;
+    const nextIndex = insertIndex ?? data.sections.length;
     push(editorReducer(data, { type: "INSERT_BLOCK", block: newBlock, index: nextIndex }));
     recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: nextIndex, timestamp: Date.now() });
     handleSelectBlock(newBlock.id);
-    showToast(`ÄÃ£ thÃªm ${newBlock.label}`);
+    showToast(`Đã thêm ${newBlock.label}`);
   }, [data, handleSelectBlock, push, recordAction, showToast]);
 
   const handleDropInside = useCallback((containerId: string, blockType: BlockType, columnIndex?: number) => {
@@ -75,7 +75,7 @@ export function useEditorBlockActions({
         handleSelectBlock(newBlock.id);
         showToast(`Đã thêm section ${newBlock.label || newBlock.type}`);
       } else {
-        const targetSectionId = containerId || (data.blocks[0]?.id);
+        const targetSectionId = containerId || (data.sections[0]?.id);
         if (targetSectionId) {
           push(editorReducer(data, {
             type: "ADD_ELEMENT_TO_SECTION",
@@ -125,7 +125,7 @@ export function useEditorBlockActions({
       }
     } else if (item.id) {
       if (containerId) {
-        const current = findBlockRecursive(data.blocks, item.id);
+        const current = findBlockRecursive(data.sections, item.id);
         if (current) {
           let nextData = editorReducer(data, {
             type: "MOVE_BLOCK_TO_PATH",
@@ -180,15 +180,15 @@ export function useEditorBlockActions({
     } else {
       let targetSectionId = "";
       if (selectedId) {
-        const selectedBlock = findBlockRecursive(data.blocks, selectedId);
+        const selectedBlock = findBlockRecursive(data.sections, selectedId);
         if (selectedBlock?.kind === "section") {
           targetSectionId = selectedBlock.id;
         } else if (selectedBlock?.parentId) {
           targetSectionId = selectedBlock.parentId;
         }
       }
-      if (!targetSectionId && data.blocks.length > 0) {
-        targetSectionId = data.blocks[data.blocks.length - 1].id;
+      if (!targetSectionId && data.sections.length > 0) {
+        targetSectionId = data.sections[data.sections.length - 1].id;
       }
 
       if (targetSectionId) {
@@ -242,7 +242,7 @@ export function useEditorBlockActions({
 
   const handleMoveBlock = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    const moved = data.blocks[fromIndex];
+    const moved = data.sections[fromIndex];
     if (!moved) return;
     push(editorReducer(data, { type: "MOVE_BLOCK", fromIndex, toIndex }));
     recordAction({ type: "move-element", blockId: moved.id, fromIndex, toIndex, timestamp: Date.now() });
@@ -254,12 +254,12 @@ export function useEditorBlockActions({
   }, [handleMoveBlock]);
 
   const handleMoveDown = useCallback((index: number) => {
-    if (index === data.blocks.length - 1) return;
+    if (index === data.sections.length - 1) return;
     handleMoveBlock(index, index + 1);
-  }, [data.blocks.length, handleMoveBlock]);
+  }, [data.sections.length, handleMoveBlock]);
 
   const handleDeleteBlock = useCallback((id: string) => {
-    const removed = findBlockRecursive(data.blocks, id);
+    const removed = findBlockRecursive(data.sections, id);
     push(editorReducer(data, { type: "DELETE_BLOCK", blockId: id }));
     if (removed) {
       recordAction({ type: "remove-element", blockId: removed.id, blockType: removed.type, timestamp: Date.now() });
@@ -269,8 +269,8 @@ export function useEditorBlockActions({
   }, [data, handleSelectBlock, push, recordAction, selectedId, showToast]);
 
   const handleDuplicateBlock = useCallback((id: string) => {
-    const index = data.blocks.findIndex((block) => block.id === id);
-    const original = findBlockRecursive(data.blocks, id);
+    const index = data.sections.findIndex((block) => block.id === id);
+    const original = findBlockRecursive(data.sections, id);
     if (!original) return;
     const newBlockId = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     push(editorReducer(data, { type: "DUPLICATE_BLOCK", blockId: id, newBlockId }));
@@ -280,7 +280,7 @@ export function useEditorBlockActions({
   }, [data, handleSelectBlock, push, recordAction, showToast]);
 
   const handleUpdateBlock = useCallback((id: string, newProps: Record<string, unknown>) => {
-    const current = findBlockRecursive(data.blocks, id);
+    const current = findBlockRecursive(data.sections, id);
     push(editorReducer(data, { type: "UPDATE_BLOCK_PROPS", blockId: id, props: newProps }));
     if (current) {
       const oldProps = current.props as Record<string, unknown>;
@@ -305,7 +305,7 @@ export function useEditorBlockActions({
   const handleApplyTemplate = useCallback((templateId: string, mode: "append" | "replace" = "append") => {
     const templateBlocks = instantiateTemplateBlocks(templateId);
     if (templateBlocks.length === 0) return;
-    if (mode === "replace" && data.blocks.length > 0 && !confirm("Thay toàn bộ canvas bằng mẫu này?")) return;
+    if (mode === "replace" && data.sections.length > 0 && !confirm("Thay toàn bộ canvas bằng mẫu này?")) return;
 
     push(editorReducer(data, { type: "APPLY_TEMPLATE", blocks: templateBlocks, mode }));
     templateBlocks.forEach((block, offset) => {
@@ -313,7 +313,7 @@ export function useEditorBlockActions({
         type: "insert-element",
         blockId: block.id,
         blockType: block.type,
-        index: mode === "replace" ? offset : data.blocks.length + offset,
+        index: mode === "replace" ? offset : data.sections.length + offset,
         timestamp: Date.now(),
       });
     });
@@ -323,7 +323,7 @@ export function useEditorBlockActions({
 
   const handleUseAsset = useCallback((url: string, name: string) => {
     if (selectedId) {
-      const current = findBlockRecursive(data.blocks, selectedId);
+      const current = findBlockRecursive(data.sections, selectedId);
       if (current?.type === "image") {
         handleUpdateBlock(current.id, { ...current.props, src: url, alt: name });
         showToast(`Đã gán ảnh ${name}`, "success");
@@ -343,7 +343,7 @@ export function useEditorBlockActions({
 
     navigator.clipboard?.writeText(url);
     showToast(`Đã copy link ảnh: ${name}`, "info");
-  }, [data.blocks, handleUpdateBlock, selectedId, showToast]);
+  }, [data.sections, handleUpdateBlock, selectedId, showToast]);
 
   const handleUpdateNodeFrame = useCallback((id: string, frame: Partial<ElementFrame>) => {
     push(editorReducer(data, { type: "UPDATE_NODE_FRAME", blockId: id, frame }));

@@ -81,7 +81,7 @@ export const BLOCK_REGISTRY = Object.fromEntries(
       renderHtml: (block) => renderLandingPageHtml({
         pageId: "preview",
         pageName: "Preview",
-        blocks: [block],
+        sections: [block],
         pageSettings: {
           bgColor: "#ffffff",
           maxWidth: 1280,
@@ -108,6 +108,7 @@ export const BLOCK_REGISTRY = Object.fromEntries(
           posthogProjectKey: "",
           sessionReplayEnabled: false,
         },
+        schemaVersion: 2,
       }),
     };
     return [type, entry];

@@ -21,6 +21,16 @@ import { LANDING_ASSETS, LANDING_TEMPLATE_PRESETS, instantiateTemplateBlocks, re
 import { LandingPageItem } from "../dung-chung/types";
 import { FUNNELX_FLAGS } from "@onlook/funnel";
 import { useEditorBlockActions } from "./hooks/useEditorBlockActions";
+import {
+  loadLandingPage,
+  saveLandingPage,
+  publishLandingPage,
+  createLandingPageVersion,
+  listLandingPageVersions,
+  restoreLandingPageVersion,
+} from "./core/editor-supabase-storage";
+import { migrateEditorData } from "./core/editor-migration";
+import { findBlockRecursive } from "./core/editor-reducer";
 
 // Import modular split sub-panels
 import { PageListingPanel } from "./panels/PageListingPanel";
@@ -85,23 +95,24 @@ function buildInitialData(page: LandingPageItem): EditorData {
   return {
     pageId: page.id,
     pageName: page.name,
-    blocks: presetBlocks.length > 0
+    sections: presetBlocks.length > 0
       ? presetBlocks
       : [
           ensureOnlookBlockMeta(createDefaultBlock("hero")),
           ensureOnlookBlockMeta(createDefaultBlock("countdown")),
-          ensureOnlookBlockMeta(createDefaultBlock("columns")),
+          ensureOnlookBlockMeta(createDefaultBlock("box")),
         ],
     pageSettings: createDefaultPageSettings(page.name),
+    schemaVersion: 2,
   };
 }
 
 function isUntouchedStarterData(data: EditorData): boolean {
-  const [first, second, third] = data.blocks;
-  const defaultStarter = data.blocks.length === 3
+  const [first, second, third] = data.sections || [];
+  const defaultStarter = (data.sections || []).length === 3
     && first?.type === "hero"
     && second?.type === "countdown"
-    && third?.type === "columns"
+    && third?.type === "box"
     && (first.label === "Hero Section" || first.componentName === "HeroBlock");
   const oldImageBackdropPreset = first?.type === "hero"
     && typeof first.props?.bgImage === "string"
@@ -119,12 +130,12 @@ function isLegacyTemplateData(data: EditorData, page: LandingPageItem): boolean 
   if (page.templateId && pagePresetIds.has(page.templateId) && isUntouchedStarterData(data)) return true;
 
   if (presetId === "herb-tea") {
-    const teaBlocks = data.blocks.filter((block) => block.type === "tea_landing");
-    if (teaBlocks.length !== 1 || data.blocks.length !== 1) return true;
+    const teaBlocks = (data.sections || []).filter((block) => block.type === "tea_landing");
+    if (teaBlocks.length !== 1 || (data.sections || []).length !== 1) return true;
   }
   if (presetId !== "herb-tea") return false;
 
-  return data.blocks.some((block) => {
+  return (data.sections || []).some((block) => {
     const props = block.props as Record<string, unknown>;
     return block.label?.toLowerCase().includes("herb")
       || block.label?.toLowerCase().includes("zen green")
@@ -155,13 +166,18 @@ const Toast: React.FC<{ message: string; type: "success" | "info" }> = ({ messag
 function formatActionLabel(action: LandingEditorAction): string {
   switch (action.type) {
     case "insert-element":
-      return `Đã chèn ${action.blockType} tại ${action.index + 1}`;
+      return `Đã chèn ${action.blockType} tại ${(action.index ?? 0) + 1}`;
     case "remove-element":
+    case "delete-element":
       return `Đã xóa khối ${action.blockType}`;
     case "move-element":
-      return `Di chuyển khối ${action.fromIndex + 1} -> ${action.toIndex + 1}`;
+    case "reorder-elements":
+      return `Di chuyển khối ${(action.fromIndex ?? 0) + 1} -> ${(action.toIndex ?? 0) + 1}`;
     case "update-props":
-      return `Cập nhật ${action.blockType}: ${action.keys.join(", ") || "thuộc tính"}`;
+    case "update-element-props":
+      return `Cập nhật ${action.blockType}: ${action.keys?.join(", ") || action.key || "thuộc tính"}`;
+    case "update-element-frame":
+      return `Cập nhật vị trí/kích thước: ${action.blockType}`;
     case "update-page-settings":
       return `Cài đặt trang: ${action.key}`;
     default:
@@ -204,6 +220,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [zoom, setZoom] = useState(1);
   const [pageName, setPageName] = useState(page.name);
   const [isSaved, setIsSaved] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" } | null>(null);
   const [activeViewMode, setActiveViewMode] = useState<EditorViewMode>("design");
   const [actionLog, setActionLog] = useState<LandingEditorAction[]>([]);
@@ -313,13 +330,22 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   }, []);
 
-  const saveSnapshot = useCallback((nextData: EditorData = data, nextActions: LandingEditorAction[] = actionLog) => {
-    const snapshot = createEditorSnapshot({ ...nextData, pageName }, nextActions);
-    localStorage.setItem(storageKey, JSON.stringify(snapshot));
-    setLastSavedAt(snapshot.updatedAt);
-    setIsSaved(true);
-    return snapshot;
-  }, [actionLog, data, pageName, storageKey]);
+  const saveSnapshot = useCallback(async (nextData: EditorData = data, nextActions: LandingEditorAction[] = actionLog) => {
+    setSaveStatus("saving");
+    setIsSaved(false);
+    try {
+      const snapshot = createEditorSnapshot({ ...nextData, pageName }, nextActions);
+      await saveLandingPage(page.id, snapshot.data);
+      setLastSavedAt(snapshot.updatedAt);
+      setIsSaved(true);
+      setSaveStatus("saved");
+      return snapshot;
+    } catch (err) {
+      console.error("Autosave failed, falling back to local storage:", err);
+      setSaveStatus("error");
+      setLastSavedAt(new Date().toISOString());
+    }
+  }, [actionLog, data, pageName, page.id]);
 
   const applySnapshot = useCallback((snapshot: LandingEditorSnapshot) => {
     const normalized = normalizeEditorData(snapshot.data);
@@ -331,49 +357,80 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     setIsSaved(true);
   }, [replace]);
 
+  // Load page on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const snapshot = JSON.parse(raw) as LandingEditorSnapshot;
-        if (snapshot?.data?.pageId === page.id) {
-          if (isUntouchedStarterData(snapshot.data) || isLegacyTemplateData(snapshot.data, page)) {
-            applySnapshot(createEditorSnapshot(buildInitialData(page), []));
-          } else {
-            applySnapshot(snapshot);
+    async function loadData() {
+      try {
+        const pageData = await loadLandingPage(page.id);
+        if (pageData) {
+          // If a newer local backup exists, prompt the user
+          if ((pageData as any).hasNewerLocalBackup) {
+            const recover = confirm(
+              "Tìm thấy bản nháp lưu cục bộ (Local Storage) mới hơn bản ghi trên database. Bạn có muốn khôi phục thiết kế từ bản nháp này không?"
+            );
+            if (recover && (pageData as any).localBackupData) {
+              applySnapshot(createEditorSnapshot((pageData as any).localBackupData, []));
+              return;
+            }
           }
+          applySnapshot(createEditorSnapshot(pageData, []));
+        } else {
+          // Fallback to fresh default starter
+          applySnapshot(createEditorSnapshot(buildInitialData(page), []));
         }
+      } catch (err) {
+        console.error("Failed to load landing page data:", err);
+        applySnapshot(createEditorSnapshot(buildInitialData(page), []));
+      } finally {
+        isHydratedRef.current = true;
+        void loadRevisions();
       }
-    } catch {
-      localStorage.setItem(storageKey, JSON.stringify(createEditorSnapshot(buildInitialData(page), [])));
-    } finally {
-      isHydratedRef.current = true;
     }
-  }, [applySnapshot, page.id, storageKey]);
+    void loadData();
+  }, [page.id]);
 
-  useEffect(() => {
+  // Load versions from Supabase/LocalStorage
+  const loadRevisions = useCallback(async () => {
     try {
-      const raw = localStorage.getItem(revisionsKey);
-      setRevisions(raw ? (JSON.parse(raw) as EditorRevision[]) : []);
-    } catch {
-      localStorage.removeItem(revisionsKey);
-      setRevisions([]);
+      const dbVersions = await listLandingPageVersions(page.id);
+      setRevisions(
+        dbVersions.map((v: any) => ({
+          id: v.id,
+          name: v.version_name || "Bản lưu",
+          snapshot: {
+            data: v.editor_data,
+            actions: [],
+            html: "",
+            updatedAt: v.created_at,
+          },
+          createdAt: new Date(v.created_at).toLocaleTimeString("vi-VN") + ", " + new Date(v.created_at).toLocaleDateString("vi-VN"),
+        }))
+      );
+    } catch (err) {
+      console.error("Error loading revisions:", err);
     }
-  }, [revisionsKey]);
+  }, [page.id]);
 
-  // Mark dirty and autosave on any data change
+
+
+  // Autosave triggers on committed data/present state changes
   useEffect(() => {
     if (!isHydratedRef.current) return;
     setIsSaved(false);
+    setSaveStatus("saving");
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => saveSnapshot(), 700);
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+    saveTimerRef.current = setTimeout(() => {
+      void saveSnapshot();
+    }, 1000);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [data, pageName, actionLog, saveSnapshot]);
 
-  const showToast = (message: string, type: "success" | "info" = "success") => {
+  const showToast = useCallback((message: string, type: "success" | "info" = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 2500);
-  };
+  }, []);
 
   const recordAction = useCallback((action: LandingEditorAction) => {
     setActionLog((prev) => [...prev.slice(-119), action]);
@@ -425,7 +482,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       let actionTaken = false;
 
       const normalizedText = text.toLowerCase().trim();
-      const currentSelectedBlock = selectedId ? data.blocks.find(b => b.id === selectedId) : null;
+      const currentSelectedBlock = selectedId ? findBlockRecursive(data.sections, selectedId) : null;
 
       if (currentSelectedBlock) {
         const blockId = currentSelectedBlock.id;
@@ -550,7 +607,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       setChatHistory(prev => [...prev, aiMsg]);
       setIsAiTyping(false);
     }, 1000);
-  }, [selectedId, data.blocks, handleUpdateBlock, handleUpdatePageSettings, handleAddBlock]);
+  }, [selectedId, data.sections, handleUpdateBlock, handleUpdatePageSettings, handleAddBlock]);
 
   // ── Keyboard shortcuts ───────────────────────────────────────
   useEffect(() => {
@@ -581,10 +638,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo, selectedId, handleDeleteBlock, handleDuplicateBlock]);
 
-  const handlePublish = () => {
-    saveSnapshot();
-    showToast("Đã xuất bản trang thành công! 🎉", "success");
-    if (onPublish) onPublish({ ...page, name: pageName, status: "PUBLISHED" });
+  const handlePublish = async () => {
+    try {
+      await saveSnapshot();
+      const html = renderLandingPageHtml({ ...data, pageName });
+      await publishLandingPage(page.id, html);
+      showToast("Đã xuất bản trang thành công! 🎉", "success");
+      if (onPublish) onPublish({ ...page, name: pageName, status: "PUBLISHED" });
+    } catch (err) {
+      console.error("Publish failed:", err);
+      showToast("Xuất bản trang thất bại", "info");
+    }
   };
 
   const downloadFile = useCallback((fileName: string, content: string, mimeType: string) => {
@@ -597,9 +661,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     URL.revokeObjectURL(url);
   }, []);
 
-  const handleManualSave = useCallback(() => {
-    saveSnapshot();
-    showToast("Đã lưu bản thiết kế thiết kế", "success");
+  const handleManualSave = useCallback(async () => {
+    try {
+      await saveSnapshot();
+      showToast("Đã lưu bản thiết kế thiết kế", "success");
+    } catch (err) {
+      console.error("Save failed:", err);
+      showToast("Lưu thiết kế thất bại", "info");
+    }
   }, [saveSnapshot]);
 
   const handleExportJson = useCallback(() => {
@@ -622,53 +691,60 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const snapshot = JSON.parse(String(reader.result)) as LandingEditorSnapshot;
-        if (!snapshot?.data?.blocks || !snapshot?.data?.pageSettings) {
+        const snapshot = JSON.parse(String(reader.result)) as any;
+        if ((!snapshot?.data?.blocks && !snapshot?.data?.sections) || !snapshot?.data?.pageSettings) {
           throw new Error("Invalid landing page snapshot");
         }
-        applySnapshot({
+        const migratedData = migrateEditorData(snapshot.data, page.id);
+        const migratedSnapshot = {
           ...snapshot,
           data: {
-            ...snapshot.data,
-            pageId: page.id,
-            pageName: snapshot.data.pageName || pageName,
-          },
-        });
+            ...migratedData,
+            pageName: migratedData.pageName || pageName,
+          }
+        };
+        applySnapshot(migratedSnapshot);
         showToast("Đã import bản thiết kế thành công", "success");
-      } catch {
+      } catch (err) {
+        console.error("Import JSON failed:", err);
         showToast("File JSON không hợp lệ", "info");
       }
     };
     reader.readAsText(file);
   }, [applySnapshot, page.id, pageName]);
 
-  const persistRevisions = useCallback((nextRevisions: EditorRevision[]) => {
-    const trimmed = nextRevisions.slice(0, 30);
-    setRevisions(trimmed);
-    localStorage.setItem(revisionsKey, JSON.stringify(trimmed));
-  }, [revisionsKey]);
+  const handleCreateRevision = useCallback(async (name?: string) => {
+    const versionName = name?.trim() || `Phiên bản ngày ${new Date().toLocaleString("vi-VN")}`;
+    try {
+      const snapshot = createEditorSnapshot({ ...data, pageName }, actionLog);
+      await createLandingPageVersion(page.id, snapshot.data, versionName);
+      void loadRevisions();
+      showToast("Đã tạo điểm lưu thành công", "success");
+    } catch (err) {
+      console.error("Failed to create revision:", err);
+      showToast("Không thể tạo điểm lưu", "info");
+    }
+  }, [actionLog, data, pageName, page.id, loadRevisions]);
 
-  const handleCreateRevision = useCallback((name?: string) => {
-    const snapshot = createEditorSnapshot({ ...data, pageName }, actionLog);
-    const revision: EditorRevision = {
-      id: `rev_${Date.now()}`,
-      name: name?.trim() || `Phiên bản ngày ${new Date().toLocaleString("vi-VN")}`,
-      snapshot,
-      createdAt: snapshot.updatedAt,
-    };
-    persistRevisions([revision, ...revisions]);
-    showToast("Đã tạo điểm lưu thành công", "success");
-  }, [actionLog, data, pageName, persistRevisions, revisions]);
-
-  const handleRestoreRevision = useCallback((revision: EditorRevision) => {
-    applySnapshot(revision.snapshot);
-    saveSnapshot(revision.snapshot.data, revision.snapshot.actions);
-    showToast("Đã khôi phục thiết kế", "success");
-  }, [applySnapshot, saveSnapshot]);
+  const handleRestoreRevision = useCallback(async (revision: EditorRevision) => {
+    try {
+      setSaveStatus("saving");
+      const restoredData = await restoreLandingPageVersion(page.id, revision.id, data);
+      const snapshot = createEditorSnapshot(restoredData, []);
+      applySnapshot(snapshot);
+      await saveSnapshot(restoredData, []);
+      void loadRevisions();
+      showToast("Đã khôi phục thiết kế", "success");
+    } catch (err) {
+      console.error("Failed to restore revision:", err);
+      showToast("Khôi phục thiết kế thất bại", "info");
+      setSaveStatus("error");
+    }
+  }, [data, page.id, applySnapshot, saveSnapshot, loadRevisions]);
 
   // Removed duplicate block actions (now handled by useEditorBlockActions hook)
 
-  const selectedBlock = selectedId ? data.blocks.find((b) => b.id === selectedId) ?? null : null;
+  const selectedBlock = selectedId ? findBlockRecursive(data.sections, selectedId) ?? null : null;
   const sandboxPreviewUrl = data.pageSettings.sandboxUrl
     || (data.pageSettings.sandboxProvider === "codesandbox" && data.pageSettings.sandboxId
       ? `https://${data.pageSettings.sandboxId}-${data.pageSettings.sandboxPort}.csb.app`
@@ -706,7 +782,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           lastSavedAt={lastSavedAt}
           activeViewMode={activeViewMode}
           setActiveViewMode={setActiveViewMode}
-          blockCount={data.blocks.length}
+          blockCount={data.sections.length}
         />
         <input
           ref={importInputRef}
@@ -745,7 +821,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             <div className={`${activeTab === "layers" ? "w-[420px]" : "w-64"} flex flex-shrink-0 flex-col h-full bg-white border-r border-gray-200 overflow-hidden transition-all duration-200`}>
               {activeTab === "layers" && (
                 <LayersPanel
-                  blocks={data.blocks}
+                  sections={data.sections}
                   selectedId={selectedId}
                   onSelectBlock={handleSelectBlock}
                   onDeleteBlock={handleDeleteBlock}
@@ -831,7 +907,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             </div>
           ) : (
             <Canvas
-              blocks={data.blocks}
+              sections={data.sections}
               selectedId={selectedId}
               deviceMode={deviceMode}
               zoom={zoom}

@@ -564,8 +564,9 @@ export function getEffectiveFrame(node: EditorBlock, deviceMode: DeviceMode): El
 export interface EditorData {
   pageId: string;
   pageName: string;
-  blocks: EditorBlock[];
+  sections: EditorBlock[];
   pageSettings: EditorPageSettings;
+  schemaVersion: number;
 }
 
 export interface EditorPageSettings {

@@ -19,7 +19,7 @@ export function validateEditorData(data: EditorData): EditorValidationIssue[] {
     issues.push({ severity: "error", path: "pageSettings.seoTitle", message: "SEO title is required." });
   }
 
-  data.blocks.forEach((block, index) => validateBlock(block, `blocks.${index}`, issues));
+  data.sections.forEach((block, index) => validateBlock(block, `sections.${index}`, issues));
   return issues;
 }
 
@@ -57,5 +57,9 @@ function validateBlock(block: EditorBlock, path: string, issues: EditorValidatio
       if (!Array.isArray(column)) return;
       column.forEach((child, childIndex) => validateBlock(child as EditorBlock, `${path}.props.children.${columnIndex}.${childIndex}`, issues));
     });
+  }
+
+  if (Array.isArray(block.children)) {
+    block.children.forEach((child, childIndex) => validateBlock(child, `${path}.children.${childIndex}`, issues));
   }
 }

@@ -29,7 +29,7 @@ export function createLocalStorageAdapter(): EditorStorageAdapter {
     async load(pageId) {
       const raw = localStorage.getItem(editorStorageKey(pageId));
       if (!raw) return null;
-      return migrateEditorSnapshot(JSON.parse(raw) as VersionedLandingEditorSnapshot);
+      return migrateEditorSnapshot(JSON.parse(raw) as VersionedLandingEditorSnapshot, pageId);
     },
     async save(pageId, snapshot) {
       localStorage.setItem(
@@ -46,7 +46,7 @@ export async function loadEditorRevisions(pageId: string): Promise<EditorRevisio
   const revisions = JSON.parse(raw) as EditorRevision[];
   return revisions.map((revision) => ({
     ...revision,
-    snapshot: migrateEditorSnapshot(revision.snapshot as VersionedLandingEditorSnapshot),
+    snapshot: migrateEditorSnapshot(revision.snapshot as VersionedLandingEditorSnapshot, pageId),
   }));
 }
 

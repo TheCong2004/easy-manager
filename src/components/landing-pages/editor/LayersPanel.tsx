@@ -300,7 +300,7 @@ const LayerItem: React.FC<{
 
 // ── Main Left Panel (Light Theme) ───────────────────────────────────────────
 interface LayersPanelProps {
-  blocks: EditorBlock[];
+  sections: EditorBlock[];
   selectedId: string | null;
   onSelectBlock: (id: string | null) => void;
   onDeleteBlock: (id: string) => void;
@@ -312,7 +312,7 @@ interface LayersPanelProps {
 }
 
 export const LayersPanel: React.FC<LayersPanelProps> = ({
-  blocks,
+  sections,
   selectedId,
   onSelectBlock,
   onDeleteBlock,
@@ -482,7 +482,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
         ) : (
           /* Layers tab - single scrollable column list of existing blocks */
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1 bg-white">
-            {blocks.length === 0 ? (
+            {sections.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center select-none">
                 <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
@@ -492,7 +492,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
               </div>
             ) : (
               <div className="space-y-1">
-                {blocks.map((block) => (
+                {sections.map((block) => (
                   <LayerItem
                     key={block.id}
                     block={block}

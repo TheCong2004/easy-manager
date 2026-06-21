@@ -5,6 +5,7 @@ import {
   createDefaultPageSettings,
   EditorData,
   ensureOnlookBlockMeta,
+  EditorBlock,
 } from "../types";
 
 export function buildInitialData(page: LandingPageItem): EditorData {
@@ -14,7 +15,7 @@ export function buildInitialData(page: LandingPageItem): EditorData {
   return {
     pageId: page.id,
     pageName: page.name,
-    blocks: presetBlocks.length > 0
+    sections: presetBlocks.length > 0
       ? presetBlocks
       : [
           ensureOnlookBlockMeta(createDefaultBlock("hero")),
@@ -22,12 +23,13 @@ export function buildInitialData(page: LandingPageItem): EditorData {
           ensureOnlookBlockMeta(createDefaultBlock("columns")),
         ],
     pageSettings: createDefaultPageSettings(page.name),
+    schemaVersion: 2,
   };
 }
 
 export function isUntouchedStarterData(data: EditorData): boolean {
-  const [first, second, third] = data.blocks;
-  const defaultStarter = data.blocks.length === 3
+  const [first, second, third] = data.sections || [];
+  const defaultStarter = (data.sections || []).length === 3
     && first?.type === "hero"
     && second?.type === "countdown"
     && third?.type === "columns"
@@ -52,12 +54,12 @@ export function isLegacyTemplateData(data: EditorData, page: LandingPageItem): b
   if (page.templateId && pagePresetIds.has(page.templateId) && isUntouchedStarterData(data)) return true;
 
   if (presetId === "herb-tea") {
-    const teaBlocks = data.blocks.filter((block) => block.type === "tea_landing");
-    if (teaBlocks.length !== 1 || data.blocks.length !== 1) return true;
+    const teaBlocks = (data.sections || []).filter((block: EditorBlock) => block.type === "tea_landing");
+    if (teaBlocks.length !== 1 || (data.sections || []).length !== 1) return true;
   }
   if (presetId !== "herb-tea") return false;
 
-  return data.blocks.some((block) => {
+  return (data.sections || []).some((block: EditorBlock) => {
     const props = block.props as Record<string, unknown>;
     return block.label?.toLowerCase().includes("herb")
       || block.label?.toLowerCase().includes("zen green")

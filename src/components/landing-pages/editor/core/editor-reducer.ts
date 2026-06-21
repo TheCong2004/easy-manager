@@ -13,17 +13,17 @@ import { EditorAction } from "./editor-actions";
 export function editorReducer(state: EditorData, action: EditorAction): EditorData {
   switch (action.type) {
     case "INSERT_BLOCK": {
-      const blocks = [...state.blocks];
-      const index = clampIndex(action.index ?? blocks.length, blocks.length);
-      blocks.splice(index, 0, ...blocksForRootInsert(action.block));
-      return normalizeEditorState({ ...state, blocks });
+      const sections = [...state.sections];
+      const index = clampIndex(action.index ?? sections.length, sections.length);
+      sections.splice(index, 0, ...blocksForRootInsert(action.block));
+      return normalizeEditorState({ ...state, sections });
     }
     case "INSERT_BLOCK_IN_CONTAINER": {
       const block = ensureOnlookBlockMeta(action.block);
       return normalizeEditorState({
         ...state,
-        blocks: insertInsideRecursive(
-          state.blocks,
+        sections: insertInsideRecursive(
+          state.sections,
           action.container.blockId,
           block,
           action.index,
@@ -32,27 +32,27 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
       });
     }
     case "DELETE_BLOCK":
-      return normalizeEditorState({ ...state, blocks: deleteBlockRecursive(state.blocks, action.blockId) });
+      return normalizeEditorState({ ...state, sections: deleteBlockRecursive(state.sections, action.blockId) });
     case "DUPLICATE_BLOCK":
-      return normalizeEditorState({ ...state, blocks: duplicateBlockRecursive(state.blocks, action.blockId, action.newBlockId) });
+      return normalizeEditorState({ ...state, sections: duplicateBlockRecursive(state.sections, action.blockId, action.newBlockId) });
     case "MOVE_BLOCK": {
       if (action.fromIndex === action.toIndex) return state;
-      return normalizeEditorState({ ...state, blocks: moveInList(state.blocks, action.fromIndex, action.toIndex) });
+      return normalizeEditorState({ ...state, sections: moveInList(state.sections, action.fromIndex, action.toIndex) });
     }
     case "MOVE_BLOCK_WITHIN_PARENT":
       return normalizeEditorState({
         ...state,
-        blocks: action.parentId
-          ? moveWithinParentRecursive(state.blocks, action.parentId, action.fromIndex, action.toIndex, action.columnIndex)
-          : moveInList(state.blocks, action.fromIndex, action.toIndex),
+        sections: action.parentId
+          ? moveWithinParentRecursive(state.sections, action.parentId, action.fromIndex, action.toIndex, action.columnIndex)
+          : moveInList(state.sections, action.fromIndex, action.toIndex),
       });
     case "MOVE_BLOCK_IN_CONTAINER":
       return state;
     case "MOVE_BLOCK_TO_PATH":
       return normalizeEditorState({
         ...state,
-        blocks: moveBlockRecursive(
-          state.blocks,
+        sections: moveBlockRecursive(
+          state.sections,
           action.blockId,
           action.containerId,
           action.columnIndex,
@@ -62,7 +62,7 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
     case "UPDATE_BLOCK_PROPS":
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({
           ...block,
           props: { ...block.props, ...action.props },
         })),
@@ -73,13 +73,13 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
         pageSettings: { ...state.pageSettings, [action.key]: action.value },
       });
     case "CLEAR_CANVAS":
-      return normalizeEditorState({ ...state, blocks: [] });
+      return normalizeEditorState({ ...state, sections: [] });
     case "APPLY_TEMPLATE":
       return normalizeEditorState({
         ...state,
-        blocks: action.mode === "replace"
+        sections: action.mode === "replace"
           ? action.blocks.map(ensureOnlookBlockMeta)
-          : [...state.blocks, ...action.blocks.map(ensureOnlookBlockMeta)],
+          : [...state.sections, ...action.blocks.map(ensureOnlookBlockMeta)],
       });
     case "IMPORT_SNAPSHOT":
     case "RESTORE_REVISION":
@@ -87,17 +87,17 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
     case "SET_BLOCK_LOCKED":
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({ ...block, locked: action.locked })),
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({ ...block, locked: action.locked })),
       });
     case "SET_BLOCK_HIDDEN":
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({ ...block, hidden: action.hidden })),
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({ ...block, hidden: action.hidden })),
       });
     case "SET_RESPONSIVE_OVERRIDE":
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({
           ...block,
           responsive: {
             ...block.responsive,
@@ -114,7 +114,7 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
     case "UPDATE_NODE_FRAME":
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({
           ...block,
           frame: {
             ...(block.frame || { x: 0, y: 0, width: 200, height: 100, zIndex: 1, rotate: 0 }),
@@ -125,7 +125,7 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
     case "UPDATE_RESPONSIVE_FRAME":
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({
           ...block,
           responsive: {
             ...block.responsive,
@@ -140,15 +140,15 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
         })),
       });
     case "ADD_SECTION": {
-      const blocks = [...state.blocks];
-      const index = clampIndex(action.index ?? blocks.length, blocks.length);
+      const sections = [...state.sections];
+      const index = clampIndex(action.index ?? sections.length, sections.length);
       const newSection = {
         ...action.block,
         kind: "section" as const,
         parentId: null,
       };
-      blocks.splice(index, 0, ensureOnlookBlockMeta(newSection));
-      return normalizeEditorState({ ...state, blocks });
+      sections.splice(index, 0, ensureOnlookBlockMeta(newSection));
+      return normalizeEditorState({ ...state, sections });
     }
     case "ADD_ELEMENT_TO_SECTION": {
       const elementNode = ensureOnlookBlockMeta({
@@ -165,7 +165,7 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
       });
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.sectionId, (section) => {
+        sections: updateBlockRecursive(state.sections, action.sectionId, (section) => {
           const children = [...(section.children ?? [])];
           children.push(elementNode);
           return { ...section, children };
@@ -175,7 +175,7 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
     case "MOVE_NODE_Z_INDEX": {
       return normalizeEditorState({
         ...state,
-        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => {
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => {
           if (!block.frame) return block;
           const delta = action.direction === "forward" ? 1 : -1;
           const newZ = Math.max(1, (block.frame.zIndex ?? 1) + delta);
@@ -198,7 +198,7 @@ export function normalizeEditorState(data: EditorData): EditorData {
       ...createDefaultPageSettings(data.pageName),
       ...data.pageSettings,
     },
-    blocks: data.blocks.map(ensureOnlookBlockMeta),
+    sections: (data.sections || []).map(ensureOnlookBlockMeta),
   };
 }
 

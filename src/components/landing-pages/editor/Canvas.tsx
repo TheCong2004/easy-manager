@@ -457,7 +457,7 @@ interface DragState {
 
 // ── Main Canvas ───────────────────────────────────────────────
 interface CanvasProps {
-  blocks: EditorBlock[];
+  sections: EditorBlock[];
   selectedId: string | null;
   deviceMode: DeviceMode;
   zoom: number;
@@ -486,7 +486,7 @@ interface CanvasProps {
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
-  blocks,
+  sections,
   selectedId,
   deviceMode,
   zoom,
@@ -531,9 +531,9 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   // Recursively find element parent ID
   const findParentId = useCallback((id: string): string | null => {
-    const node = findBlockRecursive(blocks, id);
+    const node = findBlockRecursive(sections, id);
     return node?.parentId ?? null;
-  }, [blocks]);
+  }, [sections]);
 
   // Recursively find block
   const findBlockRecursive = (nodes: EditorBlock[], id: string): EditorBlock | null => {
@@ -604,7 +604,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
       // Clamping bounds inside parent section
       const parentId = findParentId(dragState.blockId);
-      const parentSection = parentId ? findBlockRecursive(blocks, parentId) : null;
+      const parentSection = parentId ? findBlockRecursive(sections, parentId) : null;
       const sectionW = parentSection?.frame?.width ?? canvasWidth;
       const sectionH = parentSection?.frame?.height ?? 800;
 
@@ -699,7 +699,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         setDraftFrame({ rotate: angleDeg });
       });
     }
-  }, [dragState, effectiveZoom, blocks, canvasWidth, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame, findParentId]);
+  }, [dragState, effectiveZoom, sections, canvasWidth, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame, findParentId]);
 
   const handlePointerUp = useCallback(() => {
     if (!dragState) return;
@@ -745,7 +745,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         return;
       }
 
-      const selectedNode = findBlockRecursive(blocks, selectedId);
+      const selectedNode = findBlockRecursive(sections, selectedId);
       if (!selectedNode || selectedNode.locked) return;
 
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
@@ -796,7 +796,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId, blocks, deviceMode, onDuplicateBlock, onDeleteBlock, onSelectBlock, onUpdateNodeFrame, onUpdateResponsiveFrame]);
+  }, [selectedId, sections, deviceMode, onDuplicateBlock, onDeleteBlock, onSelectBlock, onUpdateNodeFrame, onUpdateResponsiveFrame]);
 
   // Click on canvas background to deselect
   const handleCanvasBgClick = (e: React.MouseEvent) => {
@@ -846,7 +846,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         )}
 
         {/* Stack Sections Vertically */}
-        {blocks.map((section, index) => {
+        {sections.map((section, index) => {
           const sectionFrame = section.frame || { x: 0, y: 0, width: canvasWidth, height: 500, zIndex: 1 };
           
           return (
@@ -923,7 +923,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         })}
 
         {/* Ending Drop Zone */}
-        <SectionDropZone index={blocks.length} onDropItem={onDropItem} />
+        <SectionDropZone index={sections.length} onDropItem={onDropItem} />
       </div>
 
       {/* Device Indicator Widget floating on bottom left */}
