@@ -1,4 +1,4 @@
-import { BlockType, EditorBlock, EditorData, EditorPageSettings } from "../types";
+import { BlockType, EditorBlock, EditorData, EditorPageSettings, ElementFrame } from "../types";
 
 export type ContainerPath = {
   blockId: string;
@@ -22,7 +22,12 @@ export type EditorAction =
   | { type: "RESTORE_REVISION"; data: EditorData }
   | { type: "SET_BLOCK_LOCKED"; blockId: string; locked: boolean }
   | { type: "SET_BLOCK_HIDDEN"; blockId: string; hidden: boolean }
-  | { type: "SET_RESPONSIVE_OVERRIDE"; blockId: string; deviceMode: "desktop" | "tablet" | "mobile"; props: Record<string, unknown> };
+  | { type: "SET_RESPONSIVE_OVERRIDE"; blockId: string; deviceMode: "desktop" | "tablet" | "mobile"; props: Record<string, unknown> }
+  | { type: "UPDATE_NODE_FRAME"; blockId: string; frame: Partial<ElementFrame> }
+  | { type: "UPDATE_RESPONSIVE_FRAME"; blockId: string; deviceMode: "desktop" | "tablet" | "mobile"; frame: Partial<ElementFrame> }
+  | { type: "ADD_SECTION"; block: EditorBlock; index?: number }
+  | { type: "ADD_ELEMENT_TO_SECTION"; sectionId: string; block: EditorBlock; x: number; y: number }
+  | { type: "MOVE_NODE_Z_INDEX"; blockId: string; direction: "forward" | "backward" };
 
 export type LandingEditorAction =
   | {

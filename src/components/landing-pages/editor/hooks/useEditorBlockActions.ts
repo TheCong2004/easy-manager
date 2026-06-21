@@ -10,6 +10,8 @@ import {
   canNodeHaveChildren,
   createDefaultBlock,
   ensureOnlookBlockMeta,
+  getNodeKind,
+  ElementFrame,
 } from "../types";
 
 interface UseEditorBlockActionsOptions {
@@ -56,41 +58,93 @@ export function useEditorBlockActions({
     item: { id?: string; type?: BlockType; isPalette?: boolean },
     containerId?: string,
     columnIndex?: number,
-    index?: number
+    index?: number,
+    x?: number,
+    y?: number
   ) => {
     if (item.isPalette && item.type) {
       const blockType = item.type;
       const newBlock = ensureOnlookBlockMeta(createDefaultBlock(blockType));
 
-      if (containerId) {
+      if (getNodeKind(blockType) === "section") {
         push(editorReducer(data, {
-          type: "INSERT_BLOCK_IN_CONTAINER",
-          container: { blockId: containerId, columnIndex },
+          type: "ADD_SECTION",
           block: newBlock,
           index,
         }));
-        recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: index ?? 0, timestamp: Date.now() });
         handleSelectBlock(newBlock.id);
-        showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+        showToast(`Đã thêm section ${newBlock.label || newBlock.type}`);
       } else {
-        push(editorReducer(data, {
-          type: "INSERT_BLOCK",
-          block: newBlock,
-          index,
-        }));
-        recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: index ?? data.blocks.length, timestamp: Date.now() });
-        handleSelectBlock(newBlock.id);
-        showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+        const targetSectionId = containerId || (data.blocks[0]?.id);
+        if (targetSectionId) {
+          push(editorReducer(data, {
+            type: "ADD_ELEMENT_TO_SECTION",
+            sectionId: targetSectionId,
+            block: newBlock,
+            x: x ?? 50,
+            y: y ?? 50,
+          }));
+          handleSelectBlock(newBlock.id);
+          showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+        } else {
+          const emptySection = ensureOnlookBlockMeta(createDefaultBlock("box"));
+          emptySection.kind = "section";
+          emptySection.label = "Section";
+          emptySection.props = {
+            ...emptySection.props,
+            bgColor: "transparent",
+            borderColor: "transparent",
+            borderWidth: 0,
+            borderRadius: 0,
+            paddingX: 0,
+            paddingY: 0,
+            shadow: "none",
+            title: "",
+            description: "",
+          };
+          emptySection.frame = { x: 0, y: 0, width: 1200, height: 600, zIndex: 1 };
+          
+          newBlock.parentId = emptySection.id;
+          newBlock.frame = {
+            x: x ?? 50,
+            y: y ?? 50,
+            width: newBlock.frame?.width ?? 160,
+            height: newBlock.frame?.height ?? 40,
+            zIndex: 10,
+            rotate: 0,
+          };
+          emptySection.children = [newBlock];
+          
+          push(editorReducer(data, {
+            type: "ADD_SECTION",
+            block: emptySection,
+          }));
+          handleSelectBlock(newBlock.id);
+          showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+        }
       }
     } else if (item.id) {
-      push(editorReducer(data, {
-        type: "MOVE_BLOCK_TO_PATH",
-        blockId: item.id,
-        containerId,
-        columnIndex,
-        index: index ?? 0,
-      }));
-      recordAction({ type: "move-element", blockId: item.id, fromIndex: -1, toIndex: index ?? 0, timestamp: Date.now() });
+      if (containerId) {
+        const current = findBlockRecursive(data.blocks, item.id);
+        if (current) {
+          let nextData = editorReducer(data, {
+            type: "MOVE_BLOCK_TO_PATH",
+            blockId: item.id,
+            containerId,
+            columnIndex,
+            index: index ?? 0,
+          });
+          if (x !== undefined && y !== undefined) {
+            nextData = editorReducer(nextData, {
+              type: "UPDATE_NODE_FRAME",
+              blockId: item.id,
+              frame: { x, y }
+            });
+          }
+          push(nextData);
+          recordAction({ type: "move-element", blockId: item.id, fromIndex: -1, toIndex: index ?? 0, timestamp: Date.now() });
+        }
+      }
     }
   }, [data, handleSelectBlock, push, recordAction, showToast]);
 
@@ -118,16 +172,73 @@ export function useEditorBlockActions({
         ...customProps,
       },
     });
-    const selectedBlock = selectedId ? findBlockRecursive(data.blocks, selectedId) : null;
-    const canInsertInside = selectedBlock && canNodeHaveChildren(selectedBlock);
-    push(editorReducer(data, canInsertInside
-      ? { type: "INSERT_BLOCK_IN_CONTAINER", container: { blockId: selectedBlock.id }, block: newBlock }
-      : { type: "INSERT_BLOCK", block: newBlock, index: data.blocks.length }
-    ));
-    recordAction({ type: "insert-element", blockId: newBlock.id, blockType, index: data.blocks.length, timestamp: Date.now() });
-    handleSelectBlock(newBlock.id);
-    showToast(`ÄÃ£ thÃªm ${newBlock.label}`);
-  }, [data, handleSelectBlock, push, recordAction, selectedId, showToast]);
+
+    if (getNodeKind(blockType) === "section") {
+      push(editorReducer(data, { type: "ADD_SECTION", block: newBlock }));
+      handleSelectBlock(newBlock.id);
+      showToast(`Đã thêm section ${newBlock.label || newBlock.type}`);
+    } else {
+      let targetSectionId = "";
+      if (selectedId) {
+        const selectedBlock = findBlockRecursive(data.blocks, selectedId);
+        if (selectedBlock?.kind === "section") {
+          targetSectionId = selectedBlock.id;
+        } else if (selectedBlock?.parentId) {
+          targetSectionId = selectedBlock.parentId;
+        }
+      }
+      if (!targetSectionId && data.blocks.length > 0) {
+        targetSectionId = data.blocks[data.blocks.length - 1].id;
+      }
+
+      if (targetSectionId) {
+        push(editorReducer(data, {
+          type: "ADD_ELEMENT_TO_SECTION",
+          sectionId: targetSectionId,
+          block: newBlock,
+          x: 100,
+          y: 100,
+        }));
+        handleSelectBlock(newBlock.id);
+        showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+      } else {
+        const emptySection = ensureOnlookBlockMeta(createDefaultBlock("box"));
+        emptySection.kind = "section";
+        emptySection.label = "Section";
+        emptySection.props = {
+          ...emptySection.props,
+          bgColor: "transparent",
+          borderColor: "transparent",
+          borderWidth: 0,
+          borderRadius: 0,
+          paddingX: 0,
+          paddingY: 0,
+          shadow: "none",
+          title: "",
+          description: "",
+        };
+        emptySection.frame = { x: 0, y: 0, width: 1200, height: 600, zIndex: 1 };
+        
+        newBlock.parentId = emptySection.id;
+        newBlock.frame = {
+          x: 100,
+          y: 100,
+          width: newBlock.frame?.width ?? 160,
+          height: newBlock.frame?.height ?? 40,
+          zIndex: 10,
+          rotate: 0,
+        };
+        emptySection.children = [newBlock];
+
+        push(editorReducer(data, {
+          type: "ADD_SECTION",
+          block: emptySection,
+        }));
+        handleSelectBlock(newBlock.id);
+        showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+      }
+    }
+  }, [data, handleSelectBlock, push, selectedId, showToast]);
 
   const handleMoveBlock = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
@@ -154,7 +265,7 @@ export function useEditorBlockActions({
       recordAction({ type: "remove-element", blockId: removed.id, blockType: removed.type, timestamp: Date.now() });
     }
     if (selectedId === id) handleSelectBlock(null);
-    showToast("ÄÃ£ xÃ³a khá»‘i", "info");
+    showToast("Đã xóa khối", "info");
   }, [data, handleSelectBlock, push, recordAction, selectedId, showToast]);
 
   const handleDuplicateBlock = useCallback((id: string) => {
@@ -165,7 +276,7 @@ export function useEditorBlockActions({
     push(editorReducer(data, { type: "DUPLICATE_BLOCK", blockId: id, newBlockId }));
     recordAction({ type: "insert-element", blockId: newBlockId, blockType: original.type, index: Math.max(0, index + 1), timestamp: Date.now() });
     handleSelectBlock(newBlockId);
-    showToast(`ÄÃ£ nhÃ¢n Ä‘Ã´i ${original.label}`);
+    showToast(`Đã nhân đôi ${original.label}`);
   }, [data, handleSelectBlock, push, recordAction, showToast]);
 
   const handleUpdateBlock = useCallback((id: string, newProps: Record<string, unknown>) => {
@@ -184,17 +295,17 @@ export function useEditorBlockActions({
   }, [data, push, recordAction]);
 
   const handleClearCanvas = useCallback(() => {
-    if (!confirm("Báº¡n cÃ³ muá»‘n xÃ³a táº¥t cáº£ cÃ¡c block trÃªn trang nÃ y?")) return;
+    if (!confirm("Bạn có muốn xóa tất cả các block trên trang này?")) return;
     push(editorReducer(data, { type: "CLEAR_CANVAS" }));
     setSelectedId(null);
     recordAction({ type: "update-page-settings", key: "clear-canvas", timestamp: Date.now() });
-    showToast("ÄÃ£ dá»n sáº¡ch canvas", "info");
+    showToast("Đã dọn sạch canvas", "info");
   }, [data, push, recordAction, setSelectedId, showToast]);
 
   const handleApplyTemplate = useCallback((templateId: string, mode: "append" | "replace" = "append") => {
     const templateBlocks = instantiateTemplateBlocks(templateId);
     if (templateBlocks.length === 0) return;
-    if (mode === "replace" && data.blocks.length > 0 && !confirm("Thay toÃ n bá»™ canvas báº±ng máº«u nÃ y?")) return;
+    if (mode === "replace" && data.blocks.length > 0 && !confirm("Thay toàn bộ canvas bằng mẫu này?")) return;
 
     push(editorReducer(data, { type: "APPLY_TEMPLATE", blocks: templateBlocks, mode }));
     templateBlocks.forEach((block, offset) => {
@@ -207,7 +318,7 @@ export function useEditorBlockActions({
       });
     });
     handleSelectBlock(templateBlocks[0].id);
-    showToast(mode === "replace" ? "ÄÃ£ Ã¡p dá»¥ng máº«u trang má»›i" : "ÄÃ£ chÃ¨n máº«u thiáº¿t káº¿", "success");
+    showToast(mode === "replace" ? "Đã áp dụng mẫu trang mới" : "Đã chèn mẫu thiết kế", "success");
   }, [data, handleSelectBlock, push, recordAction, showToast]);
 
   const handleUseAsset = useCallback((url: string, name: string) => {
@@ -215,24 +326,58 @@ export function useEditorBlockActions({
       const current = findBlockRecursive(data.blocks, selectedId);
       if (current?.type === "image") {
         handleUpdateBlock(current.id, { ...current.props, src: url, alt: name });
-        showToast(`ÄÃ£ gÃ¡n áº£nh ${name}`, "success");
+        showToast(`Đã gán ảnh ${name}`, "success");
         return;
       }
       if (current?.type === "hero") {
         handleUpdateBlock(current.id, { ...current.props, bgImage: url });
-        showToast(`ÄÃ£ gÃ¡n áº£nh ná»n ${name}`, "success");
+        showToast(`Đã gán ảnh nền ${name}`, "success");
         return;
       }
       if (current?.type === "testimonial") {
         handleUpdateBlock(current.id, { ...current.props, authorAvatar: url });
-        showToast(`ÄÃ£ gÃ¡n avatar ${name}`, "success");
+        showToast(`Đã gán avatar ${name}`, "success");
         return;
       }
     }
 
     navigator.clipboard?.writeText(url);
-    showToast(`ÄÃ£ copy link áº£nh: ${name}`, "info");
+    showToast(`Đã copy link ảnh: ${name}`, "info");
   }, [data.blocks, handleUpdateBlock, selectedId, showToast]);
+
+  const handleUpdateNodeFrame = useCallback((id: string, frame: Partial<ElementFrame>) => {
+    push(editorReducer(data, { type: "UPDATE_NODE_FRAME", blockId: id, frame }));
+  }, [data, push]);
+
+  const handleUpdateResponsiveFrame = useCallback((id: string, deviceMode: "desktop" | "tablet" | "mobile", frame: Partial<ElementFrame>) => {
+    push(editorReducer(data, { type: "UPDATE_RESPONSIVE_FRAME", blockId: id, deviceMode, frame }));
+  }, [data, push]);
+
+  const handleAddSection = useCallback((blockType: BlockType, index?: number) => {
+    const newSection = ensureOnlookBlockMeta(createDefaultBlock(blockType));
+    push(editorReducer(data, { type: "ADD_SECTION", block: newSection, index }));
+    handleSelectBlock(newSection.id);
+    showToast(`Đã thêm section ${newSection.label || newSection.type}`);
+  }, [data, handleSelectBlock, push, showToast]);
+
+  const handleAddElementToSection = useCallback((sectionId: string, blockType: BlockType, x: number, y: number) => {
+    const newBlock = ensureOnlookBlockMeta(createDefaultBlock(blockType));
+    push(editorReducer(data, { type: "ADD_ELEMENT_TO_SECTION", sectionId, block: newBlock, x, y }));
+    handleSelectBlock(newBlock.id);
+    showToast(`Đã thêm ${newBlock.label || newBlock.type}`);
+  }, [data, handleSelectBlock, push, showToast]);
+
+  const handleMoveNodeZIndex = useCallback((id: string, direction: "forward" | "backward") => {
+    push(editorReducer(data, { type: "MOVE_NODE_Z_INDEX", blockId: id, direction }));
+  }, [data, push]);
+
+  const handleSetBlockLocked = useCallback((id: string, locked: boolean) => {
+    push(editorReducer(data, { type: "SET_BLOCK_LOCKED", blockId: id, locked }));
+  }, [data, push]);
+
+  const handleSetBlockHidden = useCallback((id: string, hidden: boolean) => {
+    push(editorReducer(data, { type: "SET_BLOCK_HIDDEN", blockId: id, hidden }));
+  }, [data, push]);
 
   return {
     handleAddBlock,
@@ -250,5 +395,12 @@ export function useEditorBlockActions({
     handleUpdateBlock,
     handleUpdatePageSettings,
     handleUseAsset,
+    handleUpdateNodeFrame,
+    handleUpdateResponsiveFrame,
+    handleAddSection,
+    handleAddElementToSection,
+    handleMoveNodeZIndex,
+    handleSetBlockLocked,
+    handleSetBlockHidden,
   };
 }

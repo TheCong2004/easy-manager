@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import { useDrop, useDrag } from "react-dnd";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useDrop } from "react-dnd";
 import {
-  EditorBlock, BlockType, DND_TYPES, PaletteDragItem, CanvasDragItem,
-  DeviceMode, DEVICE_WIDTHS, ONLOOK_ATTRIBUTES, ensureOnlookBlockMeta, canNodeHaveChildren,
+  EditorBlock, BlockType, DND_TYPES, DeviceMode, DEVICE_WIDTHS,
+  ONLOOK_ATTRIBUTES, ensureOnlookBlockMeta, ElementFrame, getEffectiveFrame,
+  getNodeKind,
 } from "./types";
 import { HeroBlock } from "./blocks/HeroBlock";
 import { TextBlock } from "./blocks/TextBlock";
@@ -19,9 +20,6 @@ import {
   CarouselBlock, TabsBlock, FrameBlock, AccordionBlock, TableBlock,
   SurveyBlock, MenuBlock, HtmlCodeBlock
 } from "./blocks/NewLadiBlocks";
-import { CartProvider, useCart } from "../cart/CartContext";
-import { CartDrawer } from "../cart/CartDrawer";
-import { CheckoutModal } from "../cart/CheckoutModal";
 
 // ── Block Renderer ────────────────────────────────────────────
 const BlockRenderer: React.FC<{
@@ -64,422 +62,323 @@ const BlockRenderer: React.FC<{
     case "survey": return <SurveyBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "menu": return <MenuBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "html_code": return <HtmlCodeBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "columns":
-      return (
-        <div
-          onClick={onSelect}
-          className={`relative w-full p-4 cursor-pointer transition-all ${
-            isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
-          }`}
-        >
-          <div
-            className="grid w-full"
-            style={{ gridTemplateColumns: `repeat(${block.props.columns}, 1fr)`, gap: block.props.gap }}
-          >
-            {Array.from({ length: block.props.columns }).map((_, ci) => (
-              <div
-                key={ci}
-                className="min-h-24 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-sm"
-              >
-                Cột {ci + 1}
-              </div>
-            ))}
-          </div>
-          {isSelected && (
-            <div className="absolute top-1 left-1 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
-              COLUMNS
-            </div>
-          )}
-        </div>
-      );
     default:
       return null;
   }
 };
 
-// ── Sortable Block Wrapper (handles canvas reorder drag) ──────
-const SortableBlock: React.FC<{
+// ── Floating Toolbar ──────────────────────────────────────────
+const FloatingToolbar: React.FC<{
   block: EditorBlock;
-  index: number;
-  parentId?: string;
-  columnIndex?: number;
-  depth?: number;
-  selectedId: string | null;
-  isSelected: boolean;
-  onSelect: () => void;
-  onSelectBlock: (id: string | null) => void;
-  onMove: (fromIndex: number, toIndex: number) => void;
-  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onMoveUp: (index: number) => void;
-  onMoveDown: (index: number) => void;
-  onDropItem: (
-    item: { id?: string; type?: BlockType; isPalette?: boolean },
-    containerId?: string,
-    columnIndex?: number,
-    index?: number
-  ) => void;
-  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
-  isFirst: boolean;
-  isLast: boolean;
-}> = ({
-  block,
-  index,
-  parentId,
-  columnIndex,
-  depth = 0,
-  selectedId,
-  isSelected,
-  onSelect,
-  onSelectBlock,
-  onMove,
-  onMoveWithinParent,
-  onDelete,
-  onDuplicate,
-  onMoveUp,
-  onMoveDown,
-  onDropItem,
-  onUpdateBlock,
-  isFirst,
-  isLast,
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const metaBlock = ensureOnlookBlockMeta(block);
-  const canHaveChildren = canNodeHaveChildren(metaBlock);
-
-  const [{ isDragging }, drag] = useDrag<CanvasDragItem, unknown, { isDragging: boolean }>({
-    type: DND_TYPES.CANVAS_BLOCK,
-    item: { type: DND_TYPES.CANVAS_BLOCK, blockId: block.id, index, parentId, columnIndex },
-    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-  });
-
-  const [{ isOver, canDrop }, drop] = useDrop<CanvasDragItem, unknown, { isOver: boolean; canDrop: boolean }>({
-    accept: DND_TYPES.CANVAS_BLOCK,
-    hover: (dragItem) => {
-      if (dragItem.index === index) return;
-      if (dragItem.parentId !== parentId || dragItem.columnIndex !== columnIndex) return;
-      if (parentId || typeof columnIndex === "number") {
-        onMoveWithinParent(parentId, columnIndex, dragItem.index, index);
-      } else {
-        onMove(dragItem.index, index);
-      }
-      dragItem.index = index;
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
-    }),
-  });
-
-  drag(drop(ref));
-
+  zoom: number;
+  onDelete: () => void;
+  onDuplicate: () => void;
+  onBringForward: () => void;
+  onSendBackward: () => void;
+}> = ({ block, zoom, onDelete, onDuplicate, onBringForward, onSendBackward }) => {
   return (
     <div
-      ref={ref}
-      className="relative group"
-      style={{ opacity: isDragging ? 0.4 : 1 }}
-      {...{
-        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_ID]: metaBlock.oid,
-        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_INSTANCE_ID]: metaBlock.instanceId,
-        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_DOM_ID]: metaBlock.domId,
-        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_COMPONENT_NAME]: metaBlock.componentName,
+      className="absolute bg-gray-900/95 text-white flex items-center gap-1 p-1 rounded-lg shadow-xl z-50 border border-gray-800 select-none whitespace-nowrap"
+      style={{
+        top: `-${40 / zoom}px`,
+        right: 0,
+        transformOrigin: "top right",
+        fontSize: `${11 / zoom}px`,
       }}
     >
-      {/* Drop indicator top */}
-      {isOver && canDrop && (
-        <div className="absolute -top-0.5 left-0 right-0 h-1 bg-purple-500 rounded z-30" />
-      )}
-
-      {/* Block content */}
-      <BlockRenderer block={block} isSelected={isSelected} onSelect={onSelect} onUpdateBlock={onUpdateBlock} />
-
-      {canHaveChildren && block.type !== "columns" && (
-        <NodeChildren
-          parentId={block.id}
-          blocks={block.children ?? []}
-          selectedId={selectedId}
-          onSelectBlock={onSelectBlock}
-          onDropItem={onDropItem}
-          onMove={onMove}
-          onMoveWithinParent={onMoveWithinParent}
-          onDelete={onDelete}
-          onDuplicate={onDuplicate}
-          onUpdateBlock={onUpdateBlock}
-          depth={depth + 1}
-        />
-      )}
-
-      {block.type === "columns" && (
-        <ColumnsChildren
-          block={block}
-          selectedId={selectedId}
-          onSelectBlock={onSelectBlock}
-          onDropItem={onDropItem}
-          onMove={onMove}
-          onMoveWithinParent={onMoveWithinParent}
-          onDelete={onDelete}
-          onDuplicate={onDuplicate}
-          onUpdateBlock={onUpdateBlock}
-          depth={depth + 1}
-        />
-      )}
-
-      {/* Hover toolbar — shows on hover or selected */}
-      <div
-        className={`absolute right-2 top-2 z-20 flex items-center gap-1 transition-opacity ${
-          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
+      <button
+        onClick={(e) => { e.stopPropagation(); onBringForward(); }}
+        title="Lên trên (zIndex + 1)"
+        className="px-2 py-1 rounded hover:bg-gray-800 flex items-center justify-center font-bold"
       >
-        {/* Drag handle */}
-        <button
-          title="Kéo để sắp xếp"
-          className="w-7 h-7 flex items-center justify-center rounded bg-gray-800/80 text-gray-300 hover:bg-gray-700 cursor-grab active:cursor-grabbing"
+        ▲
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); onSendBackward(); }}
+        title="Xuống dưới (zIndex - 1)"
+        className="px-2 py-1 rounded hover:bg-gray-800 flex items-center justify-center font-bold"
+      >
+        ▼
+      </button>
+      <div className="w-[1px] h-4 bg-gray-800 self-center mx-1" />
+      <button
+        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+        title="Nhân đôi"
+        className="px-2 py-1 rounded hover:bg-gray-800"
+      >
+        Nhân đôi
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        title="Xóa"
+        className="px-2 py-1 rounded bg-red-650/80 hover:bg-red-650"
+      >
+        Xóa
+      </button>
+    </div>
+  );
+};
+
+// ── Selection Overlay ─────────────────────────────────────────
+const SelectionOverlay: React.FC<{
+  block: EditorBlock;
+  frame: ElementFrame;
+  zoom: number;
+  onPointerDownResize: (e: React.PointerEvent, direction: string) => void;
+  onPointerDownRotate: (e: React.PointerEvent) => void;
+}> = ({ block, frame, zoom, onPointerDownResize, onPointerDownRotate }) => {
+  const handleSize = 7 / zoom;
+  const offset = 1 / zoom;
+
+  const overlayStyle: React.CSSProperties = {
+    position: "absolute",
+    inset: `-${offset}px`,
+    border: "1.5px dashed #8b5cf6", // violet-500
+    pointerEvents: "none",
+    borderRadius: "2px",
+    zIndex: 1000,
+  };
+
+  const handleBaseStyle = (cursor: string): React.CSSProperties => ({
+    position: "absolute",
+    width: `${handleSize}px`,
+    height: `${handleSize}px`,
+    backgroundColor: "#ffffff",
+    border: "1.5px solid #8b5cf6",
+    cursor,
+    pointerEvents: "auto",
+    zIndex: 1001,
+  });
+
+  const rotateHandleStyle: React.CSSProperties = {
+    position: "absolute",
+    bottom: `-${24 / zoom}px`,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: `${14 / zoom}px`,
+    height: `${14 / zoom}px`,
+    borderRadius: "50%",
+    backgroundColor: "#ffffff",
+    border: "1.5px solid #8b5cf6",
+    cursor: "alias",
+    pointerEvents: "auto",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1002,
+  };
+
+  return (
+    <div style={overlayStyle}>
+      <div
+        className="absolute bg-purple-650 text-white font-extrabold rounded select-none tracking-wider uppercase"
+        style={{
+          top: `-${18 / zoom}px`,
+          left: `-${offset}px`,
+          fontSize: `${9 / zoom}px`,
+          padding: `${1 / zoom}px ${4 / zoom}px`,
+          transformOrigin: "top left",
+        }}
+      >
+        {block.type}
+      </div>
+
+      <div
+        data-handle="top"
+        style={{ ...handleBaseStyle("ns-resize"), top: `-${handleSize / 2}px`, left: "50%", transform: "translateX(-50%)" }}
+        onPointerDown={(e) => onPointerDownResize(e, "top")}
+      />
+      <div
+        data-handle="bottom"
+        style={{ ...handleBaseStyle("ns-resize"), bottom: `-${handleSize / 2}px`, left: "50%", transform: "translateX(-50%)" }}
+        onPointerDown={(e) => onPointerDownResize(e, "bottom")}
+      />
+      <div
+        data-handle="left"
+        style={{ ...handleBaseStyle("ew-resize"), left: `-${handleSize / 2}px`, top: "50%", transform: "translateY(-50%)" }}
+        onPointerDown={(e) => onPointerDownResize(e, "left")}
+      />
+      <div
+        data-handle="right"
+        style={{ ...handleBaseStyle("ew-resize"), right: `-${handleSize / 2}px`, top: "50%", transform: "translateY(-50%)" }}
+        onPointerDown={(e) => onPointerDownResize(e, "right")}
+      />
+      <div
+        data-handle="top-left"
+        style={{ ...handleBaseStyle("nwse-resize"), top: `-${handleSize / 2}px`, left: `-${handleSize / 2}px` }}
+        onPointerDown={(e) => onPointerDownResize(e, "top-left")}
+      />
+      <div
+        data-handle="top-right"
+        style={{ ...handleBaseStyle("nesw-resize"), top: `-${handleSize / 2}px`, right: `-${handleSize / 2}px` }}
+        onPointerDown={(e) => onPointerDownResize(e, "top-right")}
+      />
+      <div
+        data-handle="bottom-left"
+        style={{ ...handleBaseStyle("nesw-resize"), bottom: `-${handleSize / 2}px`, left: `-${handleSize / 2}px` }}
+        onPointerDown={(e) => onPointerDownResize(e, "bottom-left")}
+      />
+      <div
+        data-handle="bottom-right"
+        style={{ ...handleBaseStyle("nwse-resize"), bottom: `-${handleSize / 2}px`, right: `-${handleSize / 2}px` }}
+        onPointerDown={(e) => onPointerDownResize(e, "bottom-right")}
+      />
+
+      <div
+        data-handle="rotate"
+        style={rotateHandleStyle}
+        onPointerDown={onPointerDownRotate}
+        title="Xoay phần tử"
+      >
+        <svg
+          style={{ width: `${8 / zoom}px`, height: `${8 / zoom}px`, color: "#8b5cf6" }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3.5"
+          viewBox="0 0 24 24"
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
-          </svg>
-        </button>
-        {/* Move up */}
-        {!isFirst && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onMoveUp(index); }}
-            title="Lên"
-            className="w-7 h-7 flex items-center justify-center rounded bg-gray-800/80 text-gray-300 hover:bg-gray-700"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-            </svg>
-          </button>
-        )}
-        {/* Move down */}
-        {!isLast && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onMoveDown(index); }}
-            title="Xuống"
-            className="w-7 h-7 flex items-center justify-center rounded bg-gray-800/80 text-gray-300 hover:bg-gray-700"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-        )}
-        {/* Duplicate */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onDuplicate(block.id); }}
-          title="Nhân đôi"
-          className="w-7 h-7 flex items-center justify-center rounded bg-gray-800/80 text-gray-300 hover:bg-gray-700"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-          </svg>
-        </button>
-        {/* Delete */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
-          title="Xóa block"
-          className="w-7 h-7 flex items-center justify-center rounded bg-red-600/80 text-white hover:bg-red-600"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
       </div>
     </div>
   );
 };
 
-// ── Drop Zone (empty canvas or between blocks) ────────────────
-const NodeChildren: React.FC<{
-  parentId: string;
-  blocks: EditorBlock[];
-  selectedId: string | null;
-  onSelectBlock: (id: string | null) => void;
-  onDropItem: (
-    item: { id?: string; type?: BlockType; isPalette?: boolean },
-    containerId?: string,
-    columnIndex?: number,
-    index?: number
-  ) => void;
-  onMove: (fromIndex: number, toIndex: number) => void;
-  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
-  depth: number;
-}> = ({
-  parentId,
-  blocks,
-  selectedId,
-  onSelectBlock,
-  onDropItem,
-  onMove,
-  onMoveWithinParent,
-  onDelete,
-  onDuplicate,
-  onUpdateBlock,
-  depth,
-}) => (
-  <div className="px-3 pb-3">
-    {blocks.length === 0 ? (
-      <DropZone
-        containerId={parentId}
-        index={0}
-        onDropItem={onDropItem}
-      />
-    ) : (
-      <>
-        {blocks.map((child, childIndex) => (
-          <React.Fragment key={child.id}>
-            <DropZone
-              isCompact
-              containerId={parentId}
-              index={childIndex}
-              onDropItem={onDropItem}
-            />
-            <SortableBlock
-              block={child}
-              index={childIndex}
-              parentId={parentId}
-              depth={depth}
-              selectedId={selectedId}
-              isSelected={selectedId === child.id}
-              onSelect={() => onSelectBlock(child.id)}
-              onSelectBlock={onSelectBlock}
-              onMove={onMove}
-              onMoveWithinParent={onMoveWithinParent}
-              onDelete={onDelete}
-              onDuplicate={onDuplicate}
-              onMoveUp={(index) => onMoveWithinParent(parentId, undefined, index, index - 1)}
-              onMoveDown={(index) => onMoveWithinParent(parentId, undefined, index, index + 1)}
-              onDropItem={onDropItem}
-              onUpdateBlock={onUpdateBlock}
-              isFirst={childIndex === 0}
-              isLast={childIndex === blocks.length - 1}
-            />
-          </React.Fragment>
-        ))}
-        <DropZone
-          isCompact
-          containerId={parentId}
-          index={blocks.length}
-          onDropItem={onDropItem}
-        />
-      </>
-    )}
-  </div>
-);
-
-const ColumnsChildren: React.FC<{
+// ── Element Absolute Container Wrapper ───────────────────────
+const AbsoluteElementWrapper: React.FC<{
   block: EditorBlock;
-  selectedId?: string | null;
-  onSelectBlock: (id: string | null) => void;
-  onDropItem: (
-    item: { id?: string; type?: BlockType; isPalette?: boolean },
-    containerId?: string,
-    columnIndex?: number,
-    index?: number
-  ) => void;
-  onMove: (fromIndex: number, toIndex: number) => void;
-  onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
+  isSelected: boolean;
+  deviceMode: DeviceMode;
+  zoom: number;
+  onSelect: (e: React.MouseEvent) => void;
+  onPointerDownDrag: (e: React.PointerEvent, block: EditorBlock) => void;
+  onPointerDownResize: (e: React.PointerEvent, block: EditorBlock, direction: string) => void;
+  onPointerDownRotate: (e: React.PointerEvent, block: EditorBlock) => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
-  depth: number;
-}> = ({ block, selectedId, onSelectBlock, onDropItem, onMove, onMoveWithinParent, onDelete, onDuplicate, onUpdateBlock, depth }) => {
-  const columns = Array.isArray(block.props.children) ? block.props.children as EditorBlock[][] : [];
-  const count = Number(block.props.columns) || Math.max(2, columns.length);
+  onDeleteBlock: (id: string) => void;
+  onDuplicateBlock: (id: string) => void;
+  onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
+  draftFrame: Partial<ElementFrame> | null;
+}> = ({
+  block,
+  isSelected,
+  deviceMode,
+  zoom,
+  onSelect,
+  onPointerDownDrag,
+  onPointerDownResize,
+  onPointerDownRotate,
+  onUpdateBlock,
+  onDeleteBlock,
+  onDuplicateBlock,
+  onMoveNodeZIndex,
+  draftFrame,
+}) => {
+  const frame = getEffectiveFrame(block, deviceMode);
+  const finalX = draftFrame?.x !== undefined ? draftFrame.x : frame.x;
+  const finalY = draftFrame?.y !== undefined ? draftFrame.y : frame.y;
+  const finalW = draftFrame?.width !== undefined ? draftFrame.width : frame.width;
+  const finalH = draftFrame?.height !== undefined ? draftFrame.height : frame.height;
+  const finalZ = draftFrame?.zIndex !== undefined ? draftFrame.zIndex : frame.zIndex;
+  const finalR = draftFrame?.rotate !== undefined ? draftFrame.rotate : (frame.rotate || 0);
+
+  const style: React.CSSProperties = {
+    position: "absolute",
+    left: `${finalX}px`,
+    top: `${finalY}px`,
+    width: `${finalW}px`,
+    height: `${finalH}px`,
+    zIndex: finalZ,
+    transform: finalR ? `rotate(${finalR}deg)` : undefined,
+    userSelect: "none",
+  };
 
   return (
-    <div className="grid gap-3 px-3 pb-3" style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
-      {Array.from({ length: count }).map((_, columnIndex) => {
-        const children = columns[columnIndex] ?? [];
-        return (
-          <div key={columnIndex} className="min-h-20 rounded-xl border border-dashed border-gray-250 bg-white/70 p-2">
-            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-gray-400">Column {columnIndex + 1}</div>
-            {children.length === 0 ? (
-              <DropZone
-                containerId={block.id}
-                columnIndex={columnIndex}
-                index={0}
-                onDropItem={onDropItem}
-              />
-            ) : (
-              <>
-                {children.map((child, childIndex) => (
-                  <React.Fragment key={child.id}>
-                    <DropZone
-                      isCompact
-                      containerId={block.id}
-                      columnIndex={columnIndex}
-                      index={childIndex}
-                      onDropItem={onDropItem}
-                    />
-                    <SortableBlock
-                      block={child}
-                      index={childIndex}
-                      parentId={block.id}
-                      columnIndex={columnIndex}
-                      depth={depth}
-                      selectedId={selectedId ?? null}
-                      isSelected={selectedId === child.id}
-                      onSelect={() => onSelectBlock(child.id)}
-                      onSelectBlock={onSelectBlock}
-                      onMove={onMove}
-                      onMoveWithinParent={onMoveWithinParent}
-                      onDelete={onDelete}
-                      onDuplicate={onDuplicate}
-                      onMoveUp={(index) => onMoveWithinParent(block.id, columnIndex, index, index - 1)}
-                      onMoveDown={(index) => onMoveWithinParent(block.id, columnIndex, index, index + 1)}
-                      onDropItem={onDropItem}
-                      onUpdateBlock={onUpdateBlock}
-                      isFirst={childIndex === 0}
-                      isLast={childIndex === children.length - 1}
-                    />
-                  </React.Fragment>
-                ))}
-                <DropZone
-                  isCompact
-                  containerId={block.id}
-                  columnIndex={columnIndex}
-                  index={children.length}
-                  onDropItem={onDropItem}
-                />
-              </>
-            )}
-          </div>
-        );
-      })}
+    <div
+      style={style}
+      onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest("[data-handle]")) return;
+        onPointerDownDrag(e, block);
+      }}
+      onClick={onSelect}
+      id={block.id}
+      {...{
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_ID]: block.oid,
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_INSTANCE_ID]: block.instanceId,
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_DOM_ID]: block.domId,
+        [ONLOOK_ATTRIBUTES.DATA_ONLOOK_COMPONENT_NAME]: block.componentName,
+      }}
+    >
+      <div style={{ width: "100%", height: "100%", pointerEvents: "none" }}>
+        <BlockRenderer block={block} isSelected={false} onSelect={() => {}} onUpdateBlock={onUpdateBlock} />
+      </div>
+
+      {isSelected && (
+        <>
+          <SelectionOverlay
+            block={block}
+            frame={{ x: finalX, y: finalY, width: finalW, height: finalH, zIndex: finalZ, rotate: finalR }}
+            zoom={zoom}
+            onPointerDownResize={(e, dir) => onPointerDownResize(e, block, dir)}
+            onPointerDownRotate={(e) => onPointerDownRotate(e, block)}
+          />
+          <FloatingToolbar
+            block={block}
+            zoom={zoom}
+            onDelete={() => onDeleteBlock(block.id)}
+            onDuplicate={() => onDuplicateBlock(block.id)}
+            onBringForward={() => onMoveNodeZIndex(block.id, "forward")}
+            onSendBackward={() => onMoveNodeZIndex(block.id, "backward")}
+          />
+        </>
+      )}
     </div>
   );
 };
 
-// ── Drop Zone (recursive canvas & container drops) ────────────────
-const DropZone: React.FC<{
-  containerId?: string;
-  columnIndex?: number;
-  index: number;
+// ── Section Drop Zone Wrapper ─────────────────────────────────
+const SectionDropZoneWrapper: React.FC<{
+  section: EditorBlock;
+  zoom: number;
   onDropItem: (
     item: { id?: string; type?: BlockType; isPalette?: boolean },
     containerId?: string,
     columnIndex?: number,
-    index?: number
+    index?: number,
+    x?: number,
+    y?: number
   ) => void;
-  isCompact?: boolean;
-}> = ({ containerId, columnIndex, index, onDropItem, isCompact = false }) => {
+  children: React.ReactNode;
+}> = ({ section, zoom, onDropItem, children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
   const [{ isOver, canDrop }, drop] = useDrop<
     { type: string; blockType?: BlockType; blockId?: string },
     unknown,
     { isOver: boolean; canDrop: boolean }
   >({
     accept: [DND_TYPES.PALETTE_BLOCK, DND_TYPES.CANVAS_BLOCK],
+    canDrop: (item) => {
+      if (item.type === DND_TYPES.PALETTE_BLOCK) {
+        return getNodeKind(item.blockType || "box") !== "section";
+      }
+      return true;
+    },
     drop: (item, monitor) => {
       if (monitor.didDrop()) return;
+
+      const clientOffset = monitor.getClientOffset();
+      if (!clientOffset || !ref.current) return;
+
+      const rect = ref.current.getBoundingClientRect();
+      const dropX = Math.round((clientOffset.x - rect.left) / zoom);
+      const dropY = Math.round((clientOffset.y - rect.top) / zoom);
+
       if (item.type === DND_TYPES.PALETTE_BLOCK && item.blockType) {
-        onDropItem({ type: item.blockType, isPalette: true }, containerId, columnIndex, index);
+        onDropItem({ type: item.blockType, isPalette: true }, section.id, undefined, undefined, dropX, dropY);
       } else if (item.type === DND_TYPES.CANVAS_BLOCK && item.blockId) {
-        if (item.blockId === containerId) return;
-        onDropItem({ id: item.blockId }, containerId, columnIndex, index);
+        if (item.blockId === section.id) return;
+        onDropItem({ id: item.blockId }, section.id, undefined, undefined, dropX, dropY);
       }
     },
     collect: (monitor) => ({
@@ -488,62 +387,75 @@ const DropZone: React.FC<{
     }),
   });
 
-  if (isCompact) {
-    return (
-      <div
-        ref={drop as unknown as React.Ref<HTMLDivElement>}
-        className={`transition-all h-2.5 mx-4 my-1 rounded-full ${
-          isOver && canDrop ? "bg-purple-600 h-5 shadow-sm" : canDrop ? "bg-purple-400/20" : "bg-transparent"
-        }`}
-      />
-    );
-  }
+  drop(ref);
 
   return (
     <div
-      ref={drop as unknown as React.Ref<HTMLDivElement>}
-      className={`flex flex-col items-center justify-center gap-3 transition-all rounded-xl border-2 border-dashed mx-3 my-4 ${
-        isOver && canDrop
-          ? "border-purple-500 bg-purple-500/10 scale-[1.01]"
-          : canDrop
-          ? "border-purple-400/40 bg-purple-500/5"
-          : "border-gray-300/40 bg-transparent text-gray-400 hover:border-purple-250 hover:bg-purple-50/55 hover:text-purple-500"
+      ref={ref}
+      className={`relative w-full transition-colors ${
+        isOver && canDrop ? "bg-purple-500/5 ring-1 ring-purple-300" : ""
       }`}
-      style={{ minHeight: 120 }}
     >
-      <div className="w-10 h-10 rounded-xl bg-gray-100/10 flex items-center justify-center pointer-events-none">
-        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-      </div>
-      <div className="text-center pointer-events-none">
-        <p className="text-xs font-semibold text-gray-400">Kéo thả phần tử vào đây</p>
-      </div>
+      {children}
     </div>
   );
 };
 
-// ── Floating Cart Button ──────────────────────────────────────────────────────
-const FloatingCartButton: React.FC = () => {
-  const { totalItems, openDrawer } = useCart();
+// ── Root Section Drop Zone (compact) ──────────────────────────
+const SectionDropZone: React.FC<{
+  index: number;
+  onDropItem: (
+    item: { id?: string; type?: BlockType; isPalette?: boolean },
+    containerId?: string,
+    columnIndex?: number,
+    index?: number
+  ) => void;
+}> = ({ index, onDropItem }) => {
+  const [{ isOver, canDrop }, drop] = useDrop<
+    { type: string; blockType?: BlockType; blockId?: string },
+    unknown,
+    { isOver: boolean; canDrop: boolean }
+  >({
+    accept: [DND_TYPES.PALETTE_BLOCK, DND_TYPES.CANVAS_BLOCK],
+    canDrop: (item) => {
+      if (item.type === DND_TYPES.PALETTE_BLOCK) {
+        return getNodeKind(item.blockType || "box") === "section";
+      }
+      return false;
+    },
+    drop: (item, monitor) => {
+      if (monitor.didDrop()) return;
+      if (item.type === DND_TYPES.PALETTE_BLOCK && item.blockType) {
+        onDropItem({ type: item.blockType, isPalette: true }, undefined, undefined, index);
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver({ shallow: true }),
+      canDrop: monitor.canDrop(),
+    }),
+  });
+
   return (
-    <button
-      onClick={openDrawer}
-      className="fixed bottom-6 right-6 z-[990] flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-2xl shadow-slate-900/30 hover:bg-slate-700 active:scale-95 transition-all duration-200"
-      title="Xem giỏ hàng"
-    >
-      <span className="text-lg">🛒</span>
-      <span className="text-sm font-bold">Giỏ hàng</span>
-      {totalItems > 0 && (
-        <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-red-500 text-[11px] font-black px-1">
-          {totalItems}
-        </span>
-      )}
-    </button>
+    <div
+      ref={drop as unknown as React.Ref<HTMLDivElement>}
+      className={`transition-all h-2 my-1 rounded-full ${
+        isOver && canDrop ? "bg-purple-600 h-5" : canDrop ? "bg-purple-400/20" : "bg-transparent"
+      }`}
+    />
   );
 };
 
-// ── Main Canvas ────────────────────────────────────────────────
+// ── Drag & Resize state types ─────────────────────────────────
+interface DragState {
+  type: "drag" | "resize" | "rotate";
+  blockId: string;
+  baseFrame: ElementFrame;
+  startPointerX: number;
+  startPointerY: number;
+  direction?: string;
+}
+
+// ── Main Canvas ───────────────────────────────────────────────
 interface CanvasProps {
   blocks: EditorBlock[];
   selectedId: string | null;
@@ -555,7 +467,9 @@ interface CanvasProps {
     item: { id?: string; type?: BlockType; isPalette?: boolean },
     containerId?: string,
     columnIndex?: number,
-    index?: number
+    index?: number,
+    x?: number,
+    y?: number
   ) => void;
   onMoveBlock: (fromIndex: number, toIndex: number) => void;
   onMoveWithinParent: (parentId: string | undefined, columnIndex: number | undefined, fromIndex: number, toIndex: number) => void;
@@ -564,6 +478,11 @@ interface CanvasProps {
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  onUpdateNodeFrame: (id: string, frame: Partial<ElementFrame>) => void;
+  onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
+  onAddSection: (blockType: BlockType, index?: number) => void;
+  onAddElementToSection: (sectionId: string, blockType: BlockType, x: number, y: number) => void;
+  onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -574,24 +493,28 @@ export const Canvas: React.FC<CanvasProps> = ({
   pageBgColor,
   onSelectBlock,
   onDropItem,
-  onMoveBlock,
-  onMoveWithinParent,
   onDeleteBlock,
   onDuplicateBlock,
-  onMoveUp,
-  onMoveDown,
   onUpdateBlock,
+  onUpdateNodeFrame,
+  onUpdateResponsiveFrame,
+  onMoveNodeZIndex,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const canvasWidth = DEVICE_WIDTHS[deviceMode];
   const minPageHeight = 1600;
   const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
+  
   const fitZoom = viewportWidth
     ? Math.min(1, Math.max(0.28, (viewportWidth - 48) / canvasWidth))
     : 1;
   const effectiveZoom = Math.min(zoom, fitZoom);
   const scaledWidth = canvasWidth * effectiveZoom;
+
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [draftFrame, setDraftFrame] = useState<Partial<ElementFrame> | null>(null);
+  const [snapGuides, setSnapGuides] = useState<{ vertical?: number; horizontal?: number } | null>(null);
 
   useEffect(() => {
     const node = viewportRef.current;
@@ -602,142 +525,412 @@ export const Canvas: React.FC<CanvasProps> = ({
 
     const resizeObserver = new ResizeObserver(updateViewportWidth);
     resizeObserver.observe(node);
-    window.addEventListener("resize", updateViewportWidth);
 
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", updateViewportWidth);
-    };
+    return () => resizeObserver.disconnect();
   }, []);
 
-  // Click on canvas bg deselects
+  // Recursively find element parent ID
+  const findParentId = useCallback((id: string): string | null => {
+    const node = findBlockRecursive(blocks, id);
+    return node?.parentId ?? null;
+  }, [blocks]);
+
+  // Recursively find block
+  const findBlockRecursive = (nodes: EditorBlock[], id: string): EditorBlock | null => {
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      if (node.children) {
+        const found = findBlockRecursive(node.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Pointer Interaction Handlers
+  const handlePointerDownDrag = useCallback((e: React.PointerEvent, block: EditorBlock) => {
+    if (block.locked) return;
+    e.stopPropagation();
+    const frame = getEffectiveFrame(block, deviceMode);
+    setDragState({
+      type: "drag",
+      blockId: block.id,
+      baseFrame: frame,
+      startPointerX: e.clientX,
+      startPointerY: e.clientY,
+    });
+    setDraftFrame(null);
+  }, [deviceMode]);
+
+  const handlePointerDownResize = useCallback((e: React.PointerEvent, block: EditorBlock, direction: string) => {
+    if (block.locked) return;
+    e.stopPropagation();
+    const frame = getEffectiveFrame(block, deviceMode);
+    setDragState({
+      type: "resize",
+      blockId: block.id,
+      baseFrame: frame,
+      startPointerX: e.clientX,
+      startPointerY: e.clientY,
+      direction,
+    });
+    setDraftFrame(null);
+  }, [deviceMode]);
+
+  const handlePointerDownRotate = useCallback((e: React.PointerEvent, block: EditorBlock) => {
+    if (block.locked) return;
+    e.stopPropagation();
+    const frame = getEffectiveFrame(block, deviceMode);
+    setDragState({
+      type: "rotate",
+      blockId: block.id,
+      baseFrame: frame,
+      startPointerX: e.clientX,
+      startPointerY: e.clientY,
+    });
+    setDraftFrame(null);
+  }, [deviceMode]);
+
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (!dragState) return;
+    e.preventDefault();
+
+    const dx = (e.clientX - dragState.startPointerX) / effectiveZoom;
+    const dy = (e.clientY - dragState.startPointerY) / effectiveZoom;
+
+    if (dragState.type === "drag") {
+      let nextX = Math.round(dragState.baseFrame.x + dx);
+      let nextY = Math.round(dragState.baseFrame.y + dy);
+
+      // Clamping bounds inside parent section
+      const parentId = findParentId(dragState.blockId);
+      const parentSection = parentId ? findBlockRecursive(blocks, parentId) : null;
+      const sectionW = parentSection?.frame?.width ?? canvasWidth;
+      const sectionH = parentSection?.frame?.height ?? 800;
+
+      nextX = Math.max(0, Math.min(sectionW - dragState.baseFrame.width, nextX));
+      nextY = Math.max(0, Math.min(sectionH - dragState.baseFrame.height, nextY));
+
+      // Snap guidelines
+      const snapInterval = 10;
+      nextX = Math.round(nextX / snapInterval) * snapInterval;
+      nextY = Math.round(nextY / snapInterval) * snapInterval;
+
+      // Section center snapping
+      const sectionCenter = sectionW / 2;
+      const elCenter = nextX + dragState.baseFrame.width / 2;
+      if (Math.abs(elCenter - sectionCenter) < 15) {
+        nextX = sectionCenter - dragState.baseFrame.width / 2;
+        setSnapGuides({ vertical: sectionCenter });
+      } else {
+        setSnapGuides(null);
+      }
+
+      // Auto-grow section height
+      if (parentSection && parentSection.frame) {
+        const bottomEdge = nextY + dragState.baseFrame.height;
+        if (bottomEdge > parentSection.frame.height - 40) {
+          const newHeight = Math.max(parentSection.frame.height, bottomEdge + 80);
+          if (deviceMode === "desktop") {
+            onUpdateNodeFrame(parentSection.id, { height: newHeight });
+          } else {
+            onUpdateResponsiveFrame(parentSection.id, deviceMode, { height: newHeight });
+          }
+        }
+      }
+
+      // Request animation frame layout update
+      requestAnimationFrame(() => {
+        setDraftFrame({ x: nextX, y: nextY });
+      });
+    } else if (dragState.type === "resize") {
+      const direction = dragState.direction || "";
+      let nextX = dragState.baseFrame.x;
+      let nextY = dragState.baseFrame.y;
+      let nextW = dragState.baseFrame.width;
+      let nextH = dragState.baseFrame.height;
+
+      if (direction.includes("right")) {
+        nextW = Math.max(20, Math.round(dragState.baseFrame.width + dx));
+      }
+      if (direction.includes("left")) {
+        const potentialW = dragState.baseFrame.width - dx;
+        if (potentialW >= 20) {
+          nextW = Math.round(potentialW);
+          nextX = Math.round(dragState.baseFrame.x + dx);
+        }
+      }
+      if (direction.includes("bottom")) {
+        nextH = Math.max(20, Math.round(dragState.baseFrame.height + dy));
+      }
+      if (direction.includes("top")) {
+        const potentialH = dragState.baseFrame.height - dy;
+        if (potentialH >= 20) {
+          nextH = Math.round(potentialH);
+          nextY = Math.round(dragState.baseFrame.y + dy);
+        }
+      }
+
+      // Snap dimensions
+      nextW = Math.round(nextW / 5) * 5;
+      nextH = Math.round(nextH / 5) * 5;
+      nextX = Math.round(nextX / 5) * 5;
+      nextY = Math.round(nextY / 5) * 5;
+
+      requestAnimationFrame(() => {
+        setDraftFrame({ x: nextX, y: nextY, width: nextW, height: nextH });
+      });
+    } else if (dragState.type === "rotate") {
+      const el = document.getElementById(dragState.blockId);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const angleRad = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+      let angleDeg = Math.round(angleRad * (180 / Math.PI)) - 90;
+      if (angleDeg < 0) angleDeg += 360;
+
+      if (e.shiftKey) {
+        angleDeg = Math.round(angleDeg / 15) * 15;
+      }
+
+      requestAnimationFrame(() => {
+        setDraftFrame({ rotate: angleDeg });
+      });
+    }
+  }, [dragState, effectiveZoom, blocks, canvasWidth, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame, findParentId]);
+
+  const handlePointerUp = useCallback(() => {
+    if (!dragState) return;
+
+    if (draftFrame) {
+      if (deviceMode === "desktop") {
+        onUpdateNodeFrame(dragState.blockId, draftFrame);
+      } else {
+        onUpdateResponsiveFrame(dragState.blockId, deviceMode, draftFrame);
+      }
+    }
+
+    setDragState(null);
+    setDraftFrame(null);
+    setSnapGuides(null);
+  }, [dragState, draftFrame, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame]);
+
+  // Pointer Event listeners
+  useEffect(() => {
+    if (!dragState) return;
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [dragState, handlePointerMove, handlePointerUp]);
+
+  // Keyboard Event shortcuts
+  useEffect(() => {
+    if (!selectedId) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      const selectedNode = findBlockRecursive(blocks, selectedId);
+      if (!selectedNode || selectedNode.locked) return;
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const cmdCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      if (cmdCtrl && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        onDuplicateBlock(selectedId);
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        onDeleteBlock(selectedId);
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onSelectBlock(null);
+        return;
+      }
+
+      if (e.key.startsWith("Arrow")) {
+        e.preventDefault();
+        const frame = getEffectiveFrame(selectedNode, deviceMode);
+        const step = e.shiftKey ? 10 : 1;
+        let dx = 0;
+        let dy = 0;
+
+        if (e.key === "ArrowUp") dy = -step;
+        if (e.key === "ArrowDown") dy = step;
+        if (e.key === "ArrowLeft") dx = -step;
+        if (e.key === "ArrowRight") dx = step;
+
+        const nextFrame = {
+          x: frame.x + dx,
+          y: frame.y + dy,
+        };
+
+        if (deviceMode === "desktop") {
+          onUpdateNodeFrame(selectedId, nextFrame);
+        } else {
+          onUpdateResponsiveFrame(selectedId, deviceMode, nextFrame);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedId, blocks, deviceMode, onDuplicateBlock, onDeleteBlock, onSelectBlock, onUpdateNodeFrame, onUpdateResponsiveFrame]);
+
+  // Click on canvas background to deselect
   const handleCanvasBgClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onSelectBlock(null);
+    if (e.target === e.currentTarget) {
+      onSelectBlock(null);
+    }
   };
 
   return (
-    <CartProvider>
-      {/* Cart Drawer (slides in from right) */}
-      <CartDrawer />
-      {/* Checkout Modal */}
-      <CheckoutModal />
-      {/* Floating Cart Button */}
-      <FloatingCartButton />
-
+    <div
+      ref={viewportRef}
+      className="flex-1 overflow-auto bg-gray-50 flex items-start justify-center relative select-none"
+      onClick={handleCanvasBgClick}
+      style={{ padding: "40px 20px" }}
+    >
       <div
-        ref={viewportRef}
-        className="flex-1 overflow-auto"
+        className="relative bg-white border border-gray-200 shadow-2xl transition-all"
         style={{
-          backgroundColor: "#f3f4f6",
-          backgroundImage: "radial-gradient(circle, rgba(107, 114, 128, 0.08) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
+          width: `${canvasWidth}px`,
+          minHeight: `${minPageHeight}px`,
+          transform: `scale(${effectiveZoom})`,
+          transformOrigin: "top center",
+          backgroundColor: pageBgColor,
         }}
         onClick={handleCanvasBgClick}
       >
-        <div className="flex min-h-full items-start justify-center px-4 py-6">
+        {/* Render Snap Lines */}
+        {snapGuides?.vertical !== undefined && (
           <div
-            className="relative transition-all duration-300"
+            className="absolute border-l border-dashed border-pink-500 z-50 pointer-events-none"
             style={{
-              width: scaledWidth,
-              minHeight: (minPageHeight + 34) * effectiveZoom,
+              left: `${snapGuides.vertical}px`,
+              top: 0,
+              bottom: 0,
             }}
-          >
-            <div
-              className="origin-top-left overflow-hidden rounded-[10px] border border-gray-250 bg-white shadow-xl shadow-gray-300/40"
-              style={{
-                width: canvasWidth,
-                transform: `scale(${effectiveZoom})`,
-              }}
-            >
-              <div className="flex h-8 items-center justify-between border-b border-gray-200 bg-gray-50 px-3 text-[10px] text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-red-500/70" />
-                  <span className="h-2 w-2 rounded-full bg-amber-500/70" />
-                  <span className="h-2 w-2 rounded-full bg-emerald-500/70" />
-                </div>
-                <div className="font-mono uppercase tracking-wider">
-                  {deviceLabel} / {canvasWidth}px / {Math.round(effectiveZoom * 100)}%
-                </div>
-                <div />
-              </div>
+          />
+        )}
+        {snapGuides?.horizontal !== undefined && (
+          <div
+            className="absolute border-t border-dashed border-pink-500 z-50 pointer-events-none"
+            style={{
+              top: `${snapGuides.horizontal}px`,
+              left: 0,
+              right: 0,
+            }}
+          />
+        )}
 
-              {/* Page Content */}
-              <div
-                className="w-full"
-                style={{
-                  minHeight: minPageHeight,
-                  backgroundColor: pageBgColor,
-                }}
-                onClick={handleCanvasBgClick}
-              >
-                {blocks.length === 0 ? (
-                  <DropZone
-                    index={0}
-                    onDropItem={onDropItem}
-                  />
-                ) : (
-                  <>
-                    {blocks.map((block, index) => (
-                      <React.Fragment key={block.id}>
-                        {/* Inter-block drop zone (compact) */}
-                        <DropZone
-                          isCompact
-                          index={index}
-                          onDropItem={onDropItem}
-                        />
-                        <SortableBlock
-                          block={block}
-                          index={index}
-                          selectedId={selectedId}
-                          isSelected={selectedId === block.id}
-                          onSelect={() => onSelectBlock(block.id)}
-                          onSelectBlock={onSelectBlock}
-                          onMove={onMoveBlock}
-                          onMoveWithinParent={onMoveWithinParent}
-                          onDelete={onDeleteBlock}
-                          onDuplicate={onDuplicateBlock}
-                          onMoveUp={onMoveUp}
-                          onMoveDown={onMoveDown}
-                          onDropItem={onDropItem}
-                          onUpdateBlock={onUpdateBlock}
-                          isFirst={index === 0}
-                          isLast={index === blocks.length - 1}
-                        />
-                      </React.Fragment>
-                    ))}
-                    {/* Drop zone at the end */}
-                    <DropZone
-                      isCompact
-                      index={blocks.length}
-                      onDropItem={onDropItem}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
+        {/* Stack Sections Vertically */}
+        {blocks.map((section, index) => {
+          const sectionFrame = section.frame || { x: 0, y: 0, width: canvasWidth, height: 500, zIndex: 1 };
+          
+          return (
+            <React.Fragment key={section.id}>
+              {/* Root Section Drop Zone */}
+              <SectionDropZone index={index} onDropItem={onDropItem} />
 
-            <div className="pointer-events-auto absolute left-1/2 top-full z-40 mt-5 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-gray-200 bg-white/95 p-1.5 shadow-lg shadow-gray-200/50 backdrop-blur">
-              {[
-                { title: "Select", path: "M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" },
-                { title: "Pan", path: "M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" },
-                { title: "Frame", path: "M4.5 4.5h15v15h-15z" },
-                { title: "Text", path: "M6 4.5h12M12 4.5v15m-3 0h6" },
-                { title: "Code", path: "M8.25 9.75 4.5 13.5l3.75 3.75m7.5-7.5 3.75 3.75-3.75 3.75" },
-              ].map((tool) => (
-                <button
-                  key={tool.title}
-                  title={tool.title}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+              <SectionDropZoneWrapper section={section} zoom={effectiveZoom} onDropItem={onDropItem}>
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: `${sectionFrame.height}px`,
+                    zIndex: sectionFrame.zIndex,
+                    overflow: "hidden",
+                    border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
+                  }}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      onSelectBlock(section.id);
+                    }
+                  }}
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={tool.path} />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+                  {/* Render Section Background/Title props using Box renderer */}
+                  <div style={{ width: "100%", height: "100%", pointerEvents: "none" }}>
+                    <BlockRenderer
+                      block={section}
+                      isSelected={false}
+                      onSelect={() => {}}
+                      onUpdateBlock={onUpdateBlock}
+                    />
+                  </div>
+
+                  {selectedId === section.id && (
+                    <div
+                      className="absolute bg-purple-650 text-white font-extrabold rounded select-none uppercase pointer-events-none z-50"
+                      style={{
+                        top: "4px",
+                        left: "4px",
+                        fontSize: "9px",
+                        padding: "1px 4px",
+                      }}
+                    >
+                      SECTION
+                    </div>
+                  )}
+
+                  {/* Absolute Element Layers inside this Section */}
+                  {(section.children ?? []).map((element) => (
+                    <AbsoluteElementWrapper
+                      key={element.id}
+                      block={element}
+                      isSelected={selectedId === element.id}
+                      deviceMode={deviceMode}
+                      zoom={effectiveZoom}
+                      onSelect={(e) => {
+                        e.stopPropagation();
+                        onSelectBlock(element.id);
+                      }}
+                      onPointerDownDrag={handlePointerDownDrag}
+                      onPointerDownResize={handlePointerDownResize}
+                      onPointerDownRotate={handlePointerDownRotate}
+                      onUpdateBlock={onUpdateBlock}
+                      onDeleteBlock={onDeleteBlock}
+                      onDuplicateBlock={onDuplicateBlock}
+                      onMoveNodeZIndex={onMoveNodeZIndex}
+                      draftFrame={dragState?.blockId === element.id ? draftFrame : null}
+                    />
+                  ))}
+                </div>
+              </SectionDropZoneWrapper>
+            </React.Fragment>
+          );
+        })}
+
+        {/* Ending Drop Zone */}
+        <SectionDropZone index={blocks.length} onDropItem={onDropItem} />
       </div>
-    </CartProvider>
+
+      {/* Device Indicator Widget floating on bottom left */}
+      <div className="fixed bottom-4 left-4 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-lg text-xs font-black text-gray-800 z-50 select-none flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+        {deviceLabel} ({canvasWidth}px) | Scale: {Math.round(effectiveZoom * 100)}%
+      </div>
+    </div>
   );
 };

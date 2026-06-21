@@ -6,6 +6,7 @@ import {
   EditorData,
   ensureOnlookBlockMeta,
   isElementNodeType,
+  ElementFrame,
 } from "../types";
 import { EditorAction } from "./editor-actions";
 
@@ -102,11 +103,89 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
             ...block.responsive,
             [action.deviceMode]: {
               ...(block.responsive?.[action.deviceMode] ?? {}),
-              ...action.props,
+              props: {
+                ...(block.responsive?.[action.deviceMode]?.props ?? {}),
+                ...action.props,
+              },
             },
           },
         })),
       });
+    case "UPDATE_NODE_FRAME":
+      return normalizeEditorState({
+        ...state,
+        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({
+          ...block,
+          frame: {
+            ...(block.frame || { x: 0, y: 0, width: 200, height: 100, zIndex: 1, rotate: 0 }),
+            ...action.frame,
+          },
+        })),
+      });
+    case "UPDATE_RESPONSIVE_FRAME":
+      return normalizeEditorState({
+        ...state,
+        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => ({
+          ...block,
+          responsive: {
+            ...block.responsive,
+            [action.deviceMode]: {
+              ...(block.responsive?.[action.deviceMode] ?? {}),
+              frame: {
+                ...(block.responsive?.[action.deviceMode]?.frame ?? {}),
+                ...action.frame,
+              },
+            },
+          },
+        })),
+      });
+    case "ADD_SECTION": {
+      const blocks = [...state.blocks];
+      const index = clampIndex(action.index ?? blocks.length, blocks.length);
+      const newSection = {
+        ...action.block,
+        kind: "section" as const,
+        parentId: null,
+      };
+      blocks.splice(index, 0, ensureOnlookBlockMeta(newSection));
+      return normalizeEditorState({ ...state, blocks });
+    }
+    case "ADD_ELEMENT_TO_SECTION": {
+      const elementNode = ensureOnlookBlockMeta({
+        ...action.block,
+        parentId: action.sectionId,
+        frame: {
+          x: action.x,
+          y: action.y,
+          width: action.block.frame?.width ?? 160,
+          height: action.block.frame?.height ?? 40,
+          zIndex: action.block.frame?.zIndex ?? 10,
+          rotate: action.block.frame?.rotate ?? 0,
+        },
+      });
+      return normalizeEditorState({
+        ...state,
+        blocks: updateBlockRecursive(state.blocks, action.sectionId, (section) => {
+          const children = [...(section.children ?? [])];
+          children.push(elementNode);
+          return { ...section, children };
+        }),
+      });
+    }
+    case "MOVE_NODE_Z_INDEX": {
+      return normalizeEditorState({
+        ...state,
+        blocks: updateBlockRecursive(state.blocks, action.blockId, (block) => {
+          if (!block.frame) return block;
+          const delta = action.direction === "forward" ? 1 : -1;
+          const newZ = Math.max(1, (block.frame.zIndex ?? 1) + delta);
+          return {
+            ...block,
+            frame: { ...block.frame, zIndex: newZ },
+          };
+        }),
+      });
+    }
     default:
       return state;
   }

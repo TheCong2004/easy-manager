@@ -513,15 +513,31 @@ export interface JsonObject {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EditorBlockProps = any;
 
+export interface ElementFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex: number;
+  rotate?: number;
+}
+
+export interface DeviceOverride<TProps = EditorBlockProps> {
+  frame?: Partial<ElementFrame>;
+  props?: Partial<TProps>;
+}
+
 export type ResponsiveOverrides<TProps = EditorBlockProps> = Partial<
-  Record<DeviceMode, Partial<TProps>>
+  Record<DeviceMode, DeviceOverride<TProps>>
 >;
 
 export interface EditorBlock<TProps = EditorBlockProps> {
   id: string;
   type: BlockType;
   kind?: EditorNodeKind;
+  parentId?: string | null;
   props: TProps;
+  frame?: ElementFrame;
   children?: EditorBlock[];
   responsive?: ResponsiveOverrides<TProps>;
   label?: string;
@@ -534,6 +550,15 @@ export interface EditorBlock<TProps = EditorBlockProps> {
 }
 
 export type EditorNode<TProps = EditorBlockProps> = EditorBlock<TProps>;
+
+export function getEffectiveFrame(node: EditorBlock, deviceMode: DeviceMode): ElementFrame {
+  const base: ElementFrame = node.frame || { x: 0, y: 0, width: 200, height: 100, zIndex: 1, rotate: 0 };
+  const override = node.responsive?.[deviceMode]?.frame;
+  return {
+    ...base,
+    ...override,
+  } as ElementFrame;
+}
 
 // ── Root editor data (serialisable state) ───────────────────
 export interface EditorData {
@@ -1025,14 +1050,42 @@ export function createDefaultBlock(blockType: BlockType): EditorBlock {
 export function ensureOnlookBlockMeta(block: EditorBlock): EditorBlock {
   const suffix = block.id.replace(/^block_/, "");
   const kind = getNodeKind(block.type, block.kind);
-  const children = block.children?.map(ensureOnlookBlockMeta);
+  
+  let frame = block.frame;
+  if (kind !== "section" && !frame) {
+    let width = 200;
+    let height = 80;
+    if (block.type === "button") { width = 160; height = 40; }
+    else if (block.type === "icon") { width = 48; height = 48; }
+    else if (block.type === "image") { width = 300; height = 200; }
+    else if (block.type === "divider") { width = 400; height = 20; }
+    else if (block.type === "spacer") { width = 100; height = 48; }
+    
+    frame = {
+      x: 50,
+      y: 50,
+      width,
+      height,
+      zIndex: 10,
+      rotate: 0,
+    };
+  }
+
   const props = normalizeNestedProps(block);
+  
+  const rawChildren = block.children ?? [];
+  const children = rawChildren.map(c => {
+    const childMeta = ensureOnlookBlockMeta(c);
+    childMeta.parentId = block.id;
+    return childMeta;
+  });
 
   return {
     ...block,
     kind,
     props,
-    children: children && children.length > 0 ? children : (canNodeHaveChildren({ ...block, kind }) ? block.children ?? [] : undefined),
+    frame,
+    children: children && children.length > 0 ? children : (canNodeHaveChildren({ ...block, kind }) ? children : undefined),
     oid: block.oid ?? `lp_${block.type}_${suffix}`,
     instanceId: block.instanceId ?? `oiid_${suffix}`,
     domId: block.domId ?? block.id,
@@ -1042,8 +1095,10 @@ export function ensureOnlookBlockMeta(block: EditorBlock): EditorBlock {
 
 export function createEmptySectionNode(children: EditorBlock[] = []): EditorBlock {
   const base = createDefaultBlock("box");
+  const sectionId = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   return ensureOnlookBlockMeta({
     ...base,
+    id: sectionId,
     kind: "section",
     label: "Section",
     props: {
@@ -1052,13 +1107,20 @@ export function createEmptySectionNode(children: EditorBlock[] = []): EditorBloc
       borderColor: "transparent",
       borderWidth: 0,
       borderRadius: 0,
-      paddingX: 32,
-      paddingY: 32,
+      paddingX: 0,
+      paddingY: 0,
       shadow: "none",
       title: "",
       description: "",
     },
-    children,
+    frame: {
+      x: 0,
+      y: 0,
+      width: 1200,
+      height: 600, // default section height
+      zIndex: 1,
+    },
+    children: children.map(c => ({ ...c, parentId: sectionId })),
   });
 }
 

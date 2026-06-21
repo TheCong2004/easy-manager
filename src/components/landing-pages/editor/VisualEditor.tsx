@@ -396,6 +396,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     handleUpdateBlock,
     handleUpdatePageSettings,
     handleUseAsset,
+    handleUpdateNodeFrame,
+    handleUpdateResponsiveFrame,
+    handleAddSection,
+    handleAddElementToSection,
+    handleMoveNodeZIndex,
+    handleSetBlockLocked,
+    handleSetBlockHidden,
   } = useEditorBlockActions({
     data,
     handleSelectBlock,
@@ -743,6 +750,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   onSelectBlock={handleSelectBlock}
                   onDeleteBlock={handleDeleteBlock}
                   onAddBlock={handleAddBlock}
+                  onDuplicateBlock={handleDuplicateBlock}
+                  onSetBlockLocked={handleSetBlockLocked}
+                  onSetBlockHidden={handleSetBlockHidden}
+                  onMoveNodeZIndex={handleMoveNodeZIndex}
                 />
               )}
               {activeTab === "brand" && (
@@ -834,6 +845,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               onMoveUp={handleMoveUp}
               onMoveDown={handleMoveDown}
               onUpdateBlock={handleUpdateBlock}
+              onUpdateNodeFrame={handleUpdateNodeFrame}
+              onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
+              onAddSection={handleAddSection}
+              onAddElementToSection={handleAddElementToSection}
+              onMoveNodeZIndex={handleMoveNodeZIndex}
             />
           )}
 
@@ -875,6 +891,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   pageSettings={data.pageSettings}
                   onUpdateBlock={handleUpdateBlock}
                   onUpdatePageSettings={handleUpdatePageSettings}
+                  deviceMode={deviceMode}
+                  onUpdateNodeFrame={handleUpdateNodeFrame}
+                  onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
                 />
               ) : (
                 <AIChatPanel

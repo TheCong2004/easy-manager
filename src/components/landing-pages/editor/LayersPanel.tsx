@@ -64,8 +64,23 @@ const LayerItem: React.FC<{
   selectedId: string | null;
   onSelectBlock: (id: string | null) => void;
   onDeleteBlock: (id: string) => void;
+  onDuplicateBlock: (id: string) => void;
+  onSetBlockLocked: (id: string, locked: boolean) => void;
+  onSetBlockHidden: (id: string, hidden: boolean) => void;
+  onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
   depth?: number;
-}> = ({ block, isSelected, selectedId, onSelectBlock, onDeleteBlock, depth = 0 }) => {
+}> = ({
+  block,
+  isSelected,
+  selectedId,
+  onSelectBlock,
+  onDeleteBlock,
+  onDuplicateBlock,
+  onSetBlockLocked,
+  onSetBlockHidden,
+  onMoveNodeZIndex,
+  depth = 0,
+}) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const columns = block.type === "columns" && Array.isArray(block.props.children)
@@ -99,9 +114,9 @@ const LayerItem: React.FC<{
     <div className="text-gray-800" style={{ marginLeft: depth > 0 ? 6 : 0 }}>
       <div
         onClick={() => onSelectBlock(block.id)}
-        className={`w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-sm text-left transition border group cursor-pointer ${
+        className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-sm text-left transition border group cursor-pointer ${
           isSelected
-            ? "bg-purple-50 text-purple-750 border-purple-200 font-semibold shadow-sm"
+            ? "bg-purple-50 text-purple-750 border-purple-250 font-semibold shadow-sm"
             : "text-gray-650 hover:bg-gray-50 border-transparent"
         }`}
       >
@@ -124,26 +139,110 @@ const LayerItem: React.FC<{
           <span className="w-4" />
         )}
 
-        <span className="text-gray-400 flex-shrink-0 w-3.5 h-3.5 group-hover:text-purple-600 transition">
+        <span className="text-gray-450 flex-shrink-0 w-3.5 h-3.5 group-hover:text-purple-650 transition">
           {BLOCK_ICONS[block.type] ?? BLOCK_ICONS.box}
         </span>
 
-        <span className="flex-1 truncate text-xs">
+        <span className={`flex-1 truncate text-xs ${block.hidden ? "line-through text-gray-400" : ""}`}>
           {block.label || BLOCK_LABELS[block.type] || block.type}
         </span>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDeleteBlock(block.id);
-          }}
-          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition ml-1"
-          title="Xóa block"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Action icons directly on layers */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+          {block.kind !== "section" && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveNodeZIndex(block.id, "forward");
+                }}
+                title="Lên trên (zIndex + 1)"
+                className="text-gray-400 hover:text-purple-650 p-0.5 rounded hover:bg-gray-150 transition cursor-pointer font-bold text-[10px]"
+              >
+                ▲
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveNodeZIndex(block.id, "backward");
+                }}
+                title="Xuống dưới (zIndex - 1)"
+                className="text-gray-400 hover:text-purple-650 p-0.5 rounded hover:bg-gray-150 transition cursor-pointer font-bold text-[10px]"
+              >
+                ▼
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSetBlockHidden(block.id, !block.hidden);
+            }}
+            className={`p-0.5 rounded hover:bg-gray-150 transition cursor-pointer ${
+              block.hidden ? "text-red-500" : "text-gray-400 hover:text-gray-700"
+            }`}
+            title={block.hidden ? "Hiện phần tử" : "Ẩn phần tử"}
+          >
+            {block.hidden ? (
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.824 7.824L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )}
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSetBlockLocked(block.id, !block.locked);
+            }}
+            className={`p-0.5 rounded hover:bg-gray-150 transition cursor-pointer ${
+              block.locked ? "text-amber-500" : "text-gray-400 hover:text-gray-700"
+            }`}
+            title={block.locked ? "Mở khóa" : "Khóa vị trí"}
+          >
+            {block.locked ? (
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            )}
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicateBlock(block.id);
+            }}
+            className="text-gray-400 hover:text-blue-600 p-0.5 rounded hover:bg-gray-150 transition cursor-pointer"
+            title="Nhân đôi"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376A8.965 8.965 0 0012 12.75c-.197 0-.39.024-.577.07m6.75 4.43V7.5c0-.621-.504-1.125-1.125-1.125h-9.75a1.125 1.125 0 00-1.125 1.125v9.75c0 .621.504 1.125 1.125 1.125h9.75a1.125 1.125 0 001.125-1.125z" />
+            </svg>
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteBlock(block.id);
+            }}
+            className="text-gray-405 hover:text-red-600 p-0.5 rounded hover:bg-gray-150 transition cursor-pointer"
+            title="Xóa"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {isOpen && childrenToRender.length > 0 && (
@@ -164,6 +263,10 @@ const LayerItem: React.FC<{
                         selectedId={selectedId}
                         onSelectBlock={onSelectBlock}
                         onDeleteBlock={onDeleteBlock}
+                        onDuplicateBlock={onDuplicateBlock}
+                        onSetBlockLocked={onSetBlockLocked}
+                        onSetBlockHidden={onSetBlockHidden}
+                        onMoveNodeZIndex={onMoveNodeZIndex}
                         depth={depth + 1}
                       />
                     ))}
@@ -179,6 +282,10 @@ const LayerItem: React.FC<{
                   selectedId={selectedId}
                   onSelectBlock={onSelectBlock}
                   onDeleteBlock={onDeleteBlock}
+                  onDuplicateBlock={onDuplicateBlock}
+                  onSetBlockLocked={onSetBlockLocked}
+                  onSetBlockHidden={onSetBlockHidden}
+                  onMoveNodeZIndex={onMoveNodeZIndex}
                   depth={depth + 1}
                 />
               );
@@ -198,6 +305,10 @@ interface LayersPanelProps {
   onSelectBlock: (id: string | null) => void;
   onDeleteBlock: (id: string) => void;
   onAddBlock: (blockType: BlockType, customProps?: Record<string, unknown>) => void;
+  onDuplicateBlock: (id: string) => void;
+  onSetBlockLocked: (id: string, locked: boolean) => void;
+  onSetBlockHidden: (id: string, hidden: boolean) => void;
+  onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
 }
 
 export const LayersPanel: React.FC<LayersPanelProps> = ({
@@ -206,6 +317,10 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   onSelectBlock,
   onDeleteBlock,
   onAddBlock,
+  onDuplicateBlock,
+  onSetBlockLocked,
+  onSetBlockHidden,
+  onMoveNodeZIndex,
 }) => {
   const [tab, setTab] = useState<"layers" | "components">("components");
   const [search, setSearch] = useState("");
@@ -385,6 +500,10 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                     selectedId={selectedId}
                     onSelectBlock={onSelectBlock}
                     onDeleteBlock={onDeleteBlock}
+                    onDuplicateBlock={onDuplicateBlock}
+                    onSetBlockLocked={onSetBlockLocked}
+                    onSetBlockHidden={onSetBlockHidden}
+                    onMoveNodeZIndex={onMoveNodeZIndex}
                   />
                 ))}
               </div>

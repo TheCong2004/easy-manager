@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback } from "react";
-import { EditorBlock, BlockType, EditorData } from "./types";
+import { EditorBlock, BlockType, EditorData, DeviceMode, ElementFrame, getEffectiveFrame } from "./types";
 
 // ── Field sub-components (Light Theme) ──────────────────────────────────────
 
@@ -665,11 +665,134 @@ const INSPECTOR_MAP: Partial<Record<BlockType, React.FC<{ props: Record<string, 
   product_card: ProductCardInspector,
 };
 
+const FrameInspector: React.FC<{
+  block: EditorBlock;
+  deviceMode: DeviceMode;
+  onUpdateNodeFrame: (id: string, frame: Partial<ElementFrame>) => void;
+  onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
+}> = ({ block, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame }) => {
+  const frame = getEffectiveFrame(block, deviceMode);
+  const isSection = block.kind === "section" || block.type === "hero" || block.type === "product_section" || block.type === "form_section" || block.type === "footer" || block.type === "custom_section";
+
+  const updateField = (key: keyof ElementFrame, value: number) => {
+    const patch = { [key]: value };
+    if (deviceMode === "desktop") {
+      onUpdateNodeFrame(block.id, patch);
+    } else {
+      onUpdateResponsiveFrame(block.id, deviceMode, patch);
+    }
+  };
+
+  return (
+    <div className="bg-gray-50 border border-gray-150 rounded-xl p-3 space-y-3 mb-4 text-gray-800 shadow-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-extrabold text-purple-750 tracking-wider uppercase">
+          Kích thước & Tọa độ ({deviceMode.toUpperCase()})
+        </span>
+        {block.responsive?.[deviceMode]?.frame && (
+          <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+            Đè layout
+          </span>
+        )}
+      </div>
+
+      {isSection ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 mb-1">CHIỀU CAO (px)</label>
+            <input
+              type="number"
+              value={frame.height}
+              onChange={(e) => updateField("height", Number(e.target.value))}
+              className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 mb-1">Z-INDEX</label>
+            <input
+              type="number"
+              value={frame.zIndex}
+              onChange={(e) => updateField("zIndex", Number(e.target.value))}
+              className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">TỌA ĐỘ X (px)</label>
+              <input
+                type="number"
+                value={frame.x}
+                onChange={(e) => updateField("x", Number(e.target.value))}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">TỌA ĐỘ Y (px)</label>
+              <input
+                type="number"
+                value={frame.y}
+                onChange={(e) => updateField("y", Number(e.target.value))}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">RỘNG (W - px)</label>
+              <input
+                type="number"
+                value={frame.width}
+                onChange={(e) => updateField("width", Number(e.target.value))}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">CAO (H - px)</label>
+              <input
+                type="number"
+                value={frame.height}
+                onChange={(e) => updateField("height", Number(e.target.value))}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">GÓC XOAY (°)</label>
+              <input
+                type="number"
+                value={frame.rotate ?? 0}
+                onChange={(e) => updateField("rotate", Number(e.target.value))}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-1">Z-INDEX</label>
+              <input
+                type="number"
+                value={frame.zIndex}
+                onChange={(e) => updateField("zIndex", Number(e.target.value))}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-550 font-bold shadow-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface InspectorPanelProps {
   selectedBlock: EditorBlock | null;
   pageSettings: EditorData["pageSettings"];
   onUpdateBlock: (id: string, newProps: Record<string, unknown>) => void;
   onUpdatePageSettings: (key: string, value: string | number | boolean) => void;
+  deviceMode: DeviceMode;
+  onUpdateNodeFrame: (id: string, frame: Partial<ElementFrame>) => void;
+  onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
@@ -677,6 +800,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   pageSettings,
   onUpdateBlock,
   onUpdatePageSettings,
+  deviceMode,
+  onUpdateNodeFrame,
+  onUpdateResponsiveFrame,
 }) => {
   const update: UpdateFn = useCallback(
     (key, value) => {
@@ -702,11 +828,19 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
       {/* Fields */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 bg-white">
+        {selectedBlock && (
+          <FrameInspector
+            block={selectedBlock}
+            deviceMode={deviceMode}
+            onUpdateNodeFrame={onUpdateNodeFrame}
+            onUpdateResponsiveFrame={onUpdateResponsiveFrame}
+          />
+        )}
         {selectedBlock && InspectorComponent ? (
           <InspectorComponent props={selectedBlock.props} update={update} />
-        ) : (
+        ) : !selectedBlock ? (
           <PageSettingsPanel settings={pageSettings} onUpdateSettings={onUpdatePageSettings} />
-        )}
+        ) : null}
       </div>
 
       {/* Bottom hint */}
@@ -720,3 +854,4 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     </div>
   );
 };
+
