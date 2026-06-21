@@ -21,11 +21,14 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({ props, isSelected, onSel
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full p-4 cursor-pointer transition-all ${
-        isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
-      }`}
+      className="w-full flex cursor-pointer p-4"
     >
-      <div className={`${widthClasses[width] || "w-full"}`}>
+      <div
+        className={`relative transition-all ${widthClasses[width] || "w-full"} ${
+          isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
+        }`}
+        style={{ borderRadius }}
+      >
         {src ? (
           <img
             src={src}
@@ -48,12 +51,12 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({ props, isSelected, onSel
         {showCaption && caption && (
           <p className="text-center text-sm text-gray-500 mt-2 italic">{caption}</p>
         )}
+        {isSelected && (
+          <div className="absolute -top-7 left-0 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none whitespace-nowrap">
+            IMAGE
+          </div>
+        )}
       </div>
-      {isSelected && (
-        <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
-          IMAGE
-        </div>
-      )}
     </div>
   );
 };

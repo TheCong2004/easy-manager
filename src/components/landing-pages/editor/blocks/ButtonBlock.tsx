@@ -45,33 +45,43 @@ export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onS
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full cursor-pointer transition-all ${
-        isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
-      }`}
-      style={alignStyle}
+      className="w-full flex cursor-pointer"
+      style={{
+        display: "flex",
+        justifyContent: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+        padding: "12px 16px",
+      }}
     >
-      <button
-        className={`${sizeStyles[size]}`}
-        style={buttonStyle}
-        onClick={(e) => {
-          e.preventDefault();
-          if (isSelected) e.stopPropagation();
-        }}
+      <div
+        className={`relative transition-all ${
+          isSelected
+            ? "ring-2 ring-purple-500 ring-offset-1 rounded-lg"
+            : "hover:ring-1 hover:ring-purple-400/40 rounded-lg"
+        }`}
       >
-        <span
-          contentEditable={isSelected}
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdate?.({ ...props, label: e.currentTarget.textContent || "" })}
-          style={{ outline: "none" }}
+        <button
+          className={`${sizeStyles[size]}`}
+          style={buttonStyle}
+          onClick={(e) => {
+            e.preventDefault();
+            if (isSelected) e.stopPropagation();
+          }}
         >
-          {label}
-        </span>
-      </button>
-      {isSelected && (
-        <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
-          BUTTON
-        </div>
-      )}
+          <span
+            contentEditable={isSelected}
+            suppressContentEditableWarning
+            onBlur={(e) => onUpdate?.({ ...props, label: e.currentTarget.textContent || "" })}
+            style={{ outline: "none" }}
+          >
+            {label}
+          </span>
+        </button>
+        {isSelected && (
+          <div className="absolute -top-7 left-0 bg-purple-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md tracking-wide z-20 select-none whitespace-nowrap">
+            BUTTON
+          </div>
+        )}
+      </div>
     </div>
   );
 };

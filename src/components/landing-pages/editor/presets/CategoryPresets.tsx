@@ -330,7 +330,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nút xanh dương",
         sub: "button blue cta",
         blockType: "button",
-        props: { label: "Đăng ký ngay", style: "filled", color: "#2511d9", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        props: { label: "Đăng ký ngay", style: "filled", color: "#2511d9", textColor: "#ffffff", size: "md", fullWidth: false, borderRadius: 8, align: "center", icon: "" },
         element: <button className="pointer-events-none w-full rounded-lg bg-[#2511d9] px-3 py-2 text-[13px] font-black text-white">Đăng ký ngay</button>,
       },
       {
@@ -338,7 +338,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nút xanh lá",
         sub: "button green cta",
         blockType: "button",
-        props: { label: "Mua ngay", style: "filled", color: "#65c900", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        props: { label: "Mua ngay", style: "filled", color: "#65c900", textColor: "#ffffff", size: "md", fullWidth: false, borderRadius: 8, align: "center", icon: "" },
         element: <button className="pointer-events-none w-full rounded-lg bg-[#65c900] px-3 py-2 text-[13px] font-black text-white">Mua ngay</button>,
       },
       {
@@ -346,7 +346,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nút đỏ sale",
         sub: "button red sale cta",
         blockType: "button",
-        props: { label: "Nhận ưu đãi", style: "filled", color: "#ef1f1f", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        props: { label: "Nhận ưu đãi", style: "filled", color: "#ef1f1f", textColor: "#ffffff", size: "md", fullWidth: false, borderRadius: 8, align: "center", icon: "" },
         element: <button className="pointer-events-none w-full rounded-lg bg-[#ef1f1f] px-3 py-2 text-[13px] font-black text-white">Nhận ưu đãi</button>,
       },
       {
@@ -354,7 +354,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nút cam",
         sub: "button orange cta",
         blockType: "button",
-        props: { label: "Đặt hàng", style: "filled", color: "#ff7a30", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        props: { label: "Đặt hàng", style: "filled", color: "#ff7a30", textColor: "#ffffff", size: "md", fullWidth: false, borderRadius: 8, align: "center", icon: "" },
         element: <button className="pointer-events-none w-full rounded-lg bg-[#ff7a30] px-3 py-2 text-[13px] font-black text-white">Đặt hàng</button>,
       },
       {
@@ -362,7 +362,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nút vàng",
         sub: "button yellow cta",
         blockType: "button",
-        props: { label: "Xem combo", style: "filled", color: "#ffd43b", textColor: "#111827", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        props: { label: "Xem combo", style: "filled", color: "#ffd43b", textColor: "#111827", size: "md", fullWidth: false, borderRadius: 8, align: "center", icon: "" },
         element: <button className="pointer-events-none w-full rounded-lg bg-[#ffd43b] px-3 py-2 text-[13px] font-black text-gray-950">Xem combo</button>,
       },
       {
@@ -370,7 +370,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nút tím",
         sub: "button purple cta",
         blockType: "button",
-        props: { label: "Nhận tư vấn", style: "filled", color: "#8b35ff", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 8, align: "center", icon: "" },
+        props: { label: "Nhận tư vấn", style: "filled", color: "#8b35ff", textColor: "#ffffff", size: "md", fullWidth: false, borderRadius: 8, align: "center", icon: "" },
         element: <button className="pointer-events-none w-full rounded-lg bg-[#8b35ff] px-3 py-2 text-[13px] font-black text-white">Nhận tư vấn</button>,
       },
       {
@@ -378,7 +378,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Mua ngay đen",
         sub: "button buy now dark cta",
         blockType: "button",
-        props: { label: "Mua ngay", style: "filled", color: "#111827", textColor: "#ffffff", size: "md", fullWidth: true, borderRadius: 10, align: "center", icon: "" },
+        props: { label: "Mua ngay", style: "filled", color: "#111827", textColor: "#ffffff", size: "md", fullWidth: false, borderRadius: 10, align: "center", icon: "" },
         element: buttonPreview("Mua ngay"),
       },
       {
@@ -386,7 +386,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Nhận tư vấn viền",
         sub: "button consult outline cta",
         blockType: "button",
-        props: { label: "Nhận tư vấn", style: "outline", color: "#111827", textColor: "#111827", size: "md", fullWidth: true, borderRadius: 10, align: "center", icon: "" },
+        props: { label: "Nhận tư vấn", style: "outline", color: "#111827", textColor: "#111827", size: "md", fullWidth: false, borderRadius: 10, align: "center", icon: "" },
         element: buttonPreview("Nhận tư vấn", "outline"),
       },
       {
@@ -394,7 +394,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Chọn bộ này",
         sub: "button package order conversion",
         blockType: "button",
-        props: { label: "Chọn bộ này", style: "filled", color: "#111827", textColor: "#ffffff", size: "lg", fullWidth: true, borderRadius: 14, align: "center", icon: "" },
+        props: { label: "Chọn bộ này", style: "filled", color: "#111827", textColor: "#ffffff", size: "lg", fullWidth: false, borderRadius: 14, align: "center", icon: "" },
         element: buttonPreview("Chọn bộ này"),
       },
       {
@@ -402,7 +402,7 @@ export const getCategoryPresets = (category: string): PresetItem[] => {
         label: "Chat Zalo trắng",
         sub: "button zalo chat contact",
         blockType: "button",
-        props: { label: "Chat Zalo", style: "outline", color: "#d1d5db", textColor: "#111827", size: "md", fullWidth: true, borderRadius: 10, align: "center", icon: "" },
+        props: { label: "Chat Zalo", style: "outline", color: "#d1d5db", textColor: "#111827", size: "md", fullWidth: false, borderRadius: 10, align: "center", icon: "" },
         element: buttonPreview("Chat Zalo", "light"),
       },
       {

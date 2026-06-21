@@ -84,11 +84,14 @@ export const IconBlock: React.FC<{ props: IconProps; isSelected: boolean; onSele
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
-        isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
-      }`}
+      className={`w-full flex cursor-pointer p-4 ${alignClass}`}
     >
-      <div className={`flex w-full ${alignClass}`}>
+      <div
+        className={`relative transition-all ${
+          isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
+        }`}
+        style={{ borderRadius: `${borderRadius}px` }}
+      >
         <div
           className="flex items-center justify-center transition-transform hover:scale-110"
           style={{
@@ -102,12 +105,12 @@ export const IconBlock: React.FC<{ props: IconProps; isSelected: boolean; onSele
         >
           {icon}
         </div>
+        {isSelected && (
+          <div className="absolute -top-7 left-0 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none whitespace-nowrap">
+            ICON
+          </div>
+        )}
       </div>
-      {isSelected && (
-        <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
-          ICON
-        </div>
-      )}
     </div>
   );
 };
