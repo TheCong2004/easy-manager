@@ -461,6 +461,18 @@ const SECTION_NATURAL_TYPES = new Set([
   "custom_section", "tea_landing", "smartwatch_landing", "menu",
 ]);
 
+// Self-contained rich components that render their own content (no absolute children)
+const SELF_CONTAINED_SECTION_TYPES = new Set([
+  "tea_landing", "smartwatch_landing",
+  "menu",
+  "feature_card", "collection_list", "testimonial",
+  "countdown", "video", "chat_widget", "funnel_popup",
+  "gallery", "tabs", "accordion", "product_card", "carousel",
+  "form_capture", "survey", "table", "html_code",
+  "columns",
+]);
+
+
 // ── Main Canvas ───────────────────────────────────────────────
 interface CanvasProps {
   sections: EditorBlock[];
@@ -853,6 +865,10 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         {/* Stack Sections Vertically */}
         {sections.map((section, index) => {
+          const hasAbsoluteChildren = (section.children ?? []).length > 0;
+
+          const isSelfContained = SELF_CONTAINED_SECTION_TYPES.has(section.type) && !hasAbsoluteChildren;
+
           const naturalHeight =
             section.frame?.height ??
             (typeof section.props?.minHeight === "number"
@@ -861,6 +877,25 @@ export const Canvas: React.FC<CanvasProps> = ({
               ? 500
               : 120);
 
+          const sectionStyle: React.CSSProperties = isSelfContained
+            ? {
+                // Let rich components render at their intrinsic height
+                position: "relative",
+                width: "100%",
+                minHeight: `${Math.min(naturalHeight, 200)}px`,
+                zIndex: section.frame?.zIndex ?? 1,
+                overflow: "visible",
+                border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
+              }
+            : {
+                // Explicit height for container sections with absolute elements
+                position: "relative",
+                width: "100%",
+                height: `${naturalHeight}px`,
+                zIndex: section.frame?.zIndex ?? 1,
+                overflow: "hidden",
+                border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
+              };
 
           return (
             <React.Fragment key={section.id}>
@@ -869,14 +904,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
               <SectionDropZoneWrapper section={section} zoom={effectiveZoom} onDropItem={onDropItem}>
                 <div
-                  style={{
-                    position: "relative",
-                    width: "100%",
-                    height: `${naturalHeight}px`,
-                    zIndex: section.frame?.zIndex ?? 1,
-                    overflow: "hidden",
-                    border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
-                  }}
+                  style={sectionStyle}
                   onClick={(e) => {
                     if (e.target === e.currentTarget) {
                       onSelectBlock(section.id);
@@ -884,7 +912,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                   }}
                 >
                   {/* Render Section Background/Title props using Box renderer */}
-                  <div style={{ width: "100%", height: "100%", pointerEvents: "none" }}>
+                  <div style={{ width: "100%", height: isSelfContained ? "auto" : "100%", pointerEvents: "none" }}>
                     <BlockRenderer
                       block={section}
                       isSelected={false}
