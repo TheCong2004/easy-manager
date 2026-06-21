@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { LandingPageItem, TemplateItem, FormConfigItem, TagItem, DomainItem } from "@/components/landing-pages/dung-chung/types";
 import { SubSidebar } from "@/components/landing-pages/sidebar/SubSidebar";
 import { PagesList } from "@/components/landing-pages/pages/PagesList";
@@ -11,7 +12,12 @@ import { DomainsConfig } from "@/components/landing-pages/domains/DomainsConfig"
 import { DataLeads } from "@/components/landing-pages/leads/DataLeads";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
-import { VisualEditor } from "@/components/landing-pages/editor/VisualEditor";
+import { createLandingPage } from "@/components/landing-pages/editor/core/editor-supabase-storage";
+import { resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
+import { migrateTemplateFlatBlocks } from "@/components/landing-pages/editor/core/editor-migration";
+import { createDefaultPageSettings, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
+import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
+
 
 const initialPages: LandingPageItem[] = [
   {
@@ -334,6 +340,7 @@ function mapTemplateToEditorPreset(template: TemplateItem): string {
 
 
 export default function LandingPagesManagement() {
+  const router = useRouter();
   const [pages, setPages] = useState<LandingPageItem[]>(initialPages);
   const [activeSubTab, setActiveSubTab] = useState("pages");
   const [searchQuery, setSearchQuery] = useState("");
@@ -341,8 +348,9 @@ export default function LandingPagesManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
 
-  // Visual editor state
-  const [editingPage, setEditingPage] = useState<LandingPageItem | null>(null);
+  // Creating page state
+  const [isCreating, setIsCreating] = useState(false);
+
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -383,28 +391,83 @@ export default function LandingPagesManagement() {
     }
   };
 
-  // Modal confirm submit
-  const handleCreatePage = (e: React.FormEvent) => {
+  // Modal confirm submit — create page in Supabase, then redirect to editor route
+  const handleCreatePage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPageName.trim()) return;
+    if (!newPageName.trim() || isCreating) return;
 
-    const newPage: LandingPageItem = {
-      id: String(Date.now()),
-      name: newPageName.trim().toLowerCase(),
-      templateId: pendingTemplateId,
-      status: "UNPUBLISHED",
-      updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
-      views: 0,
-      conversions: 0,
-      revenue: 0,
-    };
+    setIsCreating(true);
+    try {
+      // Build initial editor data from template if provided
+      let initialEditorData: any = {
+        pageName: newPageName.trim(),
+        sections: [],
+        pageSettings: createDefaultPageSettings(newPageName.trim()),
+        schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+      };
 
-    setPages(prev => [newPage, ...prev]);
-    setNewPageName("");
-    setPendingTemplateId(undefined);
-    setIsCreateModalOpen(false);
-    setActiveSubTab("pages"); // Redirect to pages list
-  };
+      if (pendingTemplateId) {
+        try {
+          const flatBlocks = instantiateTemplateBlocks(pendingTemplateId).map(ensureOnlookBlockMeta);
+          const sections = migrateTemplateFlatBlocks(flatBlocks);
+          initialEditorData = {
+            ...initialEditorData,
+            sections,
+          };
+        } catch (err) {
+          console.warn("Template apply failed, starting blank:", err);
+        }
+      }
+
+      const slug = newPageName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      const created = await createLandingPage({
+        name: newPageName.trim(),
+        slug: slug || `page-${Date.now()}`,
+        editor_data: initialEditorData,
+      });
+
+      const newPg: LandingPageItem = {
+        id: created.id,
+        name: created.name,
+        templateId: pendingTemplateId,
+        status: "UNPUBLISHED",
+        updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+        views: 0,
+        conversions: 0,
+        revenue: 0,
+      };
+
+      setPages((prev) => [newPg, ...prev]);
+      setNewPageName("");
+      setPendingTemplateId(undefined);
+      setIsCreateModalOpen(false);
+
+      // Redirect to the editor route for this new page
+      router.push(`/landing-pages/editor/${created.id}`);
+    } catch (err) {
+      console.error("Failed to create landing page:", err);
+      // Fallback: create local-only page and redirect
+      const fallbackId = `local-${Date.now()}`;
+      const newPg: LandingPageItem = {
+        id: fallbackId,
+        name: newPageName.trim().toLowerCase(),
+        templateId: pendingTemplateId,
+        status: "UNPUBLISHED",
+        updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+        views: 0,
+        conversions: 0,
+        revenue: 0,
+      };
+      setPages((prev) => [newPg, ...prev]);
+      setNewPageName("");
+      setPendingTemplateId(undefined);
+      setIsCreateModalOpen(false);
+      router.push(`/landing-pages/editor/${fallbackId}`);
+    } finally {
+      setIsCreating(false);
+    }
+  }, [newPageName, pendingTemplateId, isCreating, router]);
+
 
   // Create page from template
   const handleUseTemplate = (template: TemplateItem) => {
@@ -413,10 +476,11 @@ export default function LandingPagesManagement() {
     setIsCreateModalOpen(true);
   };
 
-  // Handler for editing a page in visual editor
-  const handleEditPage = (page: LandingPageItem) => {
-    setEditingPage(page);
-  };
+  // Handler for editing a page — navigate to the editor route
+  const handleEditPage = useCallback((page: LandingPageItem) => {
+    router.push(`/landing-pages/editor/${page.id}`);
+  }, [router]);
+
 
   // Handler when published from editor
   const handlePublishFromEditor = (updatedPage: LandingPageItem) => {
@@ -487,33 +551,6 @@ export default function LandingPagesManagement() {
 
   return (
     <>
-      {/* Visual Editor — full screen overlay */}
-      {editingPage && (
-        <VisualEditor
-          key={editingPage.id}
-          page={editingPage}
-          pages={pages}
-          onClose={() => setEditingPage(null)}
-          onPublish={handlePublishFromEditor}
-          onSwitchPage={(page) => setEditingPage(page)}
-          onCreatePage={(name) => {
-            const newPg: LandingPageItem = {
-              id: String(Date.now()),
-              name: name.toLowerCase(),
-              status: "UNPUBLISHED",
-              updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
-              views: 0,
-              conversions: 0,
-              revenue: 0,
-            };
-            setPages(prev => [newPg, ...prev]);
-            return newPg;
-          }}
-          onDeletePage={(id) => {
-            setPages(prev => prev.filter(p => p.id !== id));
-          }}
-        />
-      )}
 
       <div className="flex flex-col lg:flex-row gap-6 -m-4 md:-m-6 h-[calc(100vh-72px)] md:h-[calc(100vh-80px)] overflow-hidden">
       
@@ -587,7 +624,9 @@ export default function LandingPagesManagement() {
         newPageName={newPageName}
         setNewPageName={setNewPageName}
         onCreatePage={handleCreatePage}
+        isLoading={isCreating}
       />
+
 
       {/* 4. Modal for template preview */}
       <TemplatePreviewModal 

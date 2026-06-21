@@ -7,6 +7,7 @@ interface CreatePageModalProps {
   newPageName: string;
   setNewPageName: (name: string) => void;
   onCreatePage: (e: React.FormEvent) => void;
+  isLoading?: boolean;
 }
 
 export const CreatePageModal: React.FC<CreatePageModalProps> = ({
@@ -15,7 +16,9 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
   newPageName,
   setNewPageName,
   onCreatePage,
+  isLoading = false,
 }) => {
+
   if (!isOpen) return null;
 
   return (
@@ -59,10 +62,19 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition cursor-pointer"
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg shadow-sm transition cursor-pointer"
             >
-              Tạo trang
+              {isLoading ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Đang tạo…
+                </>
+              ) : (
+                "Tạo trang"
+              )}
             </button>
+
           </div>
         </form>
       </div>
