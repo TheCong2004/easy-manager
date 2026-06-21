@@ -455,6 +455,12 @@ interface DragState {
   direction?: string;
 }
 
+// Section types with natural full-height rendering (not collapsed)
+const SECTION_NATURAL_TYPES = new Set([
+  "hero", "product_section", "form_section", "footer",
+  "custom_section", "tea_landing", "smartwatch_landing", "menu",
+]);
+
 // ── Main Canvas ───────────────────────────────────────────────
 interface CanvasProps {
   sections: EditorBlock[];
@@ -847,8 +853,15 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         {/* Stack Sections Vertically */}
         {sections.map((section, index) => {
-          const sectionFrame = section.frame || { x: 0, y: 0, width: canvasWidth, height: 500, zIndex: 1 };
-          
+          const naturalHeight =
+            section.frame?.height ??
+            (typeof section.props?.minHeight === "number"
+              ? (section.props.minHeight as number)
+              : SECTION_NATURAL_TYPES.has(section.type)
+              ? 500
+              : 120);
+
+
           return (
             <React.Fragment key={section.id}>
               {/* Root Section Drop Zone */}
@@ -859,8 +872,8 @@ export const Canvas: React.FC<CanvasProps> = ({
                   style={{
                     position: "relative",
                     width: "100%",
-                    height: `${sectionFrame.height}px`,
-                    zIndex: sectionFrame.zIndex,
+                    height: `${naturalHeight}px`,
+                    zIndex: section.frame?.zIndex ?? 1,
                     overflow: "hidden",
                     border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
                   }}

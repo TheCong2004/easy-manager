@@ -307,19 +307,42 @@ export function useEditorBlockActions({
     if (templateBlocks.length === 0) return;
     if (mode === "replace" && data.sections.length > 0 && !confirm("Thay toàn bộ canvas bằng mẫu này?")) return;
 
-    push(editorReducer(data, { type: "APPLY_TEMPLATE", blocks: templateBlocks, mode }));
-    templateBlocks.forEach((block, offset) => {
+    // Debug log: template structure before migration
+    console.group(`[Template Apply] id=${templateId} mode=${mode}`);
+    console.log("Flat blocks count:", templateBlocks.length);
+    console.log("Block types:", templateBlocks.map((b) => b.type).join(", "));
+
+    const nextState = editorReducer(data, { type: "APPLY_TEMPLATE", blocks: templateBlocks, mode });
+
+    // Debug log: migrated sections
+    console.log("Sections after migration:", nextState.sections.length);
+    nextState.sections.forEach((sec, i) => {
+      console.log(
+        `  [${i}] ${sec.type} | height=${sec.frame?.height ?? "?"} | children=${sec.children?.length ?? 0} | minHeight=${sec.props?.minHeight ?? "?"}`
+      );
+      (sec.children ?? []).slice(0, 3).forEach((c) => {
+        console.log(`      ↳ ${c.type} frame=(${c.frame?.x},${c.frame?.y},${c.frame?.width}×${c.frame?.height})`);
+      });
+    });
+    console.groupEnd();
+
+    push(nextState);
+    // Record one action per section (not per flat block)
+    nextState.sections.slice(mode === "replace" ? 0 : data.sections.length).forEach((sec, offset) => {
       recordAction({
         type: "insert-element",
-        blockId: block.id,
-        blockType: block.type,
+        blockId: sec.id,
+        blockType: sec.type,
         index: mode === "replace" ? offset : data.sections.length + offset,
         timestamp: Date.now(),
       });
     });
-    handleSelectBlock(templateBlocks[0].id);
+    // Select first section in the new template
+    const firstNew = mode === "replace" ? nextState.sections[0] : nextState.sections[data.sections.length];
+    if (firstNew) handleSelectBlock(firstNew.id);
     showToast(mode === "replace" ? "Đã áp dụng mẫu trang mới" : "Đã chèn mẫu thiết kế", "success");
   }, [data, handleSelectBlock, push, recordAction, showToast]);
+
 
   const handleUseAsset = useCallback((url: string, name: string) => {
     if (selectedId) {

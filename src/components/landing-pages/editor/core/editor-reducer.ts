@@ -9,6 +9,8 @@ import {
   ElementFrame,
 } from "../types";
 import { EditorAction } from "./editor-actions";
+import { migrateTemplateFlatBlocks, recalculateSectionHeights } from "./editor-migration";
+
 
 export function editorReducer(state: EditorData, action: EditorAction): EditorData {
   switch (action.type) {
@@ -74,13 +76,22 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
       });
     case "CLEAR_CANVAS":
       return normalizeEditorState({ ...state, sections: [] });
-    case "APPLY_TEMPLATE":
+    case "APPLY_TEMPLATE": {
+      // Migrate flat template blocks → proper sections+children structure
+      const migratedSections = migrateTemplateFlatBlocks(
+        action.blocks.map(ensureOnlookBlockMeta)
+      );
+      const finalSections = recalculateSectionHeights(
+        action.mode === "replace"
+          ? migratedSections
+          : [...state.sections, ...migratedSections]
+      );
       return normalizeEditorState({
         ...state,
-        sections: action.mode === "replace"
-          ? action.blocks.map(ensureOnlookBlockMeta)
-          : [...state.sections, ...action.blocks.map(ensureOnlookBlockMeta)],
+        sections: finalSections,
       });
+    }
+
     case "IMPORT_SNAPSHOT":
     case "RESTORE_REVISION":
       return normalizeEditorState(action.data);

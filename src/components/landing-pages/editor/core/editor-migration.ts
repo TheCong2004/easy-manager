@@ -237,3 +237,166 @@ function getDefaultFrame(type: BlockType, index: number): ElementFrame {
 function num(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
+
+// ─── SECTION TYPES (top-level sections that live directly in sections[]) ──────
+const SECTION_BLOCK_TYPES = new Set([
+  "hero",
+  "product_section",
+  "form_section",
+  "footer",
+  "custom_section",
+  "tea_landing",
+  "smartwatch_landing",
+  "menu",
+]);
+
+/**
+ * Converts a flat array of template blocks (LandingTemplatePreset.blocks with fresh IDs)
+ * into the proper v2 EditorBlock[] sections structure.
+ *
+ * Rules:
+ *  - Section-kind types (hero, menu, footer, etc.) → become standalone sections
+ *  - Layout containers (feature_card, collection_list, testimonial, box, gallery, tabs, accordion,
+ *    product_card, carousel, form_capture, countdown, video, gallery) → become standalone sections
+ *    because they are full-width components in the template context
+ *  - Pure element types (text, button, image, icon, divider, html_code) → become children
+ *    inside the most recently added section (or a new custom_section if no section exists yet)
+ */
+export function migrateTemplateFlatBlocks(flatBlocks: EditorBlock[]): EditorBlock[] {
+  // These types are treated as standalone full-width sections in templates
+  const standaloneTypes = new Set([
+    ...SECTION_BLOCK_TYPES,
+    // Template "blocks" that render as full-width section-level components:
+    "feature_card", "collection_list", "testimonial", "box", "gallery",
+    "tabs", "accordion", "product_card", "carousel", "form_capture",
+    "countdown", "video", "product_section", "survey", "table", "html_code",
+  ]);
+
+  // Pure element types that become absolute-positioned children
+  const elementTypes = new Set(["text", "button", "image", "icon", "divider"]);
+
+  const sections: EditorBlock[] = [];
+  let lastSection: EditorBlock | null = null;
+  let elementIndex = 0;
+
+  for (const block of flatBlocks) {
+    if (elementTypes.has(block.type)) {
+      // Needs to be a child inside a section
+      if (!lastSection) {
+        lastSection = ensureOnlookBlockMeta({
+          id: generateId(),
+          type: "custom_section",
+          kind: "section",
+          parentId: null,
+          label: "Section",
+          props: { bgColor: "#ffffff", minHeight: 500 },
+          frame: { x: 0, y: 0, width: 1280, height: 500, zIndex: sections.length + 1, rotate: 0 },
+          children: [],
+        });
+        sections.push(lastSection);
+      }
+
+      const elem: EditorBlock = {
+        ...block,
+        kind: "element",
+        parentId: lastSection.id,
+        frame: block.frame || getDefaultFrame(block.type, elementIndex++),
+      };
+      lastSection.children = [...(lastSection.children ?? []), elem];
+    } else if (standaloneTypes.has(block.type)) {
+      // Full-width section-level block
+      const minH = num(block.props?.minHeight, isSectionType(block.type) ? 500 : 400);
+      const sec: EditorBlock = {
+        ...block,
+        kind: "section",
+        parentId: null,
+        frame: block.frame || {
+          x: 0,
+          y: 0,
+          width: 1280,
+          height: minH,
+          zIndex: sections.length + 1,
+          rotate: 0,
+        },
+        children: Array.isArray(block.children) ? block.children : [],
+      };
+      sections.push(sec);
+      lastSection = sec; // new sections absorb subsequent element-type blocks
+      elementIndex = 0;
+    } else {
+      // Unknown type — treat as standalone section
+      const sec: EditorBlock = {
+        ...block,
+        kind: "section",
+        parentId: null,
+        frame: block.frame || { x: 0, y: 0, width: 1280, height: 400, zIndex: sections.length + 1, rotate: 0 },
+        children: Array.isArray(block.children) ? block.children : [],
+      };
+      sections.push(sec);
+      lastSection = sec;
+      elementIndex = 0;
+    }
+  }
+
+  return recalculateSectionHeights(sections);
+}
+
+function isSectionType(type: string): boolean {
+  return SECTION_BLOCK_TYPES.has(type);
+}
+
+/**
+ * Recalculate section frame.height and props.minHeight based on children.
+ * - Sections with children: height = max(child.y + child.height) + 80
+ * - Sections without children but are section types (hero, footer): keep props.minHeight or 500
+ * - Empty custom_section wrappers: collapse to 120px to avoid giant whitespace
+ */
+export function recalculateSectionHeights(sections: EditorBlock[]): EditorBlock[] {
+  return sections.map((sec) => {
+    const children = sec.children ?? [];
+
+    if (children.length > 0) {
+      let maxBottom = 0;
+      children.forEach((c) => {
+        if (c.frame) {
+          maxBottom = Math.max(maxBottom, c.frame.y + c.frame.height);
+        }
+      });
+      const minFromProps = num(sec.props?.minHeight, 0);
+      const calculated = Math.max(minFromProps, maxBottom + 80);
+
+      return {
+        ...sec,
+        frame: {
+          ...(sec.frame || { x: 0, y: 0, width: 1280, zIndex: 1, rotate: 0 }),
+          height: calculated,
+        },
+        props: sec.props ? { ...sec.props, minHeight: calculated } : sec.props,
+        children,
+      };
+    }
+
+    // No children
+    if (isSectionType(sec.type)) {
+      // Hero/footer/etc. with their own content — keep their natural height
+      const natural = num(sec.props?.minHeight, 500);
+      return {
+        ...sec,
+        frame: {
+          ...(sec.frame || { x: 0, y: 0, width: 1280, zIndex: 1, rotate: 0 }),
+          height: natural,
+        },
+      };
+    }
+
+    // Empty container section (custom_section with no elements) — collapse to compact
+    return {
+      ...sec,
+      frame: {
+        ...(sec.frame || { x: 0, y: 0, width: 1280, zIndex: 1, rotate: 0 }),
+        height: Math.max(num(sec.frame?.height, 120), 120),
+      },
+    };
+  });
+}
+
