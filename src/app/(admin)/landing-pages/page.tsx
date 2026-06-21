@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LandingPageItem, TemplateItem, FormConfigItem, TagItem, DomainItem } from "@/components/landing-pages/dung-chung/types";
 import { SubSidebar } from "@/components/landing-pages/sidebar/SubSidebar";
@@ -17,6 +17,8 @@ import { resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components
 import { migrateTemplateFlatBlocks } from "@/components/landing-pages/editor/core/editor-migration";
 import { createDefaultPageSettings, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
 import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
+import { supabase } from "@/lib/supabase";
+
 
 
 const initialPages: LandingPageItem[] = [
@@ -306,47 +308,112 @@ const initialTags: TagItem[] = [
   },
 ];
 
-function mapTemplateToEditorPreset(template: TemplateItem): string {
-  const value = `${template.id} ${template.name} ${template.category}`.toLowerCase();
-  // Legacy templates
-  if (value.includes("112306") || value.includes("wedding") || value.includes("cưới")) return "wedding-invite";
-  if (value.includes("112305") || value.includes("112309") || value.includes("mỹ phẩm")) return "beauty-shop";
-  if (value.includes("112307") || value.includes("trà") || value.includes("tea")) return "herb-tea";
-  if (value.includes("112308") || value.includes("smartwatch") || value.includes("đồng hồ")) return "smartwatch-performance";
-  if (value.includes("112312") || value.includes("khóa học")) return "webinar-lead";
-  if (value.includes("112313") || value.includes("slide show") || value.includes("carousel")) return "hero-slide-show";
-  if (value.includes("112314") || value.includes("product grid") || value.includes("flash sale")) return "ladi-product-grid";
-  if (value.includes("112315") || value.includes("course funnel") || value.includes("e-learning")) return "course-slide-funnel";
-  if (value.includes("112316") || value.includes("gallery showcase")) return "gallery-showcase";
-  if (value.includes("112317") || value.includes("builder product kit")) return "builder-product-kit";
-  if (value.includes("112318") || value.includes("builder ui elements")) return "builder-ui-elements";
-  if (value.includes("112310") || value.includes("grand") || value.includes("khai trương")) return "grand-opening";
-  if (value.includes("112311")) return "finance-consulting";
-  // 12 template mới — khớp theo ID t15–t26
-  if (value.includes("t15") || value.includes("saas") || value.includes("flux ai crm")) return "saas-minimal";
-  if (value.includes("t16") || value.includes("ecommerce") || value.includes("flash sale 70")) return "ecommerce-bold";
-  if (value.includes("t17") || value.includes("real estate") || value.includes("biệt thự")) return "real-estate-premium";
-  if (value.includes("t18") || value.includes("online course") || value.includes("growthacademy")) return "online-course";
-  if (value.includes("t19") || value.includes("webinar event") || value.includes("growth summit")) return "webinar-event";
-  if (value.includes("t20") || value.includes("agency") || value.includes("void studio")) return "agency-portfolio";
-  if (value.includes("t21") || value.includes("clinic") || value.includes("vitacare")) return "clinic-trust";
-  if (value.includes("t22") || value.includes("restaurant") || value.includes("umami")) return "restaurant-menu";
-  if (value.includes("t23") || value.includes("mobile app") || value.includes("pendo")) return "mobile-app";
-  if (value.includes("t24") || value.includes("finance lead") || value.includes("prosperwealth")) return "finance-lead";
-  if (value.includes("t25") || value.includes("beauty spa") || value.includes("lumière")) return "beauty-spa";
-  if (value.includes("t26") || value.includes("local service") || value.includes("airfix")) return "local-service";
-  return "product-launch";
-}
+
 
 
 export default function LandingPagesManagement() {
   const router = useRouter();
-  const [pages, setPages] = useState<LandingPageItem[]>(initialPages);
+  const [pages, setPages] = useState<LandingPageItem[]>([]);
   const [activeSubTab, setActiveSubTab] = useState("pages");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
+
+  // Dynamic pages loading effect
+  useEffect(() => {
+    async function loadPages() {
+      // 1. Try Supabase first
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from("landing_pages")
+            .select("id, name, status, updated_at")
+            .order("updated_at", { ascending: false });
+
+          if (!error && data) {
+            const dbPages: LandingPageItem[] = data.map((item: any) => ({
+              id: item.id,
+              name: item.name || "Untitled Page",
+              status: item.status === "published" ? "PUBLISHED" : "UNPUBLISHED",
+              updatedAt: item.updated_at
+                ? new Date(item.updated_at).toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }) +
+                  ", " +
+                  new Date(item.updated_at).toLocaleDateString("vi-VN")
+                : "",
+              views: 0,
+              conversions: 0,
+              revenue: 0,
+            }));
+            setPages(dbPages);
+            return;
+          }
+        } catch (err) {
+          console.warn("Supabase fetch pages failed, falling back to local storage:", err);
+        }
+      }
+
+      // 2. Local storage fallback: scan all landing-editor-autosave: keys
+      const localPages: LandingPageItem[] = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("landing-editor-autosave:")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const backup = JSON.parse(raw);
+              const pageId = key.replace("landing-editor-autosave:", "");
+              localPages.push({
+                id: pageId,
+                name: backup?.editorData?.pageName || "Untitled Page",
+                status: "UNPUBLISHED",
+                updatedAt: backup?.savedAt
+                  ? new Date(backup.savedAt).toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }) +
+                    ", " +
+                    new Date(backup.savedAt).toLocaleDateString("vi-VN")
+                  : "",
+                views: 0,
+                conversions: 0,
+                revenue: 0,
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to read local storage pages:", err);
+      }
+
+      // Add the mock "daotao" page if no pages exist, or as a default item
+      if (localPages.length === 0) {
+        localPages.push({
+          id: "daotao-mock",
+          name: "daotao",
+          status: "UNPUBLISHED",
+          updatedAt: "21:46, 27/02/2026",
+          views: 0,
+          conversions: 0,
+          revenue: 0,
+        });
+      }
+
+      // Sort by updatedAt descending
+      localPages.sort((a, b) => {
+        const timeA = new Date(a.updatedAt.split(", ")[1]?.split("/").reverse().join("-") + "T" + a.updatedAt.split(", ")[0]).getTime() || 0;
+        const timeB = new Date(b.updatedAt.split(", ")[1]?.split("/").reverse().join("-") + "T" + b.updatedAt.split(", ")[0]).getTime() || 0;
+        return timeB - timeA;
+      });
+
+      setPages(localPages);
+    }
+
+    void loadPages();
+  }, []);
 
   // Creating page state
   const [isCreating, setIsCreating] = useState(false);
@@ -471,10 +538,13 @@ export default function LandingPagesManagement() {
 
   // Create page from template
   const handleUseTemplate = (template: TemplateItem) => {
+    // Use resolveTemplatePresetId from template-library/index.ts (single source of truth)
+    const presetId = resolveTemplatePresetId({ name: template.name, id: template.id });
     setNewPageName(template.name.split("-")[0].trim().toLowerCase() + "-copy");
-    setPendingTemplateId(mapTemplateToEditorPreset(template));
+    setPendingTemplateId(presetId);
     setIsCreateModalOpen(true);
   };
+
 
   // Handler for editing a page — navigate to the editor route
   const handleEditPage = useCallback((page: LandingPageItem) => {

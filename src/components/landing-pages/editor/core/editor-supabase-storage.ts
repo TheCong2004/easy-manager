@@ -190,7 +190,7 @@ export async function createLandingPage(input: {
   const backup: LocalAutosaveBackup = {
     pageId,
     schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-    editorData: {
+    editorData: input.editor_data || {
       pageId,
       pageName: input.name,
       sections: [],

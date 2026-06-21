@@ -867,7 +867,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         {sections.map((section, index) => {
           const hasAbsoluteChildren = (section.children ?? []).length > 0;
 
-          const isSelfContained = SELF_CONTAINED_SECTION_TYPES.has(section.type) && !hasAbsoluteChildren;
+          const isSelfContained = SELF_CONTAINED_SECTION_TYPES.has(section.type);
 
           const naturalHeight =
             section.frame?.height ??

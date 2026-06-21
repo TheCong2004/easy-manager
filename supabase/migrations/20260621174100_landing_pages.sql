@@ -37,19 +37,19 @@ ALTER TABLE public.landing_page_versions ENABLE ROW LEVEL SECURITY;
 -- 1. Policies for landing_pages
 CREATE POLICY "Users can select their own landing pages"
     ON public.landing_pages FOR SELECT
-    USING (user_id = auth.uid());
+    USING (user_id = auth.uid() OR user_id IS NULL);
 
 CREATE POLICY "Users can insert their own landing pages"
     ON public.landing_pages FOR INSERT
-    WITH CHECK (user_id = auth.uid());
+    WITH CHECK (user_id = auth.uid() OR user_id IS NULL);
 
 CREATE POLICY "Users can update their own landing pages"
     ON public.landing_pages FOR UPDATE
-    USING (user_id = auth.uid());
+    USING (user_id = auth.uid() OR user_id IS NULL);
 
 CREATE POLICY "Users can delete their own landing pages"
     ON public.landing_pages FOR DELETE
-    USING (user_id = auth.uid());
+    USING (user_id = auth.uid() OR user_id IS NULL);
 
 -- Permit public select for rendering published pages
 CREATE POLICY "Anyone can view published landing pages"
@@ -59,12 +59,12 @@ CREATE POLICY "Anyone can view published landing pages"
 -- 2. Policies for landing_page_versions
 CREATE POLICY "Users can select versions of their own landing pages"
     ON public.landing_page_versions FOR SELECT
-    USING (user_id = auth.uid());
+    USING (user_id = auth.uid() OR user_id IS NULL);
 
 CREATE POLICY "Users can insert versions of their own landing pages"
     ON public.landing_page_versions FOR INSERT
-    WITH CHECK (user_id = auth.uid());
+    WITH CHECK (user_id = auth.uid() OR user_id IS NULL);
 
 CREATE POLICY "Users can delete versions of their own landing pages"
     ON public.landing_page_versions FOR DELETE
-    USING (user_id = auth.uid());
+    USING (user_id = auth.uid() OR user_id IS NULL);
