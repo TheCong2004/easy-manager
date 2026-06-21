@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { LandingPageItem } from "../dung-chung/types";
 
 interface PagesListProps {
@@ -12,6 +12,8 @@ interface PagesListProps {
   handleSelectRow: (id: string, checked: boolean) => void;
   setIsCreateModalOpen: (open: boolean) => void;
   onEdit?: (page: LandingPageItem) => void;
+  onDelete?: (page: LandingPageItem) => void;
+  onDeleteSelected?: (ids: string[]) => void;
 }
 
 export const PagesList: React.FC<PagesListProps> = ({
@@ -25,7 +27,10 @@ export const PagesList: React.FC<PagesListProps> = ({
   handleSelectRow,
   setIsCreateModalOpen,
   onEdit,
+  onDelete,
+  onDeleteSelected,
 }) => {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   return (
     <div className="space-y-6">
       {/* Header Title with Subtitle & Blue Button */}
@@ -39,18 +44,33 @@ export const PagesList: React.FC<PagesListProps> = ({
           </p>
         </div>
 
-        {/* Action button with AI badge */}
-        <div className="relative">
-          <button 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
-          >
-            <span>+ Tạo Landing Page</span>
-          </button>
-          {/* AI badge floating at top right */}
-          <span className="absolute -top-2.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold text-white bg-linear-to-r from-pink-500 to-violet-600 rounded-md shadow-xs animate-bounce select-none">
-            AI ✦
-          </span>
+        {/* Action buttons */}
+        <div className="flex items-center gap-3">
+          {selectedIds.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} landing page đã chọn?`)) {
+                  onDeleteSelected?.(selectedIds);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-red-650 hover:bg-red-700 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+            >
+              <span>Xóa đã chọn ({selectedIds.length})</span>
+            </button>
+          )}
+
+          <div className="relative">
+            <button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 rounded-lg shadow-sm transition duration-150 cursor-pointer"
+            >
+              <span>+ Tạo Landing Page</span>
+            </button>
+            {/* AI badge floating at top right */}
+            <span className="absolute -top-2.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold text-white bg-linear-to-r from-pink-500 to-violet-600 rounded-md shadow-xs animate-bounce select-none">
+              AI ✦
+            </span>
+          </div>
         </div>
       </div>
 
@@ -226,11 +246,43 @@ export const PagesList: React.FC<PagesListProps> = ({
                             Chỉnh sửa
                           </button>
                           {/* More options */}
-                          <button className="text-slate-400 hover:text-slate-650 dark:hover:text-gray-300 p-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                            </svg>
-                          </button>
+                          <div className="relative">
+                            <button 
+                              onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                              className="text-slate-400 hover:text-slate-650 dark:hover:text-gray-300 p-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                              </svg>
+                            </button>
+                            {openMenuId === item.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                                <div className="absolute right-0 mt-1 w-32 rounded-md shadow-lg bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 z-20 py-1">
+                                  <button
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      onEdit?.(item);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-gray-750 transition"
+                                  >
+                                    Chỉnh sửa
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      if (confirm(`Bạn có chắc chắn muốn xóa landing page "${item.name}"?`)) {
+                                        onDelete?.(item);
+                                      }
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-xs text-red-650 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-750 transition"
+                                  >
+                                    Xóa trang
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>

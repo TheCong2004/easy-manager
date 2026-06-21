@@ -376,3 +376,38 @@ export async function restoreLandingPageVersion(
   }
   throw new Error("Version not found");
 }
+
+export async function deleteLandingPage(pageId: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase
+      .from("landing_pages")
+      .delete()
+      .eq("id", pageId);
+    if (error) throw error;
+  }
+  try {
+    localStorage.removeItem(getLocalBackupKey(pageId));
+    console.info("[LandingEditor Delete] Deleted local storage backup for page:", pageId);
+  } catch (err) {
+    console.warn("Failed to delete local storage key:", err);
+  }
+}
+
+export async function deleteLandingPages(pageIds: string[]): Promise<void> {
+  if (pageIds.length === 0) return;
+  if (supabase) {
+    const { error } = await supabase
+      .from("landing_pages")
+      .delete()
+      .in("id", pageIds);
+    if (error) throw error;
+  }
+  pageIds.forEach((id) => {
+    try {
+      localStorage.removeItem(getLocalBackupKey(id));
+    } catch (err) {
+      console.warn("Failed to delete local storage key for:", id, err);
+    }
+  });
+}
+

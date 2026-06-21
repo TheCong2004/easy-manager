@@ -12,7 +12,7 @@ import { DomainsConfig } from "@/components/landing-pages/domains/DomainsConfig"
 import { DataLeads } from "@/components/landing-pages/leads/DataLeads";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
-import { createLandingPage } from "@/components/landing-pages/editor/core/editor-supabase-storage";
+import { createLandingPage, deleteLandingPage, deleteLandingPages } from "@/components/landing-pages/editor/core/editor-supabase-storage";
 import { resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
 import { migrateTemplateFlatBlocks } from "@/components/landing-pages/editor/core/editor-migration";
 import { createDefaultPageSettings, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
@@ -569,6 +569,31 @@ export default function LandingPagesManagement() {
   }, [router]);
 
 
+  // Handler for deleting a page
+  const handleDeletePage = useCallback(async (page: LandingPageItem) => {
+    try {
+      await deleteLandingPage(page.id);
+      setPages((prev) => prev.filter((p) => p.id !== page.id));
+      setSelectedIds((prev) => prev.filter((id) => id !== page.id));
+    } catch (err) {
+      console.error("Failed to delete page:", err);
+      alert("Không thể xóa landing page. Vui lòng thử lại.");
+    }
+  }, []);
+
+  // Handler for deleting multiple selected pages
+  const handleDeleteSelectedPages = useCallback(async (ids: string[]) => {
+    try {
+      await deleteLandingPages(ids);
+      setPages((prev) => prev.filter((p) => !ids.includes(p.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Failed to delete selected pages:", err);
+      alert("Không thể xóa các landing page đã chọn. Vui lòng thử lại.");
+    }
+  }, []);
+
+
   // Handler when published from editor
   const handlePublishFromEditor = (updatedPage: LandingPageItem) => {
     setPages((prev) => prev.map((p) => (p.id === updatedPage.id ? updatedPage : p)));
@@ -697,6 +722,8 @@ export default function LandingPagesManagement() {
               setIsCreateModalOpen(open);
             }}
             onEdit={handleEditPage}
+            onDelete={handleDeletePage}
+            onDeleteSelected={handleDeleteSelectedPages}
           />
         )}
       </div>
