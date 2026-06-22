@@ -11,9 +11,19 @@ import {
   createImportWebsite,
   createPpcLandingPage,
   publishWebsiteProject,
-  getWebsiteJob
+  getWebsiteJob,
+  aiEditSection
 } from "@/lib/claw-api/website-builder";
-import type { WebsiteProject, WebsiteSchema, CreateAiWebsitePayload, CreateCloneWebsitePayload, CreateImportWebsitePayload, CreatePpcLandingPagePayload } from "@/types/website-builder";
+import type {
+  WebsiteProject,
+  WebsiteSchema,
+  WebsiteJob,
+  CreateAiWebsitePayload,
+  CreateCloneWebsitePayload,
+  CreateImportWebsitePayload,
+  CreatePpcLandingPagePayload,
+  AiEditSectionPayload
+} from "@/types/website-builder";
 
 // Query Keys
 export const websiteQueryKeys = {
@@ -160,5 +170,12 @@ export function useWebsiteJob(jobId: string, options?: { enabled?: boolean; refe
     queryFn: () => getWebsiteJob(jobId),
     enabled: !!jobId && (options?.enabled ?? true),
     refetchInterval: options?.refetchInterval,
+  });
+}
+
+/** Hook gọi AI chỉnh sửa section */
+export function useAiEditSection(projectId: string) {
+  return useMutation({
+    mutationFn: (payload: AiEditSectionPayload) => aiEditSection(projectId, payload),
   });
 }

@@ -1,5 +1,15 @@
 import { request, post, put, del } from "./core";
-import type { WebsiteProject, WebsiteSchema, WebsiteJob, CreateAiWebsitePayload, CreateCloneWebsitePayload, CreateImportWebsitePayload, CreatePpcLandingPagePayload } from "@/types/website-builder";
+import type {
+  WebsiteProject,
+  WebsiteSchema,
+  WebsiteJob,
+  CreateAiWebsitePayload,
+  CreateCloneWebsitePayload,
+  CreateImportWebsitePayload,
+  CreatePpcLandingPagePayload,
+  AiEditSectionPayload,
+  AiEditSectionResponse
+} from "@/types/website-builder";
 
 /**
  * TODO: Cần cấu hình backend endpoint tương ứng trên NestJS
@@ -183,4 +193,74 @@ export async function getWebsiteJob(jobId: string): Promise<WebsiteJob> {
   }
 
   throw new Error(`Job not found: ${jobId}`);
+}
+
+/**
+ * Yêu cầu AI chỉnh sửa section dựa trên prompt và props hiện tại.
+ * Chỉ hoạt động ở chế độ mock khi có biến môi trường NEXT_PUBLIC_ENABLE_WEBSITE_BUILDER_MOCK=true.
+ */
+export async function aiEditSection(
+  projectId: string,
+  payload: AiEditSectionPayload
+): Promise<AiEditSectionResponse> {
+  if (process.env.NEXT_PUBLIC_ENABLE_WEBSITE_BUILDER_MOCK === "true") {
+    // Isolated Mock Logic for local development:
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const promptLower = payload.prompt.toLowerCase();
+    
+    // Default clone of current props
+    const updatedProps = { ...payload.currentProps };
+    
+    // Check if background image/image changes are requested
+    if (promptLower.includes("ảnh") || promptLower.includes("image") || promptLower.includes("hình ảnh")) {
+      updatedProps.imageUrl = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600";
+      updatedProps.backgroundImage = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600";
+      if (!updatedProps.props) updatedProps.props = {};
+      updatedProps.props.imageUrl = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600";
+      updatedProps.props.backgroundImage = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600";
+    }
+    
+    if (promptLower.includes("màu") || promptLower.includes("color") || promptLower.includes("nền") || promptLower.includes("background")) {
+      updatedProps.backgroundColor = "#ECFDF5"; // Light emerald green
+      if (!updatedProps.props) updatedProps.props = {};
+      updatedProps.props.backgroundColor = "#ECFDF5";
+      if (!updatedProps.props.settings) updatedProps.props.settings = {};
+      updatedProps.props.settings.backgroundColor = "#ECFDF5";
+      updatedProps.props.settings.textColor = "#064E3B";
+    }
+    
+    if (promptLower.includes("chữ") || promptLower.includes("text") || promptLower.includes("tiêu đề") || promptLower.includes("title")) {
+      updatedProps.title = "Đột Phá Doanh Nghiệp Với Giải Pháp AI";
+      updatedProps.subtitle = "Hệ thống tự động hóa chuyển đổi số giúp doanh nghiệp bứt phá doanh thu vượt trội trong kỷ nguyên số.";
+      if (!updatedProps.props) updatedProps.props = {};
+      updatedProps.props.title = "Đột Phá Doanh Nghiệp Với Giải Pháp AI";
+      updatedProps.props.subtitle = "Hệ thống tự động hóa chuyển đổi số giúp doanh nghiệp bứt phá doanh thu vượt trội trong kỷ nguyên số.";
+    }
+    
+    if (promptLower.includes("nút") || promptLower.includes("button")) {
+      updatedProps.buttonText = "Nhận Tư Vấn Miễn Phí";
+      updatedProps.buttonBgColor = "#10B981";
+      if (!updatedProps.props) updatedProps.props = {};
+      updatedProps.props.buttonText = "Nhận Tư Vấn Miễn Phí";
+      updatedProps.props.buttonBgColor = "#10B981";
+    }
+
+    // Fallback if no specific keyword matched
+    if (JSON.stringify(updatedProps) === JSON.stringify(payload.currentProps)) {
+      updatedProps.title = (payload.currentProps.title || "Tiêu đề mới") + " (AI Updated)";
+      if (!updatedProps.props) updatedProps.props = {};
+      updatedProps.props.title = (payload.currentProps.title || "Tiêu đề mới") + " (AI Updated)";
+    }
+    
+    return {
+      updatedProps,
+      explanation: "Mock AI đã cập nhật lại nội dung, màu nền và chữ kêu gọi hành động (CTA) của section theo yêu cầu."
+    };
+  }
+
+  // Real Production API logic:
+  return post<AiEditSectionResponse>(
+    `/website-builder/projects/${projectId}/ai-edit-section`,
+    payload
+  );
 }

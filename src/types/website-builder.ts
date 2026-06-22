@@ -129,6 +129,18 @@ export interface CreatePpcLandingPagePayload {
   type: "ppc_landing_page";
 }
 
+export interface AiEditSectionPayload {
+  sectionId: string;
+  sectionType: string;
+  prompt: string;
+  currentProps: Record<string, any>;
+}
+
+export interface AiEditSectionResponse {
+  updatedProps: Record<string, any>;
+  explanation?: string;
+}
+
 
 
 

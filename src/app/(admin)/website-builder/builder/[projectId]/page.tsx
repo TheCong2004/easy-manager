@@ -27,6 +27,7 @@ import {
 } from "@/components/website-builder/core/builder-node-adapter";
 import LayersTree from "@/components/website-builder/shared/LayersTree";
 import InspectorRenderer from "@/components/website-builder/shared/InspectorRenderer";
+import InspectPanel from "@/components/website-builder/shared/InspectPanel";
 
 const USE_MOCK_API = true;
 
@@ -1200,9 +1201,9 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
         </aside>
 
         {/* Central Design Canvas */}
-        <main className="flex-1 overflow-y-auto p-8 flex justify-center bg-zinc-100 dark:bg-zinc-900/50">
+        <main className="flex-1 overflow-y-auto p-8 flex flex-col items-center gap-6 bg-zinc-100 dark:bg-zinc-900/50">
           <div
-            className={`bg-white shadow-2xl transition-all duration-300 overflow-hidden relative min-h-[700px] border border-stroke dark:border-strokedark flex flex-col ${
+            className={`bg-white shadow-2xl transition-all duration-300 overflow-hidden relative min-h-[500px] border border-stroke dark:border-strokedark flex flex-col shrink-0 ${
               viewMode === "desktop" ? "w-full max-w-[1100px]" : viewMode === "tablet" ? "w-[768px]" : "w-[375px]"
             }`}
             style={{ fontFamily: schema.fontFamily || "Inter" }}
@@ -1262,7 +1263,7 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
               <iframe
                 ref={iframeRef}
                 src={builderUrl}
-                className="w-full flex-1 border-0 min-h-[600px]"
+                className="w-full flex-1 border-0 min-h-[500px]"
                 referrerPolicy="no-referrer"
                 sandbox="allow-scripts allow-same-origin allow-forms"
                 title="Website Builder Editor Canvas"
@@ -1273,6 +1274,22 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
               </div>
             )}
           </div>
+
+          {/* Inspect Panel */}
+          <InspectPanel
+            projectId={projectId}
+            schema={schema}
+            selectedSectionId={selectedSectionId}
+            onUpdateSchema={(newSchema) => {
+              updateSchema(newSchema);
+            }}
+            onClose={() => {
+              setSelectedSectionId(null);
+              setSelectedNodeId(null);
+              setSelectedNodeType(null);
+              setEditingSectionId(null);
+            }}
+          />
         </main>
 
         {/* Right Props Editor Panel */}
