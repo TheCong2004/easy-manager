@@ -17,6 +17,9 @@ import WebsiteRenderer from "@/components/website-builder/renderer/WebsiteRender
 import SectionRenderer from "@/components/website-builder/renderer/SectionRenderer";
 import { useUpdateWebsiteSchema, usePublishWebsiteProject } from "@/hooks/use-website-builder";
 import { JobProgressModal } from "@/components/website-builder/shared/job-progress";
+import { getWebsiteBuilderSession } from "@/lib/claw-api/website-builder";
+
+const USE_MOCK_API = true;
 
 interface BuilderPageProps {
   params: Promise<{ projectId: string }>;
@@ -51,6 +54,15 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
 
   const publishMutation = usePublishWebsiteProject(projectId);
 
+  // States for secure iframe handoff
+  const [builderUrl, setBuilderUrl] = useState<string | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const schema: WebsiteSchema = project?.schema_data || DEFAULT_SCHEMA;
+  const currentPage = schema.pages.find((p) => p.id === activePageId) || schema.pages[0];
+
   const triggerToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -67,6 +79,26 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
           if (schemaData?.pages && schemaData.pages.length > 0) {
             setActivePageId(schemaData.pages[0].id);
           }
+
+          // Fetch secure builder session URL
+          try {
+            if (USE_MOCK_API) {
+              const mockUrl = `${window.location.origin}/p/w/preview-${projectId}`;
+              setBuilderUrl(mockUrl);
+            } else {
+              const session = await getWebsiteBuilderSession(projectId);
+              if (session?.builderUrl) {
+                setBuilderUrl(session.builderUrl);
+              } else {
+                setSessionError("Không thể tạo phiên làm việc của Trình soạn thảo.");
+              }
+            }
+          } catch (sessionErr: any) {
+            console.error("Failed to load builder session:", sessionErr);
+            setSessionError(sessionErr?.message || "Lỗi tạo phiên soạn thảo bảo mật.");
+          } finally {
+            setSessionLoading(false);
+          }
         } else {
           triggerToast("Không tìm thấy dự án", "error");
           router.push("/website-builder");
@@ -80,6 +112,67 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
     }
     load();
   }, [projectId, router]);
+
+  // Listen for secure messages from builder iframe
+  useEffect(() => {
+    if (typeof window === "undefined" || !builderUrl) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        // Verify origin whitelist dynamically from builderUrl
+        const allowedOrigin = new URL(builderUrl).origin;
+        if (event.origin !== allowedOrigin) {
+          console.warn("Rejected postMessage from unauthorized origin:", event.origin);
+          return;
+        }
+
+        const data = event.data;
+        if (data?.type === "select_section") {
+          setEditingSectionId(data.sectionId);
+        }
+        if (data?.type === "schema_update" && data?.schema) {
+          updateSchema(data.schema);
+        }
+      } catch (err) {
+        console.error("Error processing postMessage from iframe:", err);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [builderUrl]);
+
+  // Sync local schema changes to visual iframe editor
+  useEffect(() => {
+    if (iframeRef.current && builderUrl) {
+      try {
+        const allowedOrigin = new URL(builderUrl).origin;
+        iframeRef.current.contentWindow?.postMessage(
+          { type: "sync_schema", schema },
+          allowedOrigin
+        );
+      } catch (err) {
+        console.error("Error syncing schema to iframe:", err);
+      }
+    }
+  }, [schema, builderUrl]);
+
+  // Sync selected section id to iframe
+  useEffect(() => {
+    if (iframeRef.current && builderUrl) {
+      try {
+        const allowedOrigin = new URL(builderUrl).origin;
+        iframeRef.current.contentWindow?.postMessage(
+          { type: "select_section", sectionId: editingSectionId },
+          allowedOrigin
+        );
+      } catch (err) {
+        console.error("Error syncing selected section to iframe:", err);
+      }
+    }
+  }, [editingSectionId, builderUrl]);
 
   // Set isFirstLoad to false after loading completes
   useEffect(() => {
@@ -126,9 +219,6 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
   }
 
   if (!project) return null;
-
-  const schema: WebsiteSchema = project.schema_data || DEFAULT_SCHEMA;
-  const currentPage = schema.pages.find((p) => p.id === activePageId) || schema.pages[0];
 
   const updateSchema = async (newSchema: WebsiteSchema) => {
     const currentSchema = project?.schema_data || DEFAULT_SCHEMA;
@@ -207,8 +297,6 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
       triggerToast("Lỗi khi lưu thiết kế", "error");
     }
   };
-
-  const USE_MOCK_API = true;
 
   const handlePublishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -818,77 +906,37 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
               </div>
             )}
 
-            {/* Dynamic Schema Render (Canvas) */}
-            {currentPage.sections.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-gray-400">
-                <p className="text-sm">Trang này chưa có Section nào.</p>
+            {/* Dynamic Schema Render (Decoupled Visual Canvas Iframe) */}
+            {sessionLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent mb-3"></div>
+                <p className="text-gray-500 text-sm">Đang bảo mật và khởi tạo phiên soạn thảo...</p>
+              </div>
+            ) : sessionError ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-rose-50/10">
+                <span className="text-4xl text-rose-500 mb-3">⚠</span>
+                <h4 className="text-sm font-bold text-black dark:text-white mb-2">Lỗi kết nối phiên làm việc</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mb-4">{sessionError}</p>
                 <button
-                  onClick={() => setActiveTab("add-sections")}
-                  className="mt-3 text-xs text-primary font-bold hover:underline"
+                  onClick={() => window.location.reload()}
+                  className="rounded bg-primary py-1.5 px-4 text-xs font-semibold text-white hover:bg-opacity-95"
                 >
-                  + Thêm section mới
+                  Tải lại trang
                 </button>
               </div>
+            ) : builderUrl ? (
+              <iframe
+                ref={iframeRef}
+                src={builderUrl}
+                className="w-full flex-1 border-0 min-h-[600px]"
+                referrerPolicy="no-referrer"
+                sandbox="allow-scripts allow-same-origin allow-forms"
+                title="Website Builder Editor Canvas"
+              />
             ) : (
-              currentPage.sections.map((section: any, idx: number) => {
-                const isSelected = editingSectionId === section.id;
-                
-                return (
-                  <div
-                    key={section.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingSectionId(section.id);
-                    }}
-                    className={`relative group border-2 border-transparent hover:border-primary/50 cursor-pointer transition-all ${
-                      isSelected ? "border-primary bg-primary/2" : ""
-                    }`}
-                  >
-                    {/* Floating Controls */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex items-center gap-1.5 bg-white shadow-lg border border-stroke rounded-md p-1 z-20 transition dark:bg-boxdark dark:border-strokedark">
-                      <button
-                        onClick={() => moveSection(idx, "up")}
-                        disabled={idx === 0}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-meta-4 rounded text-black dark:text-white disabled:opacity-30"
-                        title="Di chuyển lên"
-                      >
-                        ▲
-                      </button>
-                      <button
-                        onClick={() => moveSection(idx, "down")}
-                        disabled={idx === currentPage.sections.length - 1}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-meta-4 rounded text-black dark:text-white disabled:opacity-30"
-                        title="Di chuyển xuống"
-                      >
-                        ▼
-                      </button>
-                      <button
-                        onClick={() => duplicateSection(idx)}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-meta-4 rounded text-black dark:text-white"
-                        title="Nhân bản"
-                      >
-                        ❐
-                      </button>
-                      <button
-                        onClick={() => deleteSection(idx)}
-                        className="p-1 hover:bg-rose-50 rounded text-rose-600 dark:hover:bg-rose-950/20"
-                        title="Xóa"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    {/* RENDER DYNAMIC SECTION */}
-                    <SectionRenderer
-                      section={section}
-                      mode="edit"
-                      activeSectionId={editingSectionId}
-                      onFieldClick={startInlineEdit}
-                      primaryColor={schema.primaryColor}
-                    />
-                  </div>
-                );
-              })
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-gray-400">
+                <p className="text-sm">Không tìm thấy địa chỉ phiên soạn thảo.</p>
+              </div>
             )}
           </div>
         </main>

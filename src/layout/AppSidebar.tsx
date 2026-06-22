@@ -135,7 +135,7 @@ const othersItems: NavItem[] = [
     ),
     iconColor: "text-lime-600 dark:text-lime-400",
     name: "Website Builder",
-    path: "/landing-pages",
+    path: "/website-builder",
     appId: "1",
   },
   {

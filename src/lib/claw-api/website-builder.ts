@@ -124,6 +124,13 @@ export async function publishWebsiteProject(projectId: string): Promise<{ projec
 }
 
 /**
+ * Lấy URL phiên làm việc bảo mật cho Trình soạn thảo (Visual Editor)
+ */
+export async function getWebsiteBuilderSession(projectId: string): Promise<{ builderUrl: string; expiresAt?: string }> {
+  return post<{ builderUrl: string; expiresAt?: string }>(`/website-builder/projects/${projectId}/builder-session`);
+}
+
+/**
  * TODO: Cần cấu hình backend endpoint tương ứng trên NestJS
  * Lấy trạng thái của tác vụ chạy ngầm từ backend
  */
