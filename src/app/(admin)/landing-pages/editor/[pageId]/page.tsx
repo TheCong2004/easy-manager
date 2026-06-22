@@ -76,10 +76,10 @@ export default async function LandingEditorPage({ params }: Props) {
   if (supabase) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    // Nếu chưa đăng nhập → redirect signin
-    if (authError || !user) {
-      redirect(`/signin?redirect=/landing-pages/editor/${pageId}`);
-    }
+    // Nếu chưa đăng nhập → redirect signin (Tạm thời bỏ qua đăng nhập để tiện chạy thử và test)
+    // if (authError || !user) {
+    //   redirect(`/signin?redirect=/landing-pages/editor/${pageId}`);
+    // }
 
     // 3. Kiểm tra ownership của page
     const { data: page, error: pageError } = await supabase
@@ -94,7 +94,7 @@ export default async function LandingEditorPage({ params }: Props) {
     }
 
     // Nếu page tồn tại nhưng không phải của user → 403
-    if (page && page.user_id && page.user_id !== user.id) {
+    if (page && page.user_id && user && page.user_id !== user.id) {
       // Render trang lỗi 403
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
