@@ -18,6 +18,7 @@ import SectionRenderer from "@/components/website-builder/renderer/SectionRender
 import { useUpdateWebsiteSchema, usePublishWebsiteProject } from "@/hooks/use-website-builder";
 import { JobProgressModal } from "@/components/website-builder/shared/job-progress";
 import { getWebsiteBuilderSession } from "@/lib/claw-api/website-builder";
+import { getSectionIdFromNodeId, getNodeTypeFromId } from "@/components/website-builder/core/builder-node-adapter";
 
 const USE_MOCK_API = true;
 
@@ -46,6 +47,10 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [selectedNodeType, setSelectedNodeType] = useState<"section" | "heading" | "text" | "button" | "image" | "card" | null>(null);
 
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -128,7 +133,25 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
 
         const data = event.data;
         if (data?.type === "select_section") {
-          setEditingSectionId(data.sectionId);
+          const sectionId = data.sectionId;
+          setEditingSectionId(sectionId);
+          setSelectedSectionId(sectionId);
+          setSelectedNodeId(sectionId);
+          setSelectedNodeType("section");
+        }
+        if (data?.type === "select_node") {
+          const nodeId = data.nodeId;
+          setSelectedNodeId(nodeId);
+          if (nodeId) {
+            const sectionId = getSectionIdFromNodeId(nodeId);
+            setSelectedSectionId(sectionId);
+            setEditingSectionId(sectionId);
+            setSelectedNodeType(getNodeTypeFromId(nodeId));
+          } else {
+            setSelectedSectionId(null);
+            setEditingSectionId(null);
+            setSelectedNodeType(null);
+          }
         }
         if (data?.type === "schema_update" && data?.schema) {
           updateSchema(data.schema);
@@ -173,6 +196,21 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
       }
     }
   }, [editingSectionId, builderUrl]);
+
+  // Sync selected node id to iframe
+  useEffect(() => {
+    if (iframeRef.current && builderUrl) {
+      try {
+        const allowedOrigin = new URL(builderUrl).origin;
+        iframeRef.current.contentWindow?.postMessage(
+          { type: "select_node", nodeId: selectedNodeId },
+          allowedOrigin
+        );
+      } catch (err) {
+        console.error("Error syncing selected node to iframe:", err);
+      }
+    }
+  }, [selectedNodeId, builderUrl]);
 
   // Set isFirstLoad to false after loading completes
   useEffect(() => {
