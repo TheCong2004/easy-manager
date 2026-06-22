@@ -105,7 +105,7 @@ export default function PublicWebsitePage({ params }: PublicPageProps) {
 
   const handleSectionSelect = (sectionId: string) => {
     setActiveSectionId(sectionId);
-    window.parent.postMessage({ type: "select_section", sectionId }, "*");
+    window.parent.postMessage({ type: "select_section", sectionId }, window.location.origin);
   };
 
   if (isEmbedded) {

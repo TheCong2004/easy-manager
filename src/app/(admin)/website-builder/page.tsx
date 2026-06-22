@@ -223,7 +223,7 @@ export default function WebsiteBuilderDashboard() {
   useEffect(() => {
     const activeProjects = USE_MOCK_API ? mockProjects : (queryProjects || []);
     const hasRunningJobs = activeProjects.some(
-      (p: any) => p.job_status === "pending" || p.job_status === "processing" || p.status === "generating"
+      (p: WebsiteProject) => p.job_status === "pending" || p.job_status === "processing" || p.status === "generating"
     );
 
     if (hasRunningJobs) {
@@ -262,7 +262,7 @@ export default function WebsiteBuilderDashboard() {
       }
     } else {
       createProjectMutation.mutate({
-        name: `Website Project ${((queryProjects as any)?.length || 0) + 1}`,
+        name: `Website Project ${(queryProjects?.length || 0) + 1}`,
         type: "seo_landing_page",
         status: "draft"
       }, {
@@ -748,7 +748,7 @@ export default function WebsiteBuilderDashboard() {
   const isLoadingState = USE_MOCK_API ? mockLoading : queryLoading;
   const isErrorState = !USE_MOCK_API && !!queryError;
 
-  const filteredProjects = activeProjects.filter((p: any) => {
+  const filteredProjects = activeProjects.filter((p: WebsiteProject) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (p.slug && p.slug.toLowerCase().includes(searchQuery.toLowerCase())) ||
                           (p.domain && p.domain.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -773,7 +773,7 @@ export default function WebsiteBuilderDashboard() {
     }
 
     return matchesSearch && matchesType && matchesStatus;
-  }).sort((a: any, b: any) => {
+  }).sort((a: WebsiteProject, b: WebsiteProject) => {
     if (sortBy === "name") {
       return a.name.localeCompare(b.name);
     }
@@ -936,13 +936,13 @@ export default function WebsiteBuilderDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project: any) => {
+          {filteredProjects.map((project: WebsiteProject) => {
             const isPublished = project.status === "published";
             const isGenerating = project.job_status === "pending" || project.job_status === "processing" || project.status === "generating";
             
-            // Format updated time
-            const updatedAtStr = project.updated_at || project.updatedAt
-              ? new Date(project.updated_at || project.updatedAt).toLocaleDateString("vi-VN")
+            const updatedDateVal = project.updated_at || project.updatedAt;
+            const updatedAtStr = updatedDateVal
+              ? new Date(updatedDateVal).toLocaleDateString("vi-VN")
               : "Vừa mới";
 
             return (
