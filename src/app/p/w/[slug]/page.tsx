@@ -24,6 +24,7 @@ export default function PublicWebsitePage({ params }: PublicPageProps) {
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [localSchema, setLocalSchema] = useState<WebsiteSchema | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   // Check if loaded in an iframe on mount
   useEffect(() => {
@@ -40,6 +41,10 @@ export default function PublicWebsitePage({ params }: PublicPageProps) {
       }
       if (event.data?.type === "select_section") {
         setActiveSectionId(event.data.sectionId);
+        setSelectedNodeId(event.data.sectionId);
+      }
+      if (event.data?.type === "select_node") {
+        setSelectedNodeId(event.data.nodeId);
       }
     };
 
@@ -116,13 +121,16 @@ export default function PublicWebsitePage({ params }: PublicPageProps) {
       >
         <div className="w-full h-full">
           {sections.map((section) => {
-            const isSelected = activeSectionId === section.id;
+            const isSelected = selectedNodeId === section.id || activeSectionId === section.id;
             return (
               <div
                 key={section.id}
+                data-node-id={section.id}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleSectionSelect(section.id);
+                  setSelectedNodeId(section.id);
+                  setActiveSectionId(section.id);
+                  window.parent.postMessage({ type: "select_node", nodeId: section.id }, window.location.origin);
                 }}
                 className={`relative group border-2 border-transparent hover:border-primary/50 cursor-pointer transition-all ${
                   isSelected ? "border-primary bg-primary/2" : ""
@@ -132,7 +140,12 @@ export default function PublicWebsitePage({ params }: PublicPageProps) {
                   section={section}
                   mode="edit"
                   activeSectionId={activeSectionId}
+                  selectedNodeId={selectedNodeId}
                   primaryColor={schema.primaryColor}
+                  onNodeSelect={(nodeId) => {
+                    setSelectedNodeId(nodeId);
+                    window.parent.postMessage({ type: "select_node", nodeId }, window.location.origin);
+                  }}
                 />
               </div>
             );

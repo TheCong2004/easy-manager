@@ -18,7 +18,15 @@ import SectionRenderer from "@/components/website-builder/renderer/SectionRender
 import { useUpdateWebsiteSchema, usePublishWebsiteProject } from "@/hooks/use-website-builder";
 import { JobProgressModal } from "@/components/website-builder/shared/job-progress";
 import { getWebsiteBuilderSession } from "@/lib/claw-api/website-builder";
-import { getSectionIdFromNodeId, getNodeTypeFromId } from "@/components/website-builder/core/builder-node-adapter";
+import {
+  getSectionIdFromNodeId,
+  getNodeTypeFromId,
+  resolveSelectedNode,
+  updateNodeProps,
+  getLayerTree
+} from "@/components/website-builder/core/builder-node-adapter";
+import LayersTree from "@/components/website-builder/shared/LayersTree";
+import InspectorRenderer from "@/components/website-builder/shared/InspectorRenderer";
 
 const USE_MOCK_API = true;
 
@@ -32,12 +40,14 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
 
   const [project, setProject] = useState<WebsiteProject | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pages" | "seo" | "style" | "add-sections">("add-sections");
+  const [activeTab, setActiveTab] = useState<"pages" | "layers" | "ai-chat" | "seo" | "style" | "add-sections">("add-sections");
   const [activePageId, setActivePageId] = useState("home");
   const [viewMode, setViewMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved" | "failed">("saved");
   const isFirstLoad = useRef(true);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const [past, setPast] = useState<WebsiteSchema[]>([]);
   const [future, setFuture] = useState<WebsiteSchema[]>([]);
 
@@ -519,6 +529,121 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
     setEditingField(null);
   };
 
+  const handleAiQuickAction = async (actionType: string) => {
+    if (!selectedNodeId) return;
+    setAiLoading(true);
+    triggerToast("AI đang phân tích và cải thiện phần tử...");
+    
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    
+    try {
+      const selectedNode = resolveSelectedNode(schema, selectedNodeId);
+      if (!selectedNode) return;
+      
+      let patch: Record<string, any> = {};
+      let successMsg = "Đã cập nhật thay đổi thành công!";
+      
+      switch (actionType) {
+        case "heading_rewrite":
+          patch.text = "EcoTech: Giải Pháp Xanh Kiến Tạo Tương Lai Vượt Trội";
+          successMsg = "AI đã viết lại tiêu đề lôi cuốn hơn!";
+          break;
+        case "heading_shorten":
+          patch.text = "Giải Pháp Xanh Cho Tương Lai";
+          successMsg = "AI đã rút gọn tiêu đề súc tích hơn!";
+          break;
+        case "text_seo":
+          patch.text = "EcoTech mang đến giải pháp công nghệ xanh đột phá, tối ưu hóa năng suất và giảm phát thải bền vững cho mọi doanh nghiệp toàn cầu.";
+          successMsg = "AI đã tối ưu đoạn văn chuẩn SEO!";
+          break;
+        case "text_professional":
+          patch.text = "Chúng tôi cam kết đồng hành cùng doanh nghiệp trong quá trình chuyển đổi số và phát triển bền vững thông qua công nghệ xanh hiện đại.";
+          successMsg = "AI đã chuyển đổi giọng văn chuyên nghiệp!";
+          break;
+        case "button_cta":
+          patch.text = "Bắt đầu hành trình xanh ngay";
+          successMsg = "AI đã cải thiện chữ kêu gọi hành động!";
+          break;
+        case "button_color":
+          patch.backgroundColor = "#10B981"; // Emerald green
+          successMsg = "AI đã đổi màu nút sang xanh ngọc phong thủy!";
+          break;
+        case "section_color":
+          patch.backgroundColor = "#F0FDF4"; // Light green bg
+          successMsg = "AI đã phối lại màu nền section tươi mát!";
+          break;
+        case "card_content":
+          patch.title = "Năng lượng sạch";
+          patch.description = "Tận dụng tối đa nguồn năng lượng tái tạo tự nhiên.";
+          successMsg = "AI đã tóm tắt thông tin thẻ danh sách!";
+          break;
+      }
+      
+      const newSchema = updateNodeProps(schema, selectedNodeId, patch);
+      updateSchema(newSchema);
+      triggerToast(successMsg, "success");
+    } catch (err) {
+      console.error(err);
+      triggerToast("Lỗi khi gọi trợ lý AI", "error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleSendAiPrompt = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    
+    // Simulate AI API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    
+    try {
+      const promptLower = aiPrompt.toLowerCase();
+      let patch: Record<string, any> = {};
+      let targetNodeId = selectedNodeId;
+      
+      if (!targetNodeId) {
+        // Fallback to first section heading
+        const pageNode = getLayerTree(schema).find(p => p.id === activePageId);
+        const sections = pageNode?.children || [];
+        if (sections.length > 0) {
+          targetNodeId = `${sections[0].id}-heading`;
+        }
+      }
+      
+      if (targetNodeId) {
+        const selectedNode = resolveSelectedNode(schema, targetNodeId);
+        if (selectedNode) {
+          if (promptLower.includes("tiêu đề") || promptLower.includes("chữ") || promptLower.includes("text") || promptLower.includes("viết")) {
+            patch.text = "EcoTech - Giải Pháp Phát Triển Bền Vững";
+          } else if (promptLower.includes("màu") || promptLower.includes("nền") || promptLower.includes("background")) {
+            if (selectedNode.type === "button") {
+              patch.backgroundColor = "#E0F2FE"; // Light blue
+              patch.textColor = "#0369A1"; // Dark blue text
+            } else {
+              patch.backgroundColor = "#ECFDF5"; // Light emerald bg
+            }
+          } else {
+            patch.text = "Cập nhật tự động bởi AI: " + aiPrompt.slice(0, 30) + "...";
+          }
+          
+          const newSchema = updateNodeProps(schema, targetNodeId, patch);
+          updateSchema(newSchema);
+          triggerToast(`AI đã áp dụng thay đổi cho: ${selectedNode.label}`, "success");
+        }
+      } else {
+        triggerToast("Không tìm thấy phần tử đích phù hợp cho AI", "error");
+      }
+      setAiPrompt("");
+    } catch (err) {
+      console.error(err);
+      triggerToast("Lỗi xử lý prompt của AI", "error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gray-100 dark:bg-meta-4">
       {/* Toast */}
@@ -678,9 +803,11 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
         {/* Left Control Panel */}
         <aside className="w-80 border-r border-stroke bg-white dark:border-strokedark dark:bg-boxdark flex flex-col z-20 shadow-sm">
           {/* Tab Navigation */}
-          <div className="grid grid-cols-4 border-b border-stroke dark:border-strokedark">
+          <div className="grid grid-cols-6 border-b border-stroke dark:border-strokedark shrink-0">
             {[
               { id: "add-sections", label: "+Khối" },
+              { id: "layers", label: "Lớp" },
+              { id: "ai-chat", label: "AI" },
               { id: "pages", label: "Trang" },
               { id: "seo", label: "SEO" },
               { id: "style", label: "Style" }
@@ -688,7 +815,7 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-3 text-center text-xs font-bold border-b-2 transition-all ${
+                className={`py-3 text-center text-[10px] font-bold border-b-2 transition-all ${
                   activeTab === tab.id
                     ? "border-primary text-primary"
                     : "border-transparent text-gray-500 hover:text-black dark:hover:text-white"
@@ -726,6 +853,167 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
               </div>
             )}
 
+            {/* Layers Tree */}
+            {activeTab === "layers" && (
+              <LayersTree
+                schema={schema}
+                activePageId={activePageId}
+                selectedNodeId={selectedNodeId}
+                onNodeSelect={(nodeId) => {
+                  setSelectedNodeId(nodeId);
+                  if (nodeId) {
+                    const secId = getSectionIdFromNodeId(nodeId);
+                    setSelectedSectionId(secId);
+                    setEditingSectionId(secId);
+                    setSelectedNodeType(getNodeTypeFromId(nodeId));
+                  } else {
+                    setSelectedSectionId(null);
+                    setEditingSectionId(null);
+                    setSelectedNodeType(null);
+                  }
+                }}
+              />
+            )}
+
+            {/* AI Chat Tab */}
+            {activeTab === "ai-chat" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2.5 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 rounded-lg">
+                  <span className="text-xl shrink-0">🤖</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-400 leading-tight">Trợ lý AI Builder</h4>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mt-0.5">Nhập yêu cầu để AI chỉnh sửa trực tiếp trên canvas.</p>
+                  </div>
+                </div>
+
+                {/* Selected Context */}
+                <div className="p-3 bg-gray-50 dark:bg-meta-4/30 rounded-lg border border-gray-100 dark:border-zinc-800">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Bối cảnh chỉnh sửa</span>
+                  {selectedNodeId ? (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-black dark:text-white truncate">
+                          🎯 {resolveSelectedNode(schema, selectedNodeId)?.label}
+                        </span>
+                        <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-bold uppercase shrink-0">
+                          {selectedNodeType}
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-gray-400 truncate">
+                        ID: <span className="font-mono">{selectedNodeId}</span>
+                      </p>
+
+                      {/* Quick AI Suggestions based on type */}
+                      <div className="space-y-1.5 pt-2 border-t border-gray-200 dark:border-zinc-800">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase block">Gợi ý hành động AI:</span>
+                        {selectedNodeType === "heading" && (
+                          <>
+                            <button
+                              onClick={() => handleAiQuickAction("heading_rewrite")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              ✨ Viết lại tiêu đề thu hút hơn
+                            </button>
+                            <button
+                              onClick={() => handleAiQuickAction("heading_shorten")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              ✍ Ngắn gọn & Súc tích hơn
+                            </button>
+                          </>
+                        )}
+                        {selectedNodeType === "text" && (
+                          <>
+                            <button
+                              onClick={() => handleAiQuickAction("text_seo")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              📈 Viết lại tối ưu SEO
+                            </button>
+                            <button
+                              onClick={() => handleAiQuickAction("text_professional")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              💼 Giọng văn chuyên nghiệp hơn
+                            </button>
+                          </>
+                        )}
+                        {selectedNodeType === "button" && (
+                          <>
+                            <button
+                              onClick={() => handleAiQuickAction("button_cta")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              🔥 Chữ CTA kích thích nhấp chuột
+                            </button>
+                            <button
+                              onClick={() => handleAiQuickAction("button_color")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              🎨 Đổi màu nút hợp phong thủy
+                            </button>
+                          </>
+                        )}
+                        {selectedNodeType === "section" && (
+                          <>
+                            <button
+                              onClick={() => handleAiQuickAction("section_color")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              🌈 Phối màu nền section chuyên nghiệp
+                            </button>
+                          </>
+                        )}
+                        {selectedNodeType === "card" && (
+                          <>
+                            <button
+                              onClick={() => handleAiQuickAction("card_content")}
+                              className="w-full text-left text-[11px] bg-white dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-meta-4 p-2 rounded border border-stroke dark:border-strokedark transition flex items-center gap-1.5 text-black dark:text-white font-medium"
+                            >
+                              📝 Viết lại nội dung thẻ ngắn gọn
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[11px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 rounded p-2 leading-relaxed">
+                      💡 Hãy chọn một khối hoặc phần tử (tiêu đề, nút, ảnh, thẻ...) trên canvas/cây lớp để bắt đầu.
+                    </div>
+                  )}
+                </div>
+
+                {/* Prompt Chat Box */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Nhập yêu cầu sửa đổi</label>
+                  <textarea
+                    rows={4}
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    disabled={aiLoading}
+                    className="w-full rounded border border-stroke dark:border-strokedark bg-transparent py-2.5 px-3 outline-none focus:border-primary text-xs text-black dark:text-white"
+                    placeholder={selectedNodeId ? "Ví dụ: hãy viết lại tiêu đề này cho thật lôi cuốn, hướng tới khách hàng công nghệ..." : "Ví dụ: hãy sửa tiêu đề của khối Hero thành EcoTech Solution..."}
+                  />
+                  <button
+                    onClick={handleSendAiPrompt}
+                    disabled={aiLoading || !aiPrompt.trim()}
+                    className="w-full py-2 bg-primary hover:bg-opacity-95 text-white font-semibold text-xs rounded-md shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {aiLoading ? (
+                      <>
+                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></span>
+                        AI đang xử lý...
+                      </>
+                    ) : (
+                      <>
+                        <span>🚀 Gửi yêu cầu sửa</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Pages Manager */}
             {activeTab === "pages" && (
               <div className="space-y-4">
@@ -737,6 +1025,9 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
                       onClick={() => {
                         setActivePageId(p.id);
                         setEditingSectionId(null);
+                        setSelectedNodeId(null);
+                        setSelectedNodeType(null);
+                        setSelectedSectionId(null);
                       }}
                       className={`w-full flex items-center justify-between p-3 rounded-md border text-sm font-semibold transition ${
                         p.id === activePageId
@@ -787,14 +1078,19 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
                   <p className="text-xs text-gray-400 font-bold mb-2.5 uppercase tracking-wider">Cấu trúc trang (Page Outline):</p>
                   <div className="space-y-1.5">
                     {currentPage.sections.map((sec: any, idx: number) => {
-                      const isSelected = editingSectionId === sec.id;
+                      const isSelected = selectedNodeId === sec.id || editingSectionId === sec.id;
                       return (
                         <div
                           key={sec.id}
-                          onClick={() => setEditingSectionId(sec.id)}
+                          onClick={() => {
+                            setEditingSectionId(sec.id);
+                            setSelectedSectionId(sec.id);
+                            setSelectedNodeId(sec.id);
+                            setSelectedNodeType("section");
+                          }}
                           className={`w-full flex items-center justify-between p-2.5 rounded border text-xs font-semibold cursor-pointer transition ${
                             isSelected
-                              ? "bg-primary/5 text-primary border-primary"
+                              ? "bg-primary/5 text-primary border-primary font-bold"
                               : "border-stroke bg-transparent text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-meta-4"
                           }`}
                         >
@@ -980,169 +1276,27 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
         </main>
 
         {/* Right Props Editor Panel */}
-        {editingSectionId && (() => {
-          const selectedSection = currentPage.sections.find((s: any) => s.id === editingSectionId);
-          if (!selectedSection) return null;
-
-          const resolvedProps = {
-            ...selectedSection,
-            ...(selectedSection.props || {})
-          } as any;
+        {(selectedNodeId || editingSectionId) && (() => {
+          const activeNodeId = selectedNodeId || editingSectionId;
+          if (!activeNodeId) return null;
 
           const handlePropChange = (field: string, val: any) => {
-            const newSections = currentPage.sections.map((sec: any) => {
-              if (sec.id === editingSectionId) {
-                return {
-                  ...sec,
-                  [field]: val,
-                  props: {
-                    ...(sec.props || {}),
-                    [field]: val
-                  }
-                };
-              }
-              return sec;
-            });
-            const newPages = schema.pages.map((p: any) => 
-              p.id === activePageId ? { ...p, sections: newSections } : p
-            );
-            updateSchema({ ...schema, pages: newPages });
+            const newSchema = updateNodeProps(schema, activeNodeId, { [field]: val });
+            updateSchema(newSchema);
           };
 
           return (
-            <aside className="w-80 border-l border-stroke bg-white dark:border-strokedark dark:bg-boxdark flex flex-col z-20 shadow-sm overflow-y-auto">
-              <div className="p-4 border-b border-stroke dark:border-strokedark flex items-center justify-between">
-                <h3 className="text-sm font-bold text-black dark:text-white uppercase tracking-wider">Cấu hình: {selectedSection.type}</h3>
-                <button
-                  onClick={() => setEditingSectionId(null)}
-                  className="text-gray-400 hover:text-black dark:hover:text-white text-sm font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="p-4 space-y-4">
-                {/* Text fields */}
-                {resolvedProps.title !== undefined && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-gray-500 uppercase">Tiêu đề (Title)</label>
-                    <input
-                      type="text"
-                      value={resolvedProps.title}
-                      onChange={e => handlePropChange("title", e.target.value)}
-                      className="w-full rounded border border-stroke bg-transparent py-2 px-3 outline-none focus:border-primary dark:border-strokedark text-sm text-black dark:text-white"
-                    />
-                  </div>
-                )}
-                {resolvedProps.subtitle !== undefined && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-gray-500 uppercase">Phụ đề (Subtitle)</label>
-                    <textarea
-                      rows={3}
-                      value={resolvedProps.subtitle}
-                      onChange={e => handlePropChange("subtitle", e.target.value)}
-                      className="w-full rounded border border-stroke bg-transparent py-2 px-3 outline-none focus:border-primary dark:border-strokedark text-sm text-black dark:text-white"
-                    />
-                  </div>
-                )}
-                {resolvedProps.content !== undefined && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-gray-500 uppercase">Nội dung (Content)</label>
-                    <textarea
-                      rows={4}
-                      value={resolvedProps.content}
-                      onChange={e => handlePropChange("content", e.target.value)}
-                      className="w-full rounded border border-stroke bg-transparent py-2 px-3 outline-none focus:border-primary dark:border-strokedark text-sm text-black dark:text-white"
-                    />
-                  </div>
-                )}
-                {resolvedProps.buttonText !== undefined && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-gray-500 uppercase">Chữ trên nút (Button Text)</label>
-                    <input
-                      type="text"
-                      value={resolvedProps.buttonText}
-                      onChange={e => handlePropChange("buttonText", e.target.value)}
-                      className="w-full rounded border border-stroke bg-transparent py-2 px-3 outline-none focus:border-primary dark:border-strokedark text-sm text-black dark:text-white"
-                    />
-                  </div>
-                )}
-                {resolvedProps.buttonLink !== undefined && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-gray-500 uppercase">Liên kết nút (Button Link)</label>
-                    <input
-                      type="text"
-                      value={resolvedProps.buttonLink}
-                      onChange={e => handlePropChange("buttonLink", e.target.value)}
-                      className="w-full rounded border border-stroke bg-transparent py-2 px-3 outline-none focus:border-primary dark:border-strokedark text-sm text-black dark:text-white"
-                    />
-                  </div>
-                )}
-
-                {/* Sub-items for FAQ, Features, Services, Testimonials */}
-                {resolvedProps.items && Array.isArray(resolvedProps.items) && (
-                  <div className="space-y-4 pt-3 border-t border-stroke dark:border-strokedark">
-                    <label className="block text-xs font-bold text-gray-500 uppercase">Danh sách các phần tử (Items):</label>
-                    {resolvedProps.items.map((item: any, i: number) => {
-                      const handleItemChange = (itemField: string, itemVal: string) => {
-                        const newItems = resolvedProps.items.map((it: any, idx: number) => 
-                          idx === i ? { ...it, [itemField]: itemVal } : it
-                        );
-                        handlePropChange("items", newItems);
-                      };
-                      return (
-                        <div key={i} className="p-3 bg-gray-50 dark:bg-meta-4 rounded border border-stroke dark:border-strokedark space-y-2">
-                          <span className="text-[10px] font-bold text-primary">Phần tử #{i + 1}</span>
-                          {(item.title !== undefined || item.question !== undefined) && (
-                            <div>
-                              <label className="text-[10px] font-bold text-gray-400 block mb-0.5">Tiêu đề / Câu hỏi</label>
-                              <input
-                                type="text"
-                                value={item.title !== undefined ? item.title : item.question || ""}
-                                onChange={e => handleItemChange(item.title !== undefined ? "title" : "question", e.target.value)}
-                                className="w-full rounded border border-stroke bg-white dark:bg-boxdark py-1.5 px-2.5 outline-none text-xs text-black dark:text-white"
-                              />
-                            </div>
-                          )}
-                          {(item.description !== undefined || item.answer !== undefined) && (
-                            <div>
-                              <label className="text-[10px] font-bold text-gray-400 block mb-0.5">Mô tả / Câu trả lời</label>
-                              <textarea
-                                rows={2}
-                                value={item.description !== undefined ? item.description : item.answer || ""}
-                                onChange={e => handleItemChange(item.description !== undefined ? "description" : "answer", e.target.value)}
-                                className="w-full rounded border border-stroke bg-white dark:bg-boxdark py-1.5 px-2.5 outline-none text-xs text-black dark:text-white"
-                              />
-                            </div>
-                          )}
-                          {item.author !== undefined && (
-                            <div>
-                              <label className="text-[10px] font-bold text-gray-400 block mb-0.5">Tác giả</label>
-                              <input
-                                type="text"
-                                value={item.author}
-                                onChange={e => handleItemChange("author", e.target.value)}
-                                className="w-full rounded border border-stroke bg-white dark:bg-boxdark py-1.5 px-2.5 outline-none text-xs text-black dark:text-white"
-                              />
-                            </div>
-                          )}
-                          {item.role !== undefined && (
-                            <div>
-                              <label className="text-[10px] font-bold text-gray-400 block mb-0.5">Chức danh</label>
-                              <input
-                                type="text"
-                                value={item.role}
-                                onChange={e => handleItemChange("role", e.target.value)}
-                                className="w-full rounded border border-stroke bg-white dark:bg-boxdark py-1.5 px-2.5 outline-none text-xs text-black dark:text-white"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </aside>
+            <InspectorRenderer
+              schema={schema}
+              selectedNodeId={activeNodeId}
+              onChangeProps={handlePropChange}
+              onClose={() => {
+                setSelectedNodeId(null);
+                setEditingSectionId(null);
+                setSelectedNodeType(null);
+                setSelectedSectionId(null);
+              }}
+            />
           );
         })()}
       </div>

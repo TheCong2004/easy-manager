@@ -4,6 +4,8 @@ export interface BaseSectionProps {
   activeSectionId?: string | null;
   onFieldClick?: (sectionId: string, field: string, value: string) => void;
   primaryColor?: string;
+  selectedNodeId?: string | null;
+  onNodeSelect?: (nodeId: string) => void;
 }
 
 export interface NavbarSectionItem {

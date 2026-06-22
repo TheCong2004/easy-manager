@@ -17,6 +17,8 @@ interface SectionRendererProps {
   activeSectionId?: string | null;
   onFieldClick?: (sectionId: string, field: string, value: string) => void;
   primaryColor?: string;
+  selectedNodeId?: string | null;
+  onNodeSelect?: (nodeId: string) => void;
 }
 
 export const SectionRenderer: React.FC<SectionRendererProps> = ({
@@ -25,6 +27,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   activeSectionId,
   onFieldClick,
   primaryColor,
+  selectedNodeId,
+  onNodeSelect,
 }) => {
   if (!section) return null;
 
@@ -41,6 +45,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
     mode,
     activeSectionId,
     onFieldClick,
+    selectedNodeId,
+    onNodeSelect,
     primaryColor: resolvedProps.settings?.backgroundColor || resolvedProps.backgroundColor || primaryColor,
   };
 
