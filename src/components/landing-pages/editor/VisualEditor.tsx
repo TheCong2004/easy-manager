@@ -179,6 +179,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [actionLog, setActionLog] = useState<LandingEditorAction[]>([]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const importHtmlInputRef = useRef<HTMLInputElement | null>(null);
   const isHydratedRef = useRef(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<EditorRevision[]>([]);
@@ -720,6 +721,28 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     reader.readAsText(file);
   }, [applySnapshot, page.id, pageName]);
 
+  const handleImportHtml = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const htmlCode = String(reader.result);
+        if (!htmlCode.trim()) {
+          throw new Error("File HTML trống");
+        }
+        handleAddBlock("html_code", { code: htmlCode, height: 400 });
+        showToast("Đã import HTML thành công", "success");
+      } catch (err: any) {
+        console.error("Import HTML failed:", err);
+        showToast(err.message || "File HTML không hợp lệ", "info");
+      }
+    };
+    reader.readAsText(file);
+  }, [handleAddBlock, showToast]);
+
   const handleCreateRevision = useCallback(async (name?: string) => {
     const versionName = name?.trim() || `Phiên bản ngày ${new Date().toLocaleString("vi-VN")}`;
     try {
@@ -813,6 +836,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           onCreateRevision={() => handleCreateRevision()}
           onOpenCommand={() => setIsCommandOpen(true)}
           onImportJson={() => importInputRef.current?.click()}
+          onImportHtml={() => importHtmlInputRef.current?.click()}
           onExportJson={handleExportJson}
           onExportHtml={handleExportHtml}
           onPublish={handlePublish}
@@ -832,6 +856,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           accept="application/json,.json"
           className="hidden"
           onChange={handleImportJson}
+        />
+        <input
+          ref={importHtmlInputRef}
+          type="file"
+          accept=".html"
+          className="hidden"
+          onChange={handleImportHtml}
         />
 
         {/* 3-column editor body */}
@@ -1012,6 +1043,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   deviceMode={deviceMode}
                   onUpdateNodeFrame={handleUpdateNodeFrame}
                   onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
+                  handleSendChatMessage={handleSendChatMessage}
+                  isAiTyping={isAiTyping}
                 />
               ) : (
                 <AIChatPanel

@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { EditorBlock, BlockType, EditorData, DeviceMode, ElementFrame, getEffectiveFrame } from "./types";
 
 // ── Field sub-components (Light Theme) ──────────────────────────────────────
@@ -17,15 +17,16 @@ const TextField: React.FC<{
   onChange: (v: string) => void;
   hint?: string;
   multiline?: boolean;
-}> = ({ label, value, onChange, hint, multiline }) => (
+  rows?: number;
+}> = ({ label, value, onChange, hint, multiline, rows = 3 }) => (
   <div>
     <FieldLabel label={label} hint={hint} />
     {multiline ? (
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        rows={3}
-        className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 resize-none shadow-sm"
+        rows={rows}
+        className="w-full px-2.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 resize-none shadow-sm font-mono"
       />
     ) : (
       <input
@@ -619,6 +620,14 @@ const ProductCardInspector: React.FC<{ props: Record<string, unknown>; update: U
   );
 };
 
+const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn }> = ({ props: p, update }) => (
+  <>
+    <SectionHeader title="Mã HTML nhúng" />
+    <TextField label="Mã HTML/CSS/JS" value={(p.code as string) ?? ""} onChange={(v) => update("code", v)} multiline rows={12} />
+    <NumberField label="Chiều cao tối thiểu" value={(p.height as number) ?? 200} onChange={(v) => update("height", v)} min={50} max={1500} unit="px" />
+  </>
+);
+
 // ── Page settings (Light Theme) ─────────────────────────────────────────────
 export const PageSettingsPanel: React.FC<{
   settings: EditorData["pageSettings"];
@@ -663,6 +672,7 @@ const INSPECTOR_MAP: Partial<Record<BlockType, React.FC<{ props: Record<string, 
   funnel_popup: FunnelPopupInspector,
   tea_landing: TeaLandingInspector,
   product_card: ProductCardInspector,
+  html_code: HtmlCodeInspector,
 };
 
 const FrameInspector: React.FC<{
@@ -793,6 +803,8 @@ interface InspectorPanelProps {
   deviceMode: DeviceMode;
   onUpdateNodeFrame: (id: string, frame: Partial<ElementFrame>) => void;
   onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
+  handleSendChatMessage?: (text: string) => void;
+  isAiTyping?: boolean;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
@@ -803,7 +815,18 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   deviceMode,
   onUpdateNodeFrame,
   onUpdateResponsiveFrame,
+  handleSendChatMessage,
+  isAiTyping = false,
 }) => {
+  const [aiPrompt, setAiPrompt] = useState("");
+
+  const handleSendAi = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiPrompt.trim() || !handleSendChatMessage) return;
+    handleSendChatMessage(aiPrompt);
+    setAiPrompt("");
+  };
+
   const update: UpdateFn = useCallback(
     (key, value) => {
       if (!selectedBlock) return;
@@ -842,6 +865,53 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           <PageSettingsPanel settings={pageSettings} onUpdateSettings={onUpdatePageSettings} />
         ) : null}
       </div>
+
+      {/* AI Edit Section - Sticky at bottom */}
+      {selectedBlock && handleSendChatMessage && (
+        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <form onSubmit={handleSendAi} className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs">🤖</span>
+              <p className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">
+                Chỉnh sửa bằng AI
+              </p>
+            </div>
+            
+            <div className="relative flex items-center rounded-lg border border-gray-250 bg-white px-2.5 py-1.5 focus-within:border-purple-500 transition-all shadow-sm">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ví dụ: Đổi màu nút thành đỏ và đổi chữ thành Nhận quà ngay..."
+                rows={1}
+                disabled={isAiTyping}
+                className="flex-1 bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none no-scrollbar pr-6 font-medium"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (aiPrompt.trim() && !isAiTyping) {
+                      handleSendChatMessage(aiPrompt);
+                      setAiPrompt("");
+                    }
+                  }
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!aiPrompt.trim() || isAiTyping}
+                className="cursor-pointer absolute right-2 text-purple-600 hover:text-purple-700 transition-all disabled:opacity-30"
+              >
+                {isAiTyping ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-solid border-purple-600 border-t-transparent inline-block" />
+                ) : (
+                  <svg className="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Bottom hint */}
       {!selectedBlock && (

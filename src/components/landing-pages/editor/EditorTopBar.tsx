@@ -18,6 +18,7 @@ interface EditorTopBarProps {
   onCreateRevision: () => void;
   onOpenCommand: () => void;
   onImportJson: () => void;
+  onImportHtml: () => void;
   onExportJson: () => void;
   onExportHtml: () => void;
   onPublish: () => void;
@@ -53,6 +54,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onCreateRevision,
   onOpenCommand,
   onImportJson,
+  onImportHtml,
   onExportJson,
   onExportHtml,
   onPublish,
@@ -316,21 +318,28 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           title="Import JSON"
           className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
-          Import
+          Imp JSON
+        </button>
+        <button
+          onClick={onImportHtml}
+          title="Import HTML"
+          className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
+        >
+          Imp HTML
         </button>
         <button
           onClick={onExportJson}
           title="Export JSON"
           className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
-          JSON
+          Exp JSON
         </button>
         <button
           onClick={onExportHtml}
           title="Export HTML"
           className="h-7.5 px-3 rounded-lg text-[11px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 transition cursor-pointer"
         >
-          HTML
+          Exp HTML
         </button>
         {/* Copy public link */}
         <button
