@@ -3,8 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 let supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_SECRET_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 // Smart fallback if SUPABASE_URL in env.local is a JWT token instead of a URL
 if (supabaseUrl && !supabaseUrl.startsWith("http")) {

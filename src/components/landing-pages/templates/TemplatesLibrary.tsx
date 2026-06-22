@@ -15,6 +15,8 @@ interface TemplatesLibraryProps {
   toggleLikeTemplate: (e: React.MouseEvent, id: string) => void;
   setSelectedTemplateForPreview: (template: TemplateItem) => void;
   handleUseTemplate: (template: TemplateItem) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 const templateTabs = [
@@ -58,6 +60,8 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
   toggleLikeTemplate,
   setSelectedTemplateForPreview,
   handleUseTemplate,
+  isLoading = false,
+  error = null,
 }) => {
   return (
     <div className="landing-product-library mx-auto flex w-full max-w-[1320px] flex-col gap-5">
@@ -136,7 +140,28 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
         </div>
       </div>
 
-      {filteredTemplates.length > 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
+              <div className="aspect-[4/3.35] rounded-xl bg-slate-100 dark:bg-slate-900" />
+              <div className="mt-4 h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-2 h-6 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-4 h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-red-300 bg-red-50/50 p-6 text-center dark:border-red-900/50 dark:bg-red-950/20">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-500 dark:bg-red-900/50">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="mt-4 text-sm font-black text-red-800 dark:text-red-200">Không tải được Kho Template</p>
+          <p className="mt-1 text-sm text-red-500">{error}</p>
+        </div>
+      ) : filteredTemplates.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filteredTemplates.map((item) => {
             const name = compactTemplateName(item.name);

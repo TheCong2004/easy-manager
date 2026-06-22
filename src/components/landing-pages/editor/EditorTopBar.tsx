@@ -21,11 +21,18 @@ interface EditorTopBarProps {
   onExportJson: () => void;
   onExportHtml: () => void;
   onPublish: () => void;
+  onUnpublish?: () => void;
   isSaved: boolean;
   lastSavedAt?: string | null;
   activeViewMode: "design" | "code" | "preview";
   setActiveViewMode: (mode: "design" | "code" | "preview") => void;
   blockCount: number;
+  /** Trạng thái bảo mật: 'draft' | 'published' | 'archived' */
+  pageStatus?: string;
+  /** Trạng thái hiển thị: 'private' | 'public' */
+  pageVisibility?: string;
+  /** Slug của trang (dùng để tạo public link /p/[slug]) */
+  pageSlug?: string | null;
 }
 
 const ZOOM_PRESETS = [0.5, 0.75, 1, 1.25, 1.5];
@@ -49,12 +56,31 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onExportJson,
   onExportHtml,
   onPublish,
+  onUnpublish,
   isSaved,
   lastSavedAt,
   activeViewMode,
   setActiveViewMode,
   blockCount,
+  pageStatus = "draft",
+  pageVisibility = "private",
+  pageSlug,
 }) => {
+  const isPublished = pageStatus === "published" && pageVisibility === "public";
+
+  const handleCopyPublicLink = () => {
+    if (!isPublished) {
+      alert("Trang chưa xuất bản, người khác chưa xem được.\nHãy bấm 'Xuất bản trang' trước.");
+      return;
+    }
+    const link = pageSlug
+      ? `${window.location.origin}/p/${pageSlug}`
+      : `${window.location.origin}/p/${pageName.toLowerCase().replace(/\s+/g, "-")}`;
+    navigator.clipboard.writeText(link).then(() => {
+      alert(`Đã sao chép link công khai:\n${link}`);
+    });
+  };
+
   return (
     <div className="flex items-center h-14 px-3 gap-3 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm shadow-gray-100 select-none overflow-x-auto">
       {/* ← Back */}
@@ -89,6 +115,23 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 hidden sm:inline-flex items-center font-medium">
           {blockCount} blocks
         </span>
+      </div>
+
+      {/* Privacy badge */}
+      <div className="flex-shrink-0">
+        {isPublished ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Đã xuất bản · công khai
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            Riêng tư · chỉ bạn xem được
+          </span>
+        )}
       </div>
 
       <div className="flex-1" />
@@ -289,18 +332,49 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         >
           HTML
         </button>
+        {/* Copy public link */}
+        <button
+          onClick={handleCopyPublicLink}
+          title={isPublished ? "Copy link công khai" : "Trang chưa xuất bản"}
+          className={`h-7.5 px-3 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${
+            isPublished
+              ? "text-green-700 hover:text-green-900 hover:bg-green-100"
+              : "text-gray-400 hover:bg-gray-200/50"
+          }`}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+          </svg>
+          Link
+        </button>
       </div>
 
-      {/* Publish */}
-      <button
-        onClick={onPublish}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-lime-500 hover:from-purple-500 hover:to-lime-400 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-md shadow-purple-600/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex-shrink-0"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-        </svg>
-        Xuất bản trang
-      </button>
+      {/* Unpublish button — chỉ hiện khi đã published */}
+      {isPublished && onUnpublish && (
+        <button
+          onClick={onUnpublish}
+          title="Hủy xuất bản · Đưa về draft/private"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 border border-gray-200 hover:border-red-200 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex-shrink-0"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+          </svg>
+          Hủy xuất bản
+        </button>
+      )}
+
+      {/* Publish button */}
+      {!isPublished && (
+        <button
+          onClick={onPublish}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-lime-500 hover:from-purple-500 hover:to-lime-400 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-md shadow-purple-600/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex-shrink-0"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+          </svg>
+          Xuất bản trang
+        </button>
+      )}
     </div>
   );
 };

@@ -19,6 +19,13 @@ export type TemplateItem = {
   views: number;
   likes: number;
   scrollDist: string;
+  // Supabase template fields
+  template_key?: string;
+  description?: string;
+  tags?: string[];
+  price_type?: string;
+  is_featured?: boolean;
+  editor_data?: any;
 };
 
 export type FormConfigItem = {

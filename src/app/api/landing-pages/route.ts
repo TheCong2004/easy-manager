@@ -1,0 +1,141 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+export const runtime = "nodejs";
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidPageId(pageId: unknown): pageId is string {
+  return typeof pageId === "string" && UUID_PATTERN.test(pageId);
+}
+
+function resolveSupabaseUrl() {
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  if (!url || url.startsWith("http")) return url;
+  if (!url.startsWith("eyJ")) return url;
+  try {
+    const [, payload] = url.split(".");
+    if (!payload) return url;
+    const decoded = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8")
+    ) as { ref?: string };
+    return decoded.ref ? `https://${decoded.ref}.supabase.co` : url;
+  } catch {
+    return url;
+  }
+}
+
+/** Admin client dùng service_role key — chỉ dùng server-side */
+function getSupabaseAdmin() {
+  const url = resolveSupabaseUrl();
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !url.startsWith("http") || !secretKey) return null;
+  return createClient(url, secretKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+/** User client dùng anon key + JWT của người dùng để verify identity */
+function getSupabaseWithUserJwt(jwt: string) {
+  const url = resolveSupabaseUrl();
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!url || !url.startsWith("http") || !anonKey) return null;
+  return createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+  });
+}
+
+function jsonError(message: string, status = 400) {
+  return NextResponse.json({ error: message }, { status });
+}
+
+/**
+ * Lấy user từ JWT trong Authorization header.
+ * Trả về user object nếu hợp lệ, hoặc null nếu không xác thực được.
+ */
+async function getAuthenticatedUser(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+  const jwt = authHeader.slice(7).trim();
+  if (!jwt) return null;
+
+  const userClient = getSupabaseWithUserJwt(jwt);
+  if (!userClient) return null;
+
+  const { data, error } = await userClient.auth.getUser();
+  if (error || !data?.user) return null;
+  return data.user;
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return jsonError("Supabase server configuration is missing.", 500);
+
+  // Xác thực người dùng
+  const user = await getAuthenticatedUser(request);
+  if (!user) return jsonError("Unauthorized. Please sign in.", 401);
+
+  const payload = await request.json();
+  if (!isValidPageId(payload.id)) return jsonError("Invalid landing page id.");
+
+  // Bảo mật: Luôn gán user_id = người dùng đang đăng nhập (không tin payload)
+  const safePayload = {
+    ...payload,
+    user_id: user.id,
+    status: payload.status || "draft",
+    visibility: "private", // draft mới tạo luôn là private
+  };
+
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .insert([safePayload])
+    .select()
+    .single();
+
+  if (error) return jsonError(error.message, 500);
+  return NextResponse.json({ page: data });
+}
+
+export async function PUT(request: NextRequest) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return jsonError("Supabase server configuration is missing.", 500);
+
+  // Xác thực người dùng
+  const user = await getAuthenticatedUser(request);
+  if (!user) return jsonError("Unauthorized. Please sign in.", 401);
+
+  const payload = await request.json();
+  if (!isValidPageId(payload.id)) return jsonError("Invalid landing page id.");
+
+  // Kiểm tra ownership trước khi upsert
+  const { data: existingPage, error: lookupError } = await supabase
+    .from("landing_pages")
+    .select("id, user_id")
+    .eq("id", payload.id)
+    .maybeSingle();
+
+  if (lookupError) return jsonError(lookupError.message, 500);
+
+  // Nếu page đã tồn tại và không thuộc về user này → 403
+  if (existingPage && existingPage.user_id !== user.id) {
+    return jsonError("Forbidden. You do not own this page.", 403);
+  }
+
+  // Bảo mật: Luôn gán user_id = người dùng đang đăng nhập
+  const safePayload = {
+    ...payload,
+    user_id: user.id,
+  };
+
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .upsert(safePayload, { onConflict: "id" })
+    .select()
+    .single();
+
+  if (error) return jsonError(error.message, 500);
+  return NextResponse.json({ page: data });
+}

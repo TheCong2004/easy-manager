@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { VisualEditor } from "@/components/landing-pages/editor/VisualEditor";
 import { LandingPageItem } from "@/components/landing-pages/dung-chung/types";
 import { supabase } from "@/lib/supabase";
+import { getLocalBackupKey, isValidPageId } from "./core/editor-supabase-storage";
 
 interface Props {
   pageId: string;
@@ -24,6 +25,11 @@ export function LandingEditorPageClient({ pageId }: Props) {
   useEffect(() => {
     async function loadPageMeta() {
       try {
+        if (!isValidPageId(pageId)) {
+          router.replace("/landing-pages");
+          return;
+        }
+
         // Try Supabase first
         if (supabase) {
           const { data, error: dbError } = await supabase
@@ -64,7 +70,7 @@ export function LandingEditorPageClient({ pageId }: Props) {
         }
 
         // Fallback: check localStorage for this pageId
-        const localKey = `landing-editor-autosave:${pageId}`;
+        const localKey = getLocalBackupKey(pageId);
         const raw = typeof window !== "undefined" ? localStorage.getItem(localKey) : null;
         if (raw) {
           const backup = JSON.parse(raw);
@@ -98,7 +104,7 @@ export function LandingEditorPageClient({ pageId }: Props) {
     }
 
     void loadPageMeta();
-  }, [pageId]);
+  }, [pageId, router]);
 
   const handleClose = useCallback(() => {
     router.push("/landing-pages");

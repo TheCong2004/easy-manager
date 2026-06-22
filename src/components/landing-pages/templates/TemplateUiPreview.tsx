@@ -30,7 +30,7 @@ import {
 } from "../editor/blocks/NewLadiBlocks";
 
 function getPreset(template: TemplateItem): LandingTemplatePreset {
-  const presetId = resolveTemplatePresetId({ id: template.id, name: template.name });
+  const presetId = resolveTemplatePresetId({ id: template.id, name: template.name, templateId: template.templateId });
   return LANDING_TEMPLATE_PRESETS.find((preset) => preset.id === presetId) ?? LANDING_TEMPLATE_PRESETS[0];
 }
 
@@ -98,6 +98,16 @@ function renderBlock(block: Omit<EditorBlock, "id">, index: number) {
   }
 }
 
+const SELF_CONTAINED_SECTION_TYPES = new Set([
+  "tea_landing", "smartwatch_landing",
+  "menu",
+  "feature_card", "collection_list", "testimonial",
+  "countdown", "video", "chat_widget", "funnel_popup",
+  "gallery", "tabs", "accordion", "product_card", "carousel",
+  "form_capture", "survey", "table", "html_code",
+  "columns",
+]);
+
 export function TemplateUiPreview({
   template,
   mode = "card",
@@ -108,10 +118,76 @@ export function TemplateUiPreview({
   const preset = getPreset(template);
   const scale = mode === "card" ? 0.34 : 1;
 
+  const renderContent = () => {
+    if (template.editor_data && Array.isArray(template.editor_data.sections)) {
+      const sections = template.editor_data.sections;
+      return (
+        <div className="w-full flex flex-col">
+          {sections.map((section: any, secIdx: number) => {
+            const isSelfContained = SELF_CONTAINED_SECTION_TYPES.has(section.type);
+            const naturalHeight = section.frame?.height ?? (section.props?.minHeight || 120);
+
+            const sectionStyle: React.CSSProperties = isSelfContained
+              ? {
+                  position: "relative",
+                  width: "100%",
+                  minHeight: `${naturalHeight}px`,
+                  zIndex: section.frame?.zIndex ?? 1,
+                  overflow: "visible",
+                }
+              : {
+                  position: "relative",
+                  width: "100%",
+                  height: `${naturalHeight}px`,
+                  zIndex: section.frame?.zIndex ?? 1,
+                  overflow: "hidden",
+                };
+
+            return (
+              <div key={section.id || secIdx} style={sectionStyle}>
+                {/* Section Background */}
+                <div style={{ width: "100%", height: isSelfContained ? "auto" : "100%", pointerEvents: "none" }}>
+                  {renderBlock(section, 0)}
+                </div>
+
+                {/* Absolute Children Elements */}
+                {!isSelfContained && (section.children ?? []).map((element: any, childIdx: number) => {
+                  const frame = element.frame || { x: 0, y: 0, width: 300, height: 100, zIndex: 1, rotate: 0 };
+                  const childStyle: React.CSSProperties = {
+                    position: "absolute",
+                    left: `${frame.x}px`,
+                    top: `${frame.y}px`,
+                    width: `${frame.width}px`,
+                    height: `${frame.height}px`,
+                    zIndex: frame.zIndex ?? 1,
+                    transform: frame.rotate ? `rotate(${frame.rotate}deg)` : undefined,
+                    pointerEvents: "none",
+                  };
+
+                  return (
+                    <div key={element.id || childIdx} style={childStyle}>
+                      {renderBlock(element, childIdx)}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {preset.blocks.map((block, index) => renderBlock(block, index))}
+      </>
+    );
+  };
+
   if (mode === "modal") {
     return (
       <div className="landing-product-surface bg-white text-slate-950">
-        {preset.blocks.map((block, index) => renderBlock(block, index))}
+        {renderContent()}
       </div>
     );
   }
@@ -126,7 +202,7 @@ export function TemplateUiPreview({
           "--scroll-dist": template.scrollDist || "calc(-100% + 780px)",
         } as React.CSSProperties}
       >
-        {preset.blocks.map((block, index) => renderBlock(block, index))}
+        {renderContent()}
       </div>
     </div>
   );

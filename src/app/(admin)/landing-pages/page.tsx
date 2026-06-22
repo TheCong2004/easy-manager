@@ -12,280 +12,120 @@ import { DomainsConfig } from "@/components/landing-pages/domains/DomainsConfig"
 import { DataLeads } from "@/components/landing-pages/leads/DataLeads";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
 import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
-import { createLandingPage, deleteLandingPage, deleteLandingPages } from "@/components/landing-pages/editor/core/editor-supabase-storage";
-import { resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
-import { migrateTemplateFlatBlocks } from "@/components/landing-pages/editor/core/editor-migration";
+import { createLandingPage, deleteLandingPage, deleteLandingPages, isValidPageId } from "@/components/landing-pages/editor/core/editor-supabase-storage";
+import { LANDING_TEMPLATE_PRESETS, resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
+import { migrateTemplateFlatBlocks, migrateEditorData, recalculateSectionHeights } from "@/components/landing-pages/editor/core/editor-migration";
 import { createDefaultPageSettings, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
 import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
 import { supabase } from "@/lib/supabase";
+import { listTemplates, incrementTemplateDownloads } from "@/components/landing-pages/templates/template-service";
 
 
 
 const initialPages: LandingPageItem[] = [];
 
-const templatesData: TemplateItem[] = [
-  {
-    id: "t1",
-    name: "LDP112305 - Theme TikTok Shop Mỹ Phẩm",
-    image: "/images/template_cosmetics.png",
-    category: "ecommerce",
-    isPro: true,
-    views: 6120,
-    likes: 3120,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t2",
-    name: "LDP112306 - Thiệp cưới Modern Elegant Wedding",
-    image: "/images/template_wedding.png",
-    category: "others",
-    isPro: true,
-    views: 4300,
-    likes: 2150,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t3",
-    name: "LDP112307 - Trà thảo mộc chạy TikTok Ads",
-    image: "/images/template_tea.png",
-    category: "ecommerce",
-    isPro: false,
-    views: 5800,
-    likes: 2800,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t4",
-    name: "LDP112308 - Đồng hồ thông minh Smartwatch Pro",
-    image: "/images/template_electronics.png",
-    category: "ecommerce",
-    isPro: true,
-    views: 3900,
-    likes: 1950,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t5",
-    name: "LDP112309 - Spa & Skincare Landing Page",
-    image: "/images/template_cosmetics.png",
-    category: "service",
-    isPro: false,
-    views: 4500,
-    likes: 2200,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t6",
-    name: "LDP112310 - Sự kiện Khai trương cửa hàng",
-    image: "/images/template_tea.png",
-    category: "others",
-    isPro: false,
-    views: 3100,
-    likes: 1400,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t7",
-    name: "LDP112311 - Dịch vụ Tư vấn tài chính",
-    image: "/images/template_electronics.png",
-    category: "service",
-    isPro: true,
-    views: 5120,
-    likes: 2560,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t8",
-    name: "LDP112312 - Khóa học thiết kế LadiPage",
-    image: "/images/template_wedding.png",
-    category: "others",
-    isPro: false,
-    views: 2900,
-    likes: 1100,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t9",
-    name: "LDP112313 - Hero Slide Show Carousel",
-    image: "/images/carousel/carousel-01.png",
-    category: "others",
-    isPro: false,
-    views: 7240,
-    likes: 3610,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t10",
-    name: "LDP112314 - Product Grid Flash Sale",
-    image: "/images/product/smartwatch_product.png",
-    category: "ecommerce",
-    isPro: false,
-    views: 8350,
-    likes: 4180,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t11",
-    name: "LDP112315 - Course Funnel E-Learning",
-    image: "/images/carousel/carousel-02.png",
-    category: "service",
-    isPro: true,
-    views: 6920,
-    likes: 3420,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t12",
-    name: "LDP112316 - Gallery Showcase Portfolio",
-    image: "/images/grid-image/image-01.png",
-    category: "others",
-    isPro: false,
-    views: 5480,
-    likes: 2280,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t13",
-    name: "LDP112317 - Builder Product Kit",
-    image: "/images/product/skincare_product.png",
-    category: "ecommerce",
-    isPro: true,
-    views: 9210,
-    likes: 4690,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t14",
-    name: "LDP112318 - Builder UI Elements",
-    image: "/images/grid-image/image-03.png",
-    category: "service",
-    isPro: false,
-    views: 6370,
-    likes: 3010,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  // ── 12 mẫu mới ─────────────────────────────────────────────────────────────
-  {
-    id: "t15",
-    name: "SaaS Minimal Clean — Flux AI CRM",
-    image: "/images/product/smartwatch_product.png",
-    category: "service",
-    isPro: false,
-    views: 8120,
-    likes: 4060,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t16",
-    name: "E-commerce Bold Offer — Flash Sale 70%",
-    image: "/images/product/skincare_product.png",
-    category: "ecommerce",
-    isPro: false,
-    views: 11430,
-    likes: 5780,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t17",
-    name: "Premium Real Estate — Luxury Biệt thự",
-    image: "/images/grid-image/image-01.png",
-    category: "service",
-    isPro: true,
-    views: 5340,
-    likes: 2890,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t18",
-    name: "Online Course Conversion — GrowthAcademy",
-    image: "/images/carousel/carousel-02.png",
-    category: "service",
-    isPro: false,
-    views: 9870,
-    likes: 4920,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t19",
-    name: "Webinar Event Modern — Growth Summit 2026",
-    image: "/images/carousel/carousel-01.png",
-    category: "others",
-    isPro: false,
-    views: 7650,
-    likes: 3820,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t20",
-    name: "Agency Portfolio — VOID Studio Creative",
-    image: "/images/grid-image/image-02.png",
-    category: "others",
-    isPro: true,
-    views: 6210,
-    likes: 3140,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t21",
-    name: "Clinic Trust Landing — VitaCare Phòng khám",
-    image: "/images/grid-image/image-04.png",
-    category: "service",
-    isPro: false,
-    views: 4980,
-    likes: 2490,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t22",
-    name: "Restaurant Premium Menu — Nhà hàng Umami",
-    image: "/images/grid-image/image-05.png",
-    category: "service",
-    isPro: false,
-    views: 5720,
-    likes: 2960,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t23",
-    name: "Mobile App Launch — Pendo Finance App",
-    image: "/images/product/green_tea_product.png",
-    category: "others",
-    isPro: false,
-    views: 8880,
-    likes: 4440,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t24",
-    name: "Finance Lead Generation — ProsperWealth",
-    image: "/images/product/smartwatch_product.png",
-    category: "service",
-    isPro: true,
-    views: 6560,
-    likes: 3280,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t25",
-    name: "Beauty Spa Elegant — Lumière Spa & Skincare",
-    image: "/images/product/skincare_product.png",
-    category: "service",
-    isPro: false,
-    views: 7340,
-    likes: 3670,
-    scrollDist: "calc(-100% + 260px)",
-  },
-  {
-    id: "t26",
-    name: "Local Service Lead Gen — AirFix Điều hòa",
-    image: "/images/grid-image/image-06.png",
-    category: "service",
-    isPro: false,
-    views: 9120,
-    likes: 4560,
-    scrollDist: "calc(-100% + 260px)",
-  },
-];
+
+
+function formatLandingPageRow(item: any): LandingPageItem {
+  return {
+    id: item.id,
+    name: item.name || "Untitled Page",
+    templateId: item.editor_data?.templateId || undefined,
+    status: item.status === "published" ? "PUBLISHED" : "UNPUBLISHED",
+    updatedAt: item.updated_at
+      ? new Date(item.updated_at).toLocaleTimeString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }) +
+        ", " +
+        new Date(item.updated_at).toLocaleDateString("vi-VN")
+      : "",
+    views: 0,
+    conversions: 0,
+    revenue: 0,
+  };
+}
+
+function collectLocalLandingBackups() {
+  const localPages: Array<{
+    key: string;
+    pageId: string;
+    editorData: any;
+    savedAt?: string;
+  }> = [];
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith("landing-editor-autosave:")) continue;
+
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+
+      const backup = JSON.parse(raw);
+      const pageId = String(backup?.pageId || backup?.editorData?.pageId || key.replace("landing-editor-autosave:", ""));
+      localPages.push({
+        key,
+        pageId,
+        editorData: backup?.editorData || {},
+        savedAt: backup?.savedAt,
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to read local storage pages:", err);
+  }
+
+  return localPages;
+}
+
+async function syncLocalBackupsToSupabase(remoteIds: Set<string>): Promise<LandingPageItem[]> {
+  if (!supabase) return [];
+
+  const migrated: LandingPageItem[] = [];
+  const localBackups = collectLocalLandingBackups();
+
+  for (const backup of localBackups) {
+    const nextId = isValidPageId(backup.pageId)
+      ? backup.pageId
+      : typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : "";
+
+    if (!isValidPageId(nextId) || remoteIds.has(nextId)) continue;
+
+    const pageName = backup.editorData?.pageName || "Untitled Page";
+    const editorData = {
+      ...backup.editorData,
+      pageId: nextId,
+      pageName,
+    };
+
+    try {
+      const created = await createLandingPage({
+        id: nextId,
+        name: pageName,
+        slug: pageName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || `page-${Date.now()}`,
+        editor_data: editorData,
+      });
+
+      if (created?.id && isValidPageId(created.id)) {
+        migrated.push(formatLandingPageRow(created));
+        remoteIds.add(created.id);
+        localStorage.removeItem(backup.key);
+        console.info("[LandingPages Sync] Migrated local page to Supabase", {
+          oldPageId: backup.pageId,
+          newPageId: created.id,
+        });
+      }
+    } catch (err) {
+      console.warn("[LandingPages Sync] Failed to migrate local page:", err);
+    }
+  }
+
+  return migrated;
+}
+
+
 
 const initialTags: TagItem[] = [
   {
@@ -322,24 +162,9 @@ export default function LandingPagesManagement() {
             .order("updated_at", { ascending: false });
 
           if (!error && data) {
-            const dbPages: LandingPageItem[] = data.map((item: any) => ({
-              id: item.id,
-              name: item.name || "Untitled Page",
-              templateId: item.editor_data?.templateId || undefined,
-              status: item.status === "published" ? "PUBLISHED" : "UNPUBLISHED",
-              updatedAt: item.updated_at
-                ? new Date(item.updated_at).toLocaleTimeString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }) +
-                  ", " +
-                  new Date(item.updated_at).toLocaleDateString("vi-VN")
-                : "",
-              views: 0,
-              conversions: 0,
-              revenue: 0,
-            }));
-            setPages(dbPages);
+            const dbPages: LandingPageItem[] = data.map(formatLandingPageRow);
+            const migratedPages = await syncLocalBackupsToSupabase(new Set(dbPages.map((page) => page.id)));
+            setPages([...migratedPages, ...dbPages]);
             return;
           }
         } catch (err) {
@@ -402,14 +227,60 @@ export default function LandingPagesManagement() {
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPageName, setNewPageName] = useState("");
-  const [pendingTemplateId, setPendingTemplateId] = useState<string | undefined>();
+  const [pendingTemplate, setPendingTemplate] = useState<TemplateItem | null>(null);
 
   // Templates Sub-View States
   const [activeTemplateTab, setActiveTemplateTab] = useState("sample"); 
   const [activeCategory, setActiveCategory] = useState("all");
   const [templateSearchQuery, setTemplateSearchQuery] = useState("");
+  const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState<TemplateItem | null>(null);
   const [likedTemplates, setLikedTemplates] = useState<Record<string, boolean>>({});
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTemplates() {
+      setIsTemplatesLoading(true);
+      setTemplatesError(null);
+      try {
+        const data = await listTemplates();
+        if (cancelled) return;
+
+        const mapped: TemplateItem[] = data.map((t: any) => ({
+          id: t.id,
+          templateId: t.template_key,
+          name: t.name,
+          image: t.thumbnail_url || t.preview_image_url || "/images/grid-image/image-01.png",
+          category: t.category === "ecommerce" || t.category === "Bán hàng" ? "ecommerce" : t.category === "service" || t.category === "Dịch vụ" ? "service" : "others",
+          isPro: t.price_type === "pro",
+          views: t.views_count || 0,
+          likes: t.downloads_count || 0,
+          scrollDist: "calc(-100% + 260px)",
+          editor_data: t.editor_data,
+        }));
+
+        setTemplates(mapped);
+      } catch (err: any) {
+        console.error("Failed to load templates from Supabase:", err);
+        if (!cancelled) {
+          setTemplatesError(err.message || "Không thể tải kho giao diện");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsTemplatesLoading(false);
+        }
+      }
+    }
+
+    void loadTemplates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Form Config Sub-View States
   const [formConfigs, setFormConfigs] = useState<FormConfigItem[]>([]);
@@ -445,9 +316,11 @@ export default function LandingPagesManagement() {
 
     setIsCreating(true);
     try {
-      const pageId = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `page-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      if (typeof crypto === "undefined" || !crypto.randomUUID) {
+        throw new Error("Browser does not support crypto.randomUUID.");
+      }
+
+      const pageId = crypto.randomUUID();
 
       // Build initial editor data from template if provided
       let initialEditorData: any = {
@@ -456,22 +329,37 @@ export default function LandingPagesManagement() {
         sections: [],
         pageSettings: createDefaultPageSettings(newPageName.trim()),
         schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-        templateId: pendingTemplateId ?? null,
+        templateId: pendingTemplate?.templateId ?? null,
       };
 
-      if (pendingTemplateId) {
+      if (pendingTemplate) {
         try {
-          const flatBlocks = instantiateTemplateBlocks(pendingTemplateId).map(ensureOnlookBlockMeta);
-          const sections = migrateTemplateFlatBlocks(flatBlocks);
-          initialEditorData = {
-            ...initialEditorData,
-            sections,
-          };
+          if (pendingTemplate.editor_data) {
+            // Deep clone editor_data
+            const cloned = JSON.parse(JSON.stringify(pendingTemplate.editor_data));
+            cloned.pageId = pageId;
+            cloned.pageName = newPageName.trim();
+            const migrated = migrateEditorData(cloned, pageId);
+            migrated.sections = recalculateSectionHeights(migrated.sections);
+            initialEditorData = migrated;
+          } else {
+            const presetId = resolveTemplatePresetId({ name: pendingTemplate.name, id: pendingTemplate.id, templateId: pendingTemplate.templateId });
+            const flatBlocks = instantiateTemplateBlocks(presetId).map(ensureOnlookBlockMeta);
+            const sections = migrateTemplateFlatBlocks(flatBlocks);
+            const migrated = migrateEditorData({
+              pageId,
+              pageName: newPageName.trim(),
+              sections,
+              pageSettings: createDefaultPageSettings(newPageName.trim()),
+              schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+            }, pageId);
+            migrated.sections = recalculateSectionHeights(migrated.sections);
+            initialEditorData = migrated;
+          }
           console.info("[LandingPage Create:template]", {
             pageId,
-            templateId: pendingTemplateId,
-            sections: sections.length,
-            firstSection: sections[0]?.type ?? null,
+            templateId: pendingTemplate?.templateId ?? pendingTemplate?.id,
+            sections: initialEditorData.sections?.length || 0,
           });
         } catch (err) {
           console.warn("Template apply failed, starting blank:", err);
@@ -486,10 +374,19 @@ export default function LandingPagesManagement() {
         editor_data: initialEditorData,
       });
 
+      if (!created?.id || !isValidPageId(created.id)) {
+        throw new Error("Supabase did not return a valid landing page id.");
+      }
+
+      // Increment template downloads count
+      if (pendingTemplate?.id) {
+        await incrementTemplateDownloads(pendingTemplate.id);
+      }
+
       const newPg: LandingPageItem = {
         id: created.id,
         name: created.name,
-        templateId: pendingTemplateId,
+        templateId: pendingTemplate?.templateId || undefined,
         status: "UNPUBLISHED",
         updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
         views: 0,
@@ -499,66 +396,24 @@ export default function LandingPagesManagement() {
 
       setPages((prev) => [newPg, ...prev]);
       setNewPageName("");
-      setPendingTemplateId(undefined);
+      setPendingTemplate(null);
       setIsCreateModalOpen(false);
 
       // Redirect to the editor route for this new page
       router.push(`/landing-pages/editor/${created.id}`);
     } catch (err) {
       console.error("Failed to create landing page:", err);
-      // Fallback: create local-only page and redirect
-      const fallbackId = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `local-${Date.now()}`;
-      const presetId = pendingTemplateId;
-      const fallbackSections = presetId
-        ? migrateTemplateFlatBlocks(instantiateTemplateBlocks(presetId).map(ensureOnlookBlockMeta))
-        : [];
-      const fallbackEditorData = {
-        pageId: fallbackId,
-        pageName: newPageName.trim(),
-        sections: fallbackSections,
-        pageSettings: createDefaultPageSettings(newPageName.trim()),
-        schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-        templateId: presetId ?? null,
-      };
-      localStorage.setItem(
-        `landing-editor-autosave:${fallbackId}`,
-        JSON.stringify({
-          pageId: fallbackId,
-          schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-          editorData: fallbackEditorData,
-          savedAt: new Date().toISOString(),
-          source: "local",
-        })
-      );
-      const newPg: LandingPageItem = {
-        id: fallbackId,
-        name: newPageName.trim().toLowerCase(),
-        templateId: pendingTemplateId,
-        status: "UNPUBLISHED",
-        updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
-        views: 0,
-        conversions: 0,
-        revenue: 0,
-      };
-      setPages((prev) => [newPg, ...prev]);
-      setNewPageName("");
-      setPendingTemplateId(undefined);
-      setIsCreateModalOpen(false);
-      router.push(`/landing-pages/editor/${fallbackId}`);
+      alert("Không tạo được landing page trên Supabase. Kiểm tra RLS/policy hoặc service key rồi thử lại.");
     } finally {
       setIsCreating(false);
     }
-  }, [newPageName, pendingTemplateId, isCreating, router]);
+  }, [newPageName, pendingTemplate, isCreating, router]);
 
 
   // Create page from template
   const handleUseTemplate = (template: TemplateItem) => {
-    // Use resolveTemplatePresetId from template-library/index.ts (single source of truth)
-    const presetId = resolveTemplatePresetId({ name: template.name, id: template.id });
     setNewPageName(template.name.split("-")[0].trim().toLowerCase() + "-copy");
-    setPendingTemplateId(presetId);
+    setPendingTemplate(template);
     setIsCreateModalOpen(true);
   };
 
@@ -655,7 +510,7 @@ export default function LandingPagesManagement() {
   });
 
   // Filter calculation for templates
-  const filteredTemplates = templatesData.filter(t => {
+  const filteredTemplates = templates.filter(t => {
     const matchesSearch = t.name.toLowerCase().includes(templateSearchQuery.toLowerCase());
     const matchesCategory = activeCategory === "all" || t.category === activeCategory;
     return matchesSearch && matchesCategory;
@@ -689,6 +544,8 @@ export default function LandingPagesManagement() {
             toggleLikeTemplate={toggleLikeTemplate}
             setSelectedTemplateForPreview={setSelectedTemplateForPreview}
             handleUseTemplate={handleUseTemplate}
+            isLoading={isTemplatesLoading}
+            error={templatesError}
           />
         ) : activeSubTab === "forms" ? (
           <FormConfig 
@@ -718,7 +575,7 @@ export default function LandingPagesManagement() {
             handleSelectAll={handleSelectAll}
             handleSelectRow={handleSelectRow}
             setIsCreateModalOpen={(open) => {
-              if (open) setPendingTemplateId(undefined);
+              if (open) setPendingTemplate(null);
               setIsCreateModalOpen(open);
             }}
             onEdit={handleEditPage}
@@ -732,7 +589,7 @@ export default function LandingPagesManagement() {
       <CreatePageModal 
         isOpen={isCreateModalOpen}
         onClose={() => {
-          setPendingTemplateId(undefined);
+          setPendingTemplate(null);
           setIsCreateModalOpen(false);
         }}
         newPageName={newPageName}

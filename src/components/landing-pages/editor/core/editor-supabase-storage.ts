@@ -4,6 +4,17 @@ import { migrateEditorData, migrateTemplateFlatBlocks, CURRENT_EDITOR_SCHEMA_VER
 import { LandingEditorSnapshot } from "./editor-export-html";
 import { instantiateTemplateBlocks } from "../template-library";
 
+/** Lấy JWT access token của người dùng hiện tại để gửi kèm API request */
+async function getAccessToken(): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export interface LocalAutosaveBackup {
   pageId: string;
   schemaVersion: number;
@@ -12,11 +23,25 @@ export interface LocalAutosaveBackup {
   source: "local";
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isValidPageId(pageId: unknown): pageId is string {
+  return typeof pageId === "string" && UUID_PATTERN.test(pageId);
+}
+
+export function assertValidPageId(pageId: unknown): asserts pageId is string {
+  if (!isValidPageId(pageId)) {
+    throw new Error(`Invalid landing page id: ${String(pageId)}`);
+  }
+}
+
 export function getLocalBackupKey(pageId: string): string {
+  assertValidPageId(pageId);
   return `landing-editor-autosave:${pageId}`;
 }
 
 export async function loadLandingPage(pageId: string): Promise<EditorData | null> {
+  assertValidPageId(pageId);
   const localKey = getLocalBackupKey(pageId);
   const logLoad = (source: string, editorData: EditorData | null, extra?: Record<string, unknown>) => {
     console.info("[LandingEditor Load]", {
@@ -128,6 +153,7 @@ export async function loadLandingPage(pageId: string): Promise<EditorData | null
 }
 
 export async function saveLandingPage(pageId: string, editorData: EditorData): Promise<void> {
+  assertValidPageId(pageId);
   const nowStr = new Date().toISOString();
   
   // 1. Always backup to localStorage
@@ -156,6 +182,10 @@ export async function saveLandingPage(pageId: string, editorData: EditorData): P
       const userId = userData?.user?.id;
 
       const updatePayload: any = {
+        id: pageId,
+        name: editorData.pageName || "Untitled Page",
+        slug: editorData.pageName?.toLowerCase().replace(/\s+/g, "-") || `page-${pageId}`,
+        status: "draft",
         editor_data: editorData,
         updated_at: nowStr,
       };
@@ -164,35 +194,24 @@ export async function saveLandingPage(pageId: string, editorData: EditorData): P
         updatePayload.user_id = userId;
       }
 
-      const { error } = await supabase
-        .from("landing_pages")
-        .update(updatePayload)
-        .eq("id", pageId);
-
-      if (error) {
-        // If row doesn't exist, we can try to insert it
-        if (error.code === "PGRST116" || error.message?.includes("0 rows")) {
-          const insertPayload: any = {
-            id: pageId,
-            editor_data: editorData,
-            name: editorData.pageName || "Untitled Page",
-            slug: editorData.pageName?.toLowerCase().replace(/\s+/g, "-") || `page-${pageId}`,
-            status: "draft",
-            updated_at: nowStr,
-            created_at: nowStr,
-          };
-          if (userId) {
-            insertPayload.user_id = userId;
-          }
-          const { error: insertError } = await supabase
-            .from("landing_pages")
-            .insert([insertPayload]);
-          
-          if (insertError) throw insertError;
-        } else {
-          throw error;
-        }
+      // Lấy JWT để gửi Authorization header
+      const accessToken = await getAccessToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
       }
+
+      const response = await fetch("/api/landing-pages", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(updatePayload),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "Supabase save failed.");
+      }
+
       console.info("[LandingEditor Save:supabase]", {
         pageId,
         fingerprint: getEditorDataFingerprint(editorData),
@@ -213,7 +232,8 @@ export async function createLandingPage(input: {
   editor_data?: any;
 }): Promise<any> {
   const nowStr = new Date().toISOString();
-  const pageId = input.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "page-" + Math.random().toString(36).substring(2, 11));
+  const pageId = input.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "");
+  assertValidPageId(pageId);
   const editorData = input.editor_data
     ? migrateEditorData({ ...input.editor_data, pageId, pageName: input.editor_data.pageName || input.name }, pageId)
     : {
@@ -245,13 +265,27 @@ export async function createLandingPage(input: {
     if (userData?.user?.id) {
       pageData.user_id = userData.user.id;
     }
-    const { data, error } = await supabase
-      .from("landing_pages")
-      .insert([pageData])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+
+    // Lấy JWT để gửi Authorization header
+    const accessToken = await getAccessToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (accessToken) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch("/api/landing-pages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(pageData),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.error || "Supabase create failed.");
+    }
+
+    const result = await response.json();
+    return result.page;
   }
 
   // Local storage fallback for creation
@@ -267,6 +301,7 @@ export async function createLandingPage(input: {
 }
 
 export async function publishLandingPage(pageId: string, html: string): Promise<void> {
+  assertValidPageId(pageId);
   const nowStr = new Date().toISOString();
 
   if (supabase) {
@@ -275,6 +310,7 @@ export async function publishLandingPage(pageId: string, html: string): Promise<
       .update({
         published_html: html,
         status: "published",
+        visibility: "public",  // Xuất bản = công khai
         published_at: nowStr,
         updated_at: nowStr,
       })
@@ -285,11 +321,51 @@ export async function publishLandingPage(pageId: string, html: string): Promise<
   }
 }
 
+/**
+ * Thu hồi xuất bản: đưa page về trạng thái draft/private.
+ * Public link sẽ ngay lập tức trả về 404.
+ */
+export async function unpublishLandingPage(pageId: string): Promise<void> {
+  assertValidPageId(pageId);
+  if (supabase) {
+    const { error } = await supabase
+      .from("landing_pages")
+      .update({
+        status: "draft",
+        visibility: "private",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pageId);
+    if (error) throw error;
+  } else {
+    console.warn("Supabase not configured, cannot unpublish page.");
+  }
+}
+
+/**
+ * Lấy trạng thái bảo mật của page (status + visibility + slug).
+ * Dùng trong EditorTopBar để hiển thị badge và public link.
+ */
+export async function getPageSecurityInfo(
+  pageId: string
+): Promise<{ status: string; visibility: string; slug: string | null } | null> {
+  assertValidPageId(pageId);
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .select("status, visibility, slug")
+    .eq("id", pageId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as { status: string; visibility: string; slug: string | null };
+}
+
 export async function createLandingPageVersion(
   pageId: string,
   editorData: EditorData,
   versionName: string
 ): Promise<void> {
+  assertValidPageId(pageId);
   if (supabase) {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
@@ -327,6 +403,7 @@ export async function createLandingPageVersion(
 }
 
 export async function listLandingPageVersions(pageId: string): Promise<any[]> {
+  assertValidPageId(pageId);
   if (supabase) {
     const { data, error } = await supabase
       .from("landing_page_versions")
@@ -351,6 +428,7 @@ export async function restoreLandingPageVersion(
   versionId: string,
   currentEditorData: EditorData
 ): Promise<EditorData> {
+  assertValidPageId(pageId);
   // 1. Create a backup first
   await createLandingPageVersion(pageId, currentEditorData, "Before restore");
 
@@ -378,6 +456,7 @@ export async function restoreLandingPageVersion(
 }
 
 export async function deleteLandingPage(pageId: string): Promise<void> {
+  assertValidPageId(pageId);
   if (supabase) {
     const { error } = await supabase
       .from("landing_pages")
@@ -395,6 +474,7 @@ export async function deleteLandingPage(pageId: string): Promise<void> {
 
 export async function deleteLandingPages(pageIds: string[]): Promise<void> {
   if (pageIds.length === 0) return;
+  pageIds.forEach(assertValidPageId);
   if (supabase) {
     const { error } = await supabase
       .from("landing_pages")
@@ -410,4 +490,3 @@ export async function deleteLandingPages(pageIds: string[]): Promise<void> {
     }
   });
 }
-

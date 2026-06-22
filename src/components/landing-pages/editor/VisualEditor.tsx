@@ -24,6 +24,8 @@ import {
   saveLandingPage,
   getLocalBackupKey,
   publishLandingPage,
+  unpublishLandingPage,
+  getPageSecurityInfo,
   createLandingPageVersion,
   listLandingPageVersions,
   restoreLandingPageVersion,
@@ -181,6 +183,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<EditorRevision[]>([]);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
+  // Security state — đồng bộ với Supabase sau mỗi lần publish/unpublish
+  const [pageStatus, setPageStatus] = useState<string>(page.status?.toLowerCase() || "draft");
+  const [pageVisibility, setPageVisibility] = useState<string>("private");
+  const [pageSlug, setPageSlug] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<"layers" | "brand" | "pages" | "images" | "funnel" | "sandbox" | "history" | "branches">("layers");
 
@@ -357,6 +363,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           isHydratedRef.current = true;
           setIsEditorLoading(false);
           void loadRevisions();
+          // Load trạng thái bảo mật từ Supabase để hiển thị đúng badge
+          getPageSecurityInfo(page.id).then((info) => {
+            if (info && !cancelled) {
+              setPageStatus(info.status);
+              setPageVisibility(info.visibility);
+              setPageSlug(info.slug);
+            }
+          }).catch(() => {/* ignore */});
         }
       }
     }
@@ -365,6 +379,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       cancelled = true;
     };
   }, [page.id, applySnapshot]);
+
 
   // Load versions from Supabase/LocalStorage
   const loadRevisions = useCallback(async () => {
@@ -620,11 +635,26 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       await saveSnapshot();
       const html = renderLandingPageHtml({ ...data, pageName });
       await publishLandingPage(page.id, html);
+      // Đồng bộ state bảo mật
+      setPageStatus("published");
+      setPageVisibility("public");
       showToast("Đã xuất bản trang thành công! 🎉", "success");
       if (onPublish) onPublish({ ...page, name: pageName, status: "PUBLISHED" });
     } catch (err) {
       console.error("Publish failed:", err);
       showToast("Xuất bản trang thất bại", "info");
+    }
+  };
+
+  const handleUnpublish = async () => {
+    try {
+      await unpublishLandingPage(page.id);
+      setPageStatus("draft");
+      setPageVisibility("private");
+      showToast("Đã hủy xuất bản. Trang hiện ở chế độ riêng tư.", "info");
+    } catch (err) {
+      console.error("Unpublish failed:", err);
+      showToast("Hủy xuất bản thất bại", "info");
     }
   };
 
@@ -786,11 +816,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           onExportJson={handleExportJson}
           onExportHtml={handleExportHtml}
           onPublish={handlePublish}
+          onUnpublish={handleUnpublish}
           isSaved={isSaved}
           lastSavedAt={lastSavedAt}
           activeViewMode={activeViewMode}
           setActiveViewMode={setActiveViewMode}
           blockCount={data.sections.length}
+          pageStatus={pageStatus}
+          pageVisibility={pageVisibility}
+          pageSlug={pageSlug}
         />
         <input
           ref={importInputRef}
