@@ -81,7 +81,7 @@ export interface WebsiteJob {
   id: string;
   projectId: string;
   type: "generate" | "clone" | "import" | "publish";
-  status: "queued" | "processing" | "success" | "failed";
+  status: "queued" | "processing" | "success" | "failed" | "building" | "deploying" | "live";
   progress?: number;
   error?: string;
 }

@@ -119,9 +119,8 @@ export async function createPpcLandingPage(
  * TODO: Cần cấu hình backend endpoint tương ứng trên NestJS
  * Xuất bản website project ra công khai
  */
-export async function publishWebsiteProject(projectId: string): Promise<WebsiteProject> {
-  const response = await post<{ project: WebsiteProject }>(`/website-builder/projects/${projectId}/publish`);
-  return response.project;
+export async function publishWebsiteProject(projectId: string): Promise<{ project: WebsiteProject; jobId?: string }> {
+  return post<{ project: WebsiteProject; jobId?: string }>(`/website-builder/projects/${projectId}/publish`);
 }
 
 /**
@@ -145,7 +144,9 @@ export async function getWebsiteJob(jobId: string): Promise<WebsiteJob> {
       if (project) {
         // Map project status/progress to WebsiteJob
         let status: WebsiteJob["status"] = "processing";
-        if (project.job_status === "completed" || project.status === "ready") {
+        if (project.status === "published") {
+          status = "live";
+        } else if (project.job_status === "completed" || project.status === "ready") {
           status = "success";
         } else if (project.job_status === "failed" || project.status === "failed") {
           status = "failed";

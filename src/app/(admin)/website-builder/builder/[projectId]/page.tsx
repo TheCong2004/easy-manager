@@ -15,7 +15,8 @@ import {
 } from "@/components/website-builder/core/website-db-storage";
 import WebsiteRenderer from "@/components/website-builder/renderer/WebsiteRenderer";
 import SectionRenderer from "@/components/website-builder/renderer/SectionRenderer";
-import { useUpdateWebsiteSchema } from "@/hooks/use-website-builder";
+import { useUpdateWebsiteSchema, usePublishWebsiteProject } from "@/hooks/use-website-builder";
+import { JobProgressModal } from "@/components/website-builder/shared/job-progress";
 
 interface BuilderPageProps {
   params: Promise<{ projectId: string }>;
@@ -46,6 +47,9 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishSlug, setPublishSlug] = useState("");
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
+  const publishMutation = usePublishWebsiteProject(projectId);
 
   const triggerToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -204,17 +208,37 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
     }
   };
 
+  const USE_MOCK_API = true;
+
   const handlePublishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!publishSlug.trim()) return;
 
-    try {
-      await publishWebsite(project.id, publishSlug);
-      setProject((prev: WebsiteProject | null) => prev ? { ...prev, status: "published", slug: publishSlug } : null);
-      triggerToast("Xuất bản trang web thành công!");
-      setShowPublishModal(false);
-    } catch (err) {
-      triggerToast("Tên miền / Slug đã tồn tại", "error");
+    if (USE_MOCK_API) {
+      try {
+        await publishWebsite(project.id, publishSlug);
+        setProject((prev: WebsiteProject | null) => prev ? { ...prev, status: "published", slug: publishSlug } : null);
+        setShowPublishModal(false);
+        setActiveJobId(project.id);
+      } catch (err) {
+        triggerToast("Tên miền / Slug đã tồn tại", "error");
+      }
+    } else {
+      publishMutation.mutate(undefined, {
+        onSuccess: (data: any) => {
+          setShowPublishModal(false);
+          const jobId = data?.jobId;
+          if (jobId) {
+            setActiveJobId(jobId);
+          } else {
+            triggerToast("Xuất bản trang web thành công!");
+            setProject((prev: WebsiteProject | null) => prev ? { ...prev, status: "published", slug: publishSlug } : null);
+          }
+        },
+        onError: (err: any) => {
+          triggerToast(err?.message || "Lỗi khi xuất bản trang", "error");
+        }
+      });
     }
   };
 
@@ -1078,6 +1102,22 @@ export default function WebsiteBuilderCanvas({ params }: BuilderPageProps) {
             </form>
           </div>
         </div>
+      )}
+      {activeJobId && (
+        <JobProgressModal
+          jobId={activeJobId}
+          onSuccess={async () => {
+            setActiveJobId(null);
+            triggerToast("Xuất bản trang web thành công!");
+            try {
+              const data = await getWebsiteProject(projectId);
+              if (data) setProject(data);
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onClose={() => setActiveJobId(null)}
+        />
       )}
     </div>
   );

@@ -11,6 +11,8 @@ import {
   DEFAULT_SCHEMA
 } from "@/components/website-builder/core/website-db-storage";
 import WebsiteRenderer from "@/components/website-builder/renderer/WebsiteRenderer";
+import { usePublishWebsiteProject } from "@/hooks/use-website-builder";
+import { JobProgressModal } from "@/components/website-builder/shared/job-progress";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -28,6 +30,9 @@ export default function WebsiteProjectDetailPage({ params }: ProjectPageProps) {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishSlug, setPublishSlug] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
+  const publishMutation = usePublishWebsiteProject(projectId);
 
   // Load project details
   const loadProject = async (showSkeleton = false) => {
@@ -79,23 +84,47 @@ export default function WebsiteProjectDetailPage({ params }: ProjectPageProps) {
   }, [project?.status, projectId]);
 
   // Handle publish action
+  const USE_MOCK_API = true;
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!publishSlug) return;
     setPublishing(true);
-    try {
-      const success = await publishWebsite(projectId, publishSlug.trim());
-      if (success) {
-        setShowPublishModal(false);
-        await loadProject(false);
-      } else {
-        alert("Không thể xuất bản. Vui lòng kiểm tra lại slug.");
+    
+    if (USE_MOCK_API) {
+      try {
+        const success = await publishWebsite(projectId, publishSlug.trim());
+        if (success) {
+          setShowPublishModal(false);
+          setActiveJobId(projectId);
+        } else {
+          alert("Không thể xuất bản. Vui lòng kiểm tra lại slug.");
+        }
+      } catch (err) {
+        console.error("Publish failed:", err);
+        alert("Xuất bản thất bại.");
+      } finally {
+        setPublishing(false);
       }
-    } catch (err) {
-      console.error("Publish failed:", err);
-      alert("Xuất bản thất bại.");
-    } finally {
-      setPublishing(false);
+    } else {
+      publishMutation.mutate(undefined, {
+        onSuccess: (data: any) => {
+          setShowPublishModal(false);
+          setPublishing(false);
+          const jobId = data?.jobId;
+          if (jobId) {
+            setActiveJobId(jobId);
+          } else {
+            alert("Xuất bản website thành công!");
+            loadProject(false);
+          }
+        },
+        onError: (err: any) => {
+          console.error("Publish failed:", err);
+          alert(err?.message || "Xuất bản thất bại.");
+          setPublishing(false);
+        }
+      });
     }
   };
 
@@ -422,6 +451,19 @@ export default function WebsiteProjectDetailPage({ params }: ProjectPageProps) {
             </form>
           </div>
         </div>
+      )}
+      {activeJobId && (
+        <JobProgressModal
+          jobId={activeJobId}
+          onSuccess={async () => {
+            setActiveJobId(null);
+            await loadProject(false);
+          }}
+          onClose={async () => {
+            setActiveJobId(null);
+            await loadProject(false);
+          }}
+        />
       )}
     </div>
   );

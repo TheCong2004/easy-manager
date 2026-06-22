@@ -23,9 +23,18 @@ export const JobStatusBadge: React.FC<JobStatusBadgeProps> = ({ status, classNam
       styles = "bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-500 animate-pulse";
       label = "Đang xử lý...";
       break;
+    case "building":
+      styles = "bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-500 animate-pulse";
+      label = "Đang build...";
+      break;
+    case "deploying":
+      styles = "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-500 animate-pulse";
+      label = "Đang deploy...";
+      break;
+    case "live":
     case "success":
       styles = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-500";
-      label = "Thành công";
+      label = normStatus === "live" ? "Live" : "Thành công";
       break;
     case "failed":
       styles = "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-500";
@@ -37,8 +46,9 @@ export const JobStatusBadge: React.FC<JobStatusBadgeProps> = ({ status, classNam
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${styles} ${className}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${
         normStatus === "queued" ? "bg-amber-500" :
-        normStatus === "processing" ? "bg-blue-500" :
-        normStatus === "success" ? "bg-emerald-500" :
+        normStatus === "building" ? "bg-blue-500" :
+        normStatus === "deploying" ? "bg-indigo-500" :
+        (normStatus === "success" || normStatus === "live") ? "bg-emerald-500" :
         normStatus === "failed" ? "bg-rose-500" : "bg-gray-400"
       }`}></span>
       {label}
@@ -77,9 +87,9 @@ export const JobProgressModal: React.FC<JobProgressModalProps> = ({
     refetchInterval: 2000,
   });
 
-  // Stop polling when success/failed status is detected
+  // Stop polling when success/failed/live status is detected
   useEffect(() => {
-    if (job && (job.status === "success" || job.status === "failed")) {
+    if (job && (job.status === "success" || job.status === "failed" || job.status === "live")) {
       setIsPolling(false);
     }
   }, [job?.status]);
@@ -92,7 +102,7 @@ export const JobProgressModal: React.FC<JobProgressModalProps> = ({
   useEffect(() => {
     if (!job) return;
 
-    if (job.status === "success") {
+    if (job.status === "success" || job.status === "live") {
       // Invalidate project cache to refresh lists and detail views
       queryClient.invalidateQueries({ queryKey: websiteQueryKeys.projects.all });
       if (job.projectId) {
@@ -107,7 +117,7 @@ export const JobProgressModal: React.FC<JobProgressModalProps> = ({
   // Determine progress text helper based on job type
   const getProgressMessage = () => {
     if (status === "failed") return `Lỗi: ${errorMsg || "Tác vụ thất bại"}`;
-    if (status === "success") return "Tác vụ hoàn thành thành công!";
+    if (status === "success" || status === "live") return "Tác vụ hoàn thành thành công!";
 
     const jobType = job?.type || "generate";
     if (jobType === "generate") {
@@ -125,6 +135,11 @@ export const JobProgressModal: React.FC<JobProgressModalProps> = ({
       if (progress < 55) return "Đang phân tích các file HTML/ZIP...";
       if (progress < 85) return "Đang biên dịch thành các sections tương thích...";
       return "Đang liên kết dữ liệu canvas...";
+    } else if (jobType === "publish") {
+      if (status === "queued") return "Đang xếp hàng xuất bản (Queued)...";
+      if (status === "building") return "Đang biên dịch và đóng gói mã nguồn (Building)...";
+      if (status === "deploying") return "Đang phân phối tài nguyên lên CDN (Deploying)...";
+      return "Đang cấu hình máy chủ xuất bản...";
     } else {
       if (progress < 50) return "Đang đóng gói tài nguyên phân phối...";
       return "Đang cập nhật bản ghi DNS và xuất bản trang...";
@@ -160,7 +175,7 @@ export const JobProgressModal: React.FC<JobProgressModalProps> = ({
             <div className="h-14 w-14 mb-5 relative flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-dashed border-primary animate-spin"></div>
               <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-extrabold text-sm">
-                {status === "success" ? "✓" : "AI"}
+                {(status === "success" || status === "live") ? "✓" : "AI"}
               </div>
             </div>
 
