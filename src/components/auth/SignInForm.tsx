@@ -98,7 +98,7 @@ export default function SignInForm() {
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" />
+                  <Input placeholder="info@gmail.com" type="text" />
                 </div>
                 <div>
                   <Label>
@@ -136,7 +136,7 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm">
+                  <Button className="w-full" size="sm" onClick={() => router.push("/")}>
                     Sign in
                   </Button>
                 </div>
