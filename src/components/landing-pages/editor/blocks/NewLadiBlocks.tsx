@@ -692,13 +692,13 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
   return (
     <div
       onClick={onSelect}
-      className={`relative w-full px-8 py-14 cursor-pointer transition-all ${
-        isSelected ? "ring-2 ring-purple-500 ring-offset-1" : "hover:ring-1 hover:ring-purple-400/40"
+      className={`relative w-full cursor-pointer transition-all ${
+        isSelected ? "ring-2 ring-purple-500" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
       <div
-        className="w-full overflow-hidden rounded-xl border border-dashed border-gray-700 bg-black/40"
-        style={{ minHeight: `${height}px` }}
+        className="w-full overflow-hidden"
+        style={{ minHeight: height ? `${height}px` : "auto" }}
         dangerouslySetInnerHTML={{ __html: code }}
       />
       {isSelected && (
