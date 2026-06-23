@@ -40,7 +40,9 @@ function getSupabaseAdmin() {
 function getSupabaseWithUserJwt(jwt: string) {
   const url = resolveSupabaseUrl();
   const anonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY;
   if (!url || !url.startsWith("http") || !anonKey) return null;
   return createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
