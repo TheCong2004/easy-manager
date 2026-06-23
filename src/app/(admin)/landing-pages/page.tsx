@@ -16,6 +16,7 @@ import { createLandingPage, deleteLandingPage, deleteLandingPages, isValidPageId
 import { LANDING_TEMPLATE_PRESETS, resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
 import { migrateTemplateFlatBlocks, migrateEditorData, recalculateSectionHeights } from "@/components/landing-pages/editor/core/editor-migration";
 import { createDefaultPageSettings, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
+import { parseHtmlToLandingPageSchema } from "@/components/landing-pages/editor/core/html-to-landing-schema";
 import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
 import { supabase } from "@/lib/supabase";
 import { listTemplates, incrementTemplateDownloads } from "@/components/landing-pages/templates/template-service";
@@ -589,20 +590,24 @@ export default function LandingPagesManagement() {
                 htmlCode = `<div style="padding: 60px 20px; text-align: center; font-family: sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">\n  <h1>Trang thiết kế nhập từ ZIP/HTML</h1>\n  <p>Giải nén và cấu hình thành công! Chào mừng đến với trang ${name}</p>\n</div>`;
               }
 
-              const htmlBlock = ensureOnlookBlockMeta({
-                id: `html_${Date.now()}`,
-                type: "html_code",
-                label: "Mã HTML Nhập khẩu",
-                props: {
-                  code: htmlCode,
-                  height: 800
-                }
-              });
+              let parsedSections = parseHtmlToLandingPageSchema(htmlCode);
+              if (parsedSections.length === 0) {
+                const htmlBlock = ensureOnlookBlockMeta({
+                  id: `html_${Date.now()}`,
+                  type: "html_code",
+                  label: "Mã HTML Nhập khẩu",
+                  props: {
+                    code: htmlCode,
+                    height: 800
+                  }
+                });
+                parsedSections = [htmlBlock];
+              }
 
               initialEditorData = {
                 pageId,
                 pageName: name,
-                sections: [htmlBlock],
+                sections: parsedSections,
                 pageSettings: createDefaultPageSettings(name),
                 schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
               };

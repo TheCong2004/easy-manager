@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   GalleryProps, BoxProps, IconProps, ProductCardProps, CollectionListProps,
   CarouselProps, TabsProps, FrameProps, AccordionProps, TableProps,
@@ -688,6 +688,68 @@ export const MenuBlock: React.FC<{ props: MenuProps; isSelected: boolean; onSele
 // ── HTML Code Block ───────────────────────────────────────────
 export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
   const { code, height } = props;
+  const [iframeHeight, setIframeHeight] = useState<string>(height ? `${height}px` : "300px");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Prepend resets to prevent iframe default margins/scrollbars from causing layout issues
+  const iframeContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            width: 100%;
+          }
+        </style>
+      </head>
+      <body>
+        ${code}
+      </body>
+    </html>
+  `;
+
+  // Function to adjust the height of the iframe based on its content scrollHeight
+  const adjustHeight = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+      if (!height) {
+        // Let it shrink first to get correct scrollHeight, then set it
+        iframe.style.height = "0px";
+        const scrollHeight = iframe.contentDocument.body.scrollHeight || iframe.contentDocument.documentElement.scrollHeight;
+        // Ensure a fallback minimum height of 100px so it's not invisible if empty
+        const finalHeight = Math.max(100, scrollHeight);
+        setIframeHeight(`${finalHeight}px`);
+        iframe.style.height = `${finalHeight}px`;
+      }
+    }
+  }, [height]);
+
+  useEffect(() => {
+    if (height) {
+      setIframeHeight(`${height}px`);
+    } else {
+      adjustHeight();
+      // Setup timers to account for async image rendering or fonts loading
+      const t1 = setTimeout(adjustHeight, 300);
+      const t2 = setTimeout(adjustHeight, 1000);
+      const t3 = setTimeout(adjustHeight, 2500);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [code, height, adjustHeight]);
+
+  useEffect(() => {
+    if (!height) {
+      window.addEventListener("resize", adjustHeight);
+      return () => window.removeEventListener("resize", adjustHeight);
+    }
+  }, [height, adjustHeight]);
 
   return (
     <div
@@ -696,11 +758,22 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
         isSelected ? "ring-2 ring-purple-500" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
     >
-      <div
-        className="w-full overflow-hidden"
-        style={{ minHeight: height ? `${height}px` : "auto" }}
-        dangerouslySetInnerHTML={{ __html: code }}
+      {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
+      <div className="absolute inset-0 z-10 bg-transparent" />
+
+      <iframe
+        ref={iframeRef}
+        title="HTML Code Embed"
+        srcDoc={iframeContent}
+        onLoad={adjustHeight}
+        className="w-full border-none pointer-events-none"
+        style={{
+          height: iframeHeight,
+          display: "block",
+        }}
+        sandbox="allow-same-origin allow-scripts"
       />
+
       {isSelected && (
         <div className="absolute top-2 left-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
           HTML EMBED

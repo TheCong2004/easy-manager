@@ -392,20 +392,22 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   return (
     <div className="w-full flex flex-col bg-white h-full overflow-hidden border-r border-gray-200">
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 px-3 pt-2">
-        {(["components", "layers"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`cursor-pointer flex-1 rounded-t-md py-2.5 text-[11px] font-bold tracking-wider transition uppercase ${
-              tab === t
-                ? "bg-white text-purple-700 shadow-[inset_0_-2px_0_#8b5cf6]"
-                : "text-gray-550 hover:text-gray-800"
-            }`}
-          >
-            {t === "components" ? "Thêm phần tử" : "Quản lý Layers"}
-          </button>
-        ))}
+      <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 px-4 py-2">
+        <div className="flex w-full rounded-md border border-gray-200/50 bg-gray-100 p-0.5 select-none">
+          {(["components", "layers"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`cursor-pointer flex-1 rounded py-1.5 text-[10px] font-extrabold tracking-widest transition uppercase ${
+                tab === t
+                  ? "bg-white text-purple-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              {t === "components" ? "Thêm phần tử" : "Quản lý Layers"}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">

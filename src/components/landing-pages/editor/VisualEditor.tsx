@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import {
-  EditorData, BlockType, DeviceMode, EditorViewMode, DEVICE_WIDTHS, createDefaultPageSettings,
+  EditorData, BlockType, DeviceMode, EditorViewMode, DEVICE_WIDTHS, createDefaultPageSettings, EditorBlock, ensureOnlookBlockMeta,
 } from "./types";
 import {
   LandingEditorAction,
@@ -33,6 +33,7 @@ import {
 import { getEditorDataFingerprint, migrateEditorData } from "./core/editor-migration";
 import { findBlockRecursive } from "./core/editor-reducer";
 import { findMatchingCommand } from "./core/ai-command-registry";
+import { parseHtmlToLandingPageSchema } from "./core/html-to-landing-schema";
 
 // Import modular split sub-panels
 import { PageListingPanel } from "./panels/PageListingPanel";
@@ -710,11 +711,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       showToast("Đang tải lên và xử lý tệp ZIP...", "info");
       try {
         const formData = new FormData();
-        formData.append("pageId", page.id);
+        formData.append("landingPageId", page.id);
         formData.append("file", file);
-        formData.append("importMode", "append");
+        formData.append("mode", "append");
 
-        const response = await fetch("/api/landing-pages/import", {
+        const response = await fetch("/api/landing-pages/import-zip", {
           method: "POST",
           body: formData,
         });
@@ -724,7 +725,33 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         }
 
         const result = await response.json();
-        alert(`Đã nhận file ZIP thiết kế!\nJob ID: ${result.jobId || "N/A"}\nTrạng thái: ${result.status}\n\nThông báo: Nhập ZIP yêu cầu xử lý từ backend (TODO).`);
+        
+        if (result.sections && result.sections.length > 0) {
+          const confirmReplace = window.confirm(
+            "Đã bóc tách thành công ZIP từ backend!\n\n" +
+            "Bạn có muốn GHI ĐÈ toàn bộ trang hiện tại không?\n" +
+            "- Chọn 'OK' để GHI ĐÈ.\n" +
+            "- Chọn 'Cancel' để THÊM VÀO CUỐI trang hiện tại (Append)."
+          );
+          
+          let nextSections = data.sections;
+          if (confirmReplace) {
+            const doubleConfirm = window.confirm("Hành động này sẽ XÓA HẾT các khối hiện tại trên canvas. Bạn có chắc chắn muốn tiếp tục?");
+            if (!doubleConfirm) return;
+            nextSections = result.sections;
+          } else {
+            nextSections = [...data.sections, ...result.sections];
+          }
+
+          push({
+            ...data,
+            sections: nextSections,
+          });
+          setSelectedId(null);
+          showToast("Đã nhập ZIP thiết kế thành công", "success");
+        } else {
+          alert(`Đã nhận file ZIP thiết kế!\nJob ID: ${result.jobId || "N/A"}\nTrạng thái: ${result.status}\n\nThông báo: Nhập ZIP yêu cầu xử lý từ backend (TODO).`);
+        }
       } catch (err: any) {
         console.error("ZIP import error:", err);
         showToast(err.message || "Lỗi tải lên ZIP", "info");
@@ -737,8 +764,61 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           if (!htmlCode.trim()) {
             throw new Error("File HTML trống");
           }
-          handleAddBlock("html_code", { code: htmlCode, height: 400 });
-          showToast("Đã import HTML thành công", "success");
+          
+          // Prompt the user to choose conversion style
+          const confirmNative = window.confirm(
+            "Bạn có muốn CHUYỂN ĐỔI file HTML thành các khối thiết kế chỉnh sửa được (Editable Native Blocks - Khuyên dùng) không?\n\n" +
+            "- Chọn 'OK' để chuyển đổi tự động thành Sections/Headings/Paragraphs/Buttons/Images...\n" +
+            "- Chọn 'Cancel' để nhập dưới dạng một khối mã nguồn HTML thô (Raw HTML)."
+          );
+
+          let parsedSections: EditorBlock[] = [];
+          if (confirmNative) {
+            parsedSections = parseHtmlToLandingPageSchema(htmlCode);
+            if (parsedSections.length === 0) {
+              throw new Error("Không tìm thấy cấu trúc section/element phù hợp trong file HTML.");
+            }
+          } else {
+            const rawBlock = ensureOnlookBlockMeta({
+              id: `html_${Date.now()}`,
+              type: "html_code",
+              label: "Mã HTML Nhập khẩu",
+              props: {
+                code: htmlCode,
+                height: 800
+              }
+            });
+            parsedSections = [rawBlock];
+          }
+
+          // Add user-requested logs
+          const allParsedBlocks = parsedSections.flatMap(s => [s, ...(s.children || [])]);
+          console.log("[HTML_IMPORT] parsedBlocks", allParsedBlocks);
+          console.log("[HTML_IMPORT] blockTypes", allParsedBlocks.map(b => b.type));
+
+          // Ask the user to choose import mode: Replace vs Append
+          const confirmReplace = window.confirm(
+            "Bạn có muốn GHI ĐÈ (Replace) toàn bộ trang hiện tại bằng nội dung HTML mới không?\n\n" +
+            "- Chọn 'OK' để GHI ĐÈ toàn bộ các khối hiện tại.\n" +
+            "- Chọn 'Cancel' để THÊM VÀO CUỐI trang hiện tại (Append)."
+          );
+          
+          let nextSections = data.sections;
+          if (confirmReplace) {
+            const doubleConfirm = window.confirm("Hành động này sẽ XÓA HẾT các khối hiện tại trên canvas. Bạn có chắc chắn muốn tiếp tục?");
+            if (!doubleConfirm) return;
+            nextSections = parsedSections;
+          } else {
+            nextSections = [...data.sections, ...parsedSections];
+          }
+
+          push({
+            ...data,
+            sections: nextSections,
+          });
+          
+          setSelectedId(null);
+          showToast("Đã import HTML thành công!", "success");
         } catch (err: any) {
           console.error("Import HTML failed:", err);
           showToast(err.message || "File HTML không hợp lệ", "info");
@@ -746,7 +826,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       };
       reader.readAsText(file);
     }
-  }, [page.id, handleAddBlock, showToast]);
+  }, [page.id, data, push, setSelectedId, showToast]);
 
   const handleSwitchPageSafe = useCallback((targetPage: LandingPageItem) => {
     if (!isSaved) {
@@ -1020,15 +1100,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           {/* RIGHT — Inspector / AI Copilot */}
           <div className="w-[344px] flex-shrink-0 flex flex-col bg-white border-l border-gray-200 h-full overflow-hidden">
             {/* Tab selector header */}
-            <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-gray-50 select-none">
-              <div className="flex rounded-md border border-gray-250 bg-gray-100 p-0.5">
+            <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-gray-50 select-none">
+              <div className="flex rounded-md border border-gray-200/50 bg-gray-100 p-0.5 w-[200px]">
                 {(["chat", "inspector"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setRightTab(tab)}
-                    className={`rounded px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition ${
+                    className={`cursor-pointer flex-1 rounded py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition ${
                       rightTab === tab
-                        ? "bg-purple-600 text-white shadow-sm"
+                        ? "bg-white text-purple-700 shadow-sm"
                         : "text-gray-500 hover:text-gray-800"
                     }`}
                   >
@@ -1040,7 +1120,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               {rightTab === "chat" && (
                 <button
                   onClick={() => setChatHistory([])}
-                  className="cursor-pointer rounded-md border border-purple-500/20 bg-purple-50 px-2 py-1 text-[10px] font-bold text-purple-700 hover:bg-purple-100 transition shadow-sm"
+                  className="cursor-pointer rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-purple-700 hover:bg-purple-100 transition shadow-sm"
                 >
                   New
                 </button>
