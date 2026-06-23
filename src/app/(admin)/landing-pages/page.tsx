@@ -576,13 +576,26 @@ export default function LandingPagesManagement() {
                 schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
               };
             } else if (type === "import") {
+              let htmlCode = "";
+              if (params.file) {
+                try {
+                  htmlCode = await params.file.text();
+                } catch (readErr) {
+                  console.error("Failed to read uploaded HTML file:", readErr);
+                  htmlCode = `<!-- Failed to read HTML file -->`;
+                }
+              }
+              if (!htmlCode) {
+                htmlCode = `<div style="padding: 60px 20px; text-align: center; font-family: sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">\n  <h1>Trang thiết kế nhập từ ZIP/HTML</h1>\n  <p>Giải nén và cấu hình thành công! Chào mừng đến với trang ${name}</p>\n</div>`;
+              }
+
               const htmlBlock = ensureOnlookBlockMeta({
                 id: `html_${Date.now()}`,
                 type: "html_code",
                 label: "Mã HTML Nhập khẩu",
                 props: {
-                  code: `<div style="padding: 60px 20px; text-align: center; font-family: sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">\n  <h1>Trang thiết kế nhập từ ZIP/HTML</h1>\n  <p>Giải nén và cấu hình thành công! Chào mừng đến với trang ${name}</p>\n</div>`,
-                  height: 400
+                  code: htmlCode,
+                  height: 800
                 }
               });
 

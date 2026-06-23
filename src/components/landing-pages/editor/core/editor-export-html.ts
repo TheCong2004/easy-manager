@@ -231,10 +231,6 @@ function renderBlockHtml(block: EditorBlock): string {
     }
     case "html_code": {
       const code = str(props.code);
-      // Sanitize unsafe scripts
-      if (code.toLowerCase().includes("<script")) {
-        return `<div ${attrs} id="${b.id}">[Unsafe HTML script blocked]</div>`;
-      }
       return `<div ${attrs} id="${b.id}">${code}</div>`;
     }
     default:
