@@ -24,18 +24,8 @@ export function LandingEditorPageClient({ pageId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect to signin if not authenticated and supabase is configured
-  useEffect(() => {
-    async function checkAuth() {
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.replace(`/signin?redirect=/landing-pages/editor/${pageId}`);
-        }
-      }
-    }
-    void checkAuth();
-  }, [pageId, router]);
+  // Redirect to signin check disabled for development bypass
+
 
   useEffect(() => {
     async function loadPageMeta() {

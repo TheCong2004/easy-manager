@@ -150,18 +150,8 @@ export default function LandingPagesManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
 
-  // Redirect if not signed in and supabase is configured
-  useEffect(() => {
-    async function checkAuth() {
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.replace("/signin?redirect=/landing-pages");
-        }
-      }
-    }
-    void checkAuth();
-  }, [router]);
+  // Redirect check disabled for development bypass
+
 
 
   // Dynamic pages loading effect
