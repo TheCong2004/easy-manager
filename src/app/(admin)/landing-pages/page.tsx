@@ -507,7 +507,7 @@ export default function LandingPagesManagement() {
         }
       } catch (err) {
         console.error("Failed to create landing page:", err);
-        alert("Không thể tạo landing page trống.");
+        alert(`Không thể tạo landing page trống: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setIsCreating(false);
       }
@@ -646,7 +646,7 @@ export default function LandingPagesManagement() {
             }
           } catch (err) {
             console.error("Failed to complete page generation:", err);
-            alert("Lỗi hoàn thành tiến trình khởi tạo.");
+            alert(`Lỗi hoàn thành tiến trình khởi tạo: ${err instanceof Error ? err.message : String(err)}`);
             setActiveJob(null);
           }
         })();
