@@ -226,8 +226,14 @@ export default function LandingPagesManagement() {
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newPageName, setNewPageName] = useState("");
   const [pendingTemplate, setPendingTemplate] = useState<TemplateItem | null>(null);
+  const [activeJob, setActiveJob] = useState<{
+    id: string;
+    type: "blank" | "ai" | "clone" | "import" | "ppc";
+    progress: number;
+    statusText: string;
+    pageName: string;
+  } | null>(null);
 
   // Templates Sub-View States
   const [activeTemplateTab, setActiveTemplateTab] = useState("sample"); 
@@ -309,110 +315,360 @@ export default function LandingPagesManagement() {
     }
   };
 
-  // Modal confirm submit — create page in Supabase, then redirect to editor route
-  const handleCreatePage = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPageName.trim() || isCreating) return;
+  // Helper: Chọn template theo ngành nghề & phong cách của AI Builder
+  const getTemplateIdByIndustryAndStyle = (industry: string, style: string): string => {
+    const ind = (industry || "").toLowerCase();
+    if (ind.includes("spa") || ind.includes("beauty") || ind.includes("mỹ phẩm") || ind.includes("cosmetic") || ind.includes("làm đẹp")) {
+      return "beauty-spa";
+    }
+    if (ind.includes("cưới") || ind.includes("wedding") || ind.includes("marry")) {
+      return "wedding-invite";
+    }
+    if (ind.includes("trà") || ind.includes("tea") || ind.includes("thảo mộc") || ind.includes("herb")) {
+      return "herb-tea";
+    }
+    if (ind.includes("đồng hồ") || ind.includes("watch") || ind.includes("smartwatch")) {
+      return "smartwatch-performance";
+    }
+    if (ind.includes("tài chính") || ind.includes("finance") || ind.includes("consult") || ind.includes("tư vấn")) {
+      return "finance-lead";
+    }
+    if (ind.includes("khóa học") || ind.includes("course") || ind.includes("học") || ind.includes("education") || ind.includes("dạy")) {
+      return "online-course";
+    }
+    if (ind.includes("bất động sản") || ind.includes("real estate") || ind.includes("nhà") || ind.includes("căn hộ")) {
+      return "real-estate-premium";
+    }
+    if (ind.includes("nhà hàng") || ind.includes("restaurant") || ind.includes("ăn") || ind.includes("food") || ind.includes("quán")) {
+      return "restaurant-menu";
+    }
+    if (ind.includes("app") || ind.includes("mobile") || ind.includes("phần mềm") || ind.includes("crm") || ind.includes("saas")) {
+      return "saas-minimal";
+    }
+    if (style === "premium") return "clinic-trust";
+    if (style === "bold") return "ecommerce-bold";
+    if (style === "friendly") return "local-service";
+    return "saas-minimal";
+  };
 
-    setIsCreating(true);
-    try {
-      if (typeof crypto === "undefined" || !crypto.randomUUID) {
-        throw new Error("Browser does not support crypto.randomUUID.");
-      }
+  // Helper: Cá nhân hóa nội dung các block dựa trên form nhập liệu của người dùng
+  const customizeGeneratedSections = (
+    sections: any[],
+    type: "ai" | "clone" | "ppc",
+    name: string,
+    params: Record<string, any>
+  ): any[] => {
+    return sections.map((section) => {
+      const newSection = { ...section, props: { ...section.props } };
 
-      const pageId = crypto.randomUUID();
-
-      // Build initial editor data from template if provided
-      let initialEditorData: any = {
-        pageId,
-        pageName: newPageName.trim(),
-        sections: [],
-        pageSettings: createDefaultPageSettings(newPageName.trim()),
-        schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-        templateId: pendingTemplate?.templateId ?? null,
-      };
-
-      if (pendingTemplate) {
-        try {
-          if (pendingTemplate.editor_data) {
-            // Deep clone editor_data
-            const cloned = JSON.parse(JSON.stringify(pendingTemplate.editor_data));
-            cloned.pageId = pageId;
-            cloned.pageName = newPageName.trim();
-            const migrated = migrateEditorData(cloned, pageId);
-            migrated.sections = recalculateSectionHeights(migrated.sections);
-            initialEditorData = migrated;
-          } else {
-            const presetId = resolveTemplatePresetId({ name: pendingTemplate.name, id: pendingTemplate.id, templateId: pendingTemplate.templateId });
-            const flatBlocks = instantiateTemplateBlocks(presetId).map(ensureOnlookBlockMeta);
-            const sections = migrateTemplateFlatBlocks(flatBlocks);
-            const migrated = migrateEditorData({
-              pageId,
-              pageName: newPageName.trim(),
-              sections,
-              pageSettings: createDefaultPageSettings(newPageName.trim()),
-              schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
-            }, pageId);
-            migrated.sections = recalculateSectionHeights(migrated.sections);
-            initialEditorData = migrated;
+      if (type === "ai") {
+        const { businessName, industry, location, goal } = params;
+        if (newSection.type === "hero" || newSection.type === "tea_landing" || newSection.type === "smartwatch_landing") {
+          if (newSection.props.headline) {
+            newSection.props.headline = `Giải pháp ${industry} đột phá cùng ${businessName}`;
           }
-          console.info("[LandingPage Create:template]", {
-            pageId,
-            templateId: pendingTemplate?.templateId ?? pendingTemplate?.id,
-            sections: initialEditorData.sections?.length || 0,
-          });
-        } catch (err) {
-          console.warn("Template apply failed, starting blank:", err);
+          if (newSection.props.subheadline) {
+            newSection.props.subheadline = `Chúng tôi tự hào cung cấp dịch vụ ${industry} chuyên nghiệp ${location ? `tại ${location}` : "hàng đầu"}.`;
+          }
+          if (newSection.props.title) {
+            newSection.props.title = `${businessName} - ${industry}`;
+          }
+        }
+        if (newSection.type === "button" || newSection.type === "form_capture") {
+          if (goal === "sell_products") {
+            newSection.props.label = "Mua sản phẩm ngay";
+            newSection.props.buttonText = "Mua ngay";
+          } else if (goal === "brand_intro") {
+            newSection.props.label = "Đăng ký tư vấn";
+            newSection.props.buttonText = "Gửi yêu cầu";
+          }
+        }
+      } else if (type === "clone") {
+        const { url, keyword } = params;
+        const domain = url.replace(/https?:\/\/(www\.)?/, "").split("/")[0];
+        if (newSection.type === "hero") {
+          newSection.props.headline = `Bản sao giao diện từ ${domain}`;
+          newSection.props.subheadline = keyword 
+            ? `Giao diện tối ưu hóa SEO cho từ khóa: "${keyword}"`
+            : `Giao diện được cấu trúc lại từ trang nguồn: ${url}`;
+        }
+      } else if (type === "ppc") {
+        const { keyword, offer, cta } = params;
+        if (newSection.type === "hero") {
+          if (keyword) newSection.props.headline = `Dịch vụ ${keyword} chất lượng cao`;
+          if (offer) newSection.props.subheadline = `🔥 Ưu đãi cực khủng: ${offer}`;
+        }
+        if (newSection.type === "button" || newSection.type === "form_capture") {
+          if (cta) {
+            newSection.props.label = cta;
+            newSection.props.buttonText = cta;
+          }
         }
       }
 
-      const slug = newPageName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      const created = await createLandingPage({
-        id: pageId,
-        name: newPageName.trim(),
-        slug: slug || `page-${Date.now()}`,
-        editor_data: initialEditorData,
-      });
-
-      if (!created?.id || !isValidPageId(created.id)) {
-        throw new Error("Supabase did not return a valid landing page id.");
+      if (Array.isArray(newSection.children)) {
+        newSection.children = customizeGeneratedSections(newSection.children, type, name, params);
       }
 
-      // Increment template downloads count
-      if (pendingTemplate?.id) {
-        await incrementTemplateDownloads(pendingTemplate.id);
+      return newSection;
+    });
+  };
+
+  // Main Generator Handler — thay thế handleCreatePage cũ
+  const handleGeneratePage = useCallback(async (payload: {
+    type: "blank" | "ai" | "clone" | "import" | "ppc";
+    name: string;
+    params: Record<string, any>;
+  }) => {
+    const { type, name, params } = payload;
+    setIsCreateModalOpen(false);
+
+    if (type === "blank") {
+      setIsCreating(true);
+      try {
+        const pageId = crypto.randomUUID();
+        let initialEditorData: any = {
+          pageId,
+          pageName: name,
+          sections: [],
+          pageSettings: createDefaultPageSettings(name),
+          schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+          templateId: pendingTemplate?.templateId ?? null,
+        };
+
+        if (pendingTemplate) {
+          try {
+            if (pendingTemplate.editor_data) {
+              const cloned = JSON.parse(JSON.stringify(pendingTemplate.editor_data));
+              cloned.pageId = pageId;
+              cloned.pageName = name;
+              const migrated = migrateEditorData(cloned, pageId);
+              migrated.sections = recalculateSectionHeights(migrated.sections);
+              initialEditorData = migrated;
+            } else {
+              const presetId = resolveTemplatePresetId({ name: pendingTemplate.name, id: pendingTemplate.id, templateId: pendingTemplate.templateId });
+              const flatBlocks = instantiateTemplateBlocks(presetId).map(ensureOnlookBlockMeta);
+              const sections = migrateTemplateFlatBlocks(flatBlocks);
+              const migrated = migrateEditorData({
+                pageId,
+                pageName: name,
+                sections,
+                pageSettings: createDefaultPageSettings(name),
+                schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+              }, pageId);
+              migrated.sections = recalculateSectionHeights(migrated.sections);
+              initialEditorData = migrated;
+            }
+          } catch (err) {
+            console.warn("Template apply failed, starting blank:", err);
+          }
+        }
+
+        const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || `page-${Date.now()}`;
+        const created = await createLandingPage({
+          id: pageId,
+          name,
+          slug,
+          editor_data: initialEditorData,
+        });
+
+        if (pendingTemplate?.id) {
+          await incrementTemplateDownloads(pendingTemplate.id);
+        }
+
+        if (created?.id) {
+          const newPg: LandingPageItem = {
+            id: created.id,
+            name: created.name,
+            templateId: pendingTemplate?.templateId || undefined,
+            status: "UNPUBLISHED",
+            updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+            views: 0,
+            conversions: 0,
+            revenue: 0,
+          };
+          setPages((prev) => [newPg, ...prev]);
+          setPendingTemplate(null);
+          router.push(`/landing-pages/editor/${created.id}`);
+        }
+      } catch (err) {
+        console.error("Failed to create landing page:", err);
+        alert("Không thể tạo landing page trống.");
+      } finally {
+        setIsCreating(false);
       }
-
-      const newPg: LandingPageItem = {
-        id: created.id,
-        name: created.name,
-        templateId: pendingTemplate?.templateId || undefined,
-        status: "UNPUBLISHED",
-        updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
-        views: 0,
-        conversions: 0,
-        revenue: 0,
-      };
-
-      setPages((prev) => [newPg, ...prev]);
-      setNewPageName("");
-      setPendingTemplate(null);
-      setIsCreateModalOpen(false);
-
-      // Redirect to the editor route for this new page
-      router.push(`/landing-pages/editor/${created.id}`);
-    } catch (err) {
-      console.error("Failed to create landing page:", err);
-      alert("Không tạo được landing page trên Supabase. Kiểm tra RLS/policy hoặc service key rồi thử lại.");
-    } finally {
-      setIsCreating(false);
+      return;
     }
-  }, [newPageName, pendingTemplate, isCreating, router]);
 
+    // Khởi tạo tiến trình giả lập
+    setActiveJob({
+      id: `job_${Date.now()}`,
+      type,
+      progress: 0,
+      statusText: "Khởi động tiến trình...",
+      pageName: name,
+    });
+
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += Math.floor(Math.random() * 15) + 5;
+      if (currentProgress >= 100) {
+        currentProgress = 100;
+        clearInterval(interval);
+
+        void (async () => {
+          try {
+            const pageId = crypto.randomUUID();
+            let initialEditorData: any = {
+              pageId,
+              pageName: name,
+              sections: [],
+              pageSettings: createDefaultPageSettings(name),
+              schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+            };
+
+            if (type === "ai") {
+              const templateId = getTemplateIdByIndustryAndStyle(params.industry, params.style);
+              const flatBlocks = instantiateTemplateBlocks(templateId).map(ensureOnlookBlockMeta);
+              const sections = migrateTemplateFlatBlocks(flatBlocks);
+              const customized = customizeGeneratedSections(sections, "ai", name, params);
+
+              const primaryBgColors: Record<string, string> = {
+                modern: "#3B82F6",
+                premium: "#1F2937",
+                bold: "#EC4899",
+                friendly: "#10B981",
+              };
+              const selectedStyle = params.style || "modern";
+
+              initialEditorData = {
+                pageId,
+                pageName: name,
+                sections: recalculateSectionHeights(customized),
+                pageSettings: {
+                  ...createDefaultPageSettings(name),
+                  bgColor: selectedStyle === "premium" ? "#09090b" : "#ffffff",
+                  primaryColor: primaryBgColors[selectedStyle] || "#3B82F6",
+                  seoTitle: `${name} - ${params.industry}`,
+                  seoDescription: `Website giới thiệu về ${params.businessName} trong lĩnh vực ${params.industry}.`,
+                },
+                schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+              };
+            } else if (type === "clone") {
+              const templateId = "saas-minimal";
+              const flatBlocks = instantiateTemplateBlocks(templateId).map(ensureOnlookBlockMeta);
+              const sections = migrateTemplateFlatBlocks(flatBlocks);
+              const customized = customizeGeneratedSections(sections, "clone", name, params);
+
+              initialEditorData = {
+                pageId,
+                pageName: name,
+                sections: recalculateSectionHeights(customized),
+                pageSettings: {
+                  ...createDefaultPageSettings(name),
+                  primaryColor: "#8B5CF6",
+                  seoTitle: `Bản sao giao diện từ ${params.url.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}`,
+                },
+                schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+              };
+            } else if (type === "import") {
+              const htmlBlock = ensureOnlookBlockMeta({
+                id: `html_${Date.now()}`,
+                type: "html_code",
+                label: "Mã HTML Nhập khẩu",
+                props: {
+                  code: `<div style="padding: 60px 20px; text-align: center; font-family: sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">\n  <h1>Trang thiết kế nhập từ ZIP/HTML</h1>\n  <p>Giải nén và cấu hình thành công! Chào mừng đến với trang ${name}</p>\n</div>`,
+                  height: 400
+                }
+              });
+
+              initialEditorData = {
+                pageId,
+                pageName: name,
+                sections: [htmlBlock],
+                pageSettings: createDefaultPageSettings(name),
+                schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+              };
+            } else if (type === "ppc") {
+              const templateId = "finance-lead";
+              const flatBlocks = instantiateTemplateBlocks(templateId).map(ensureOnlookBlockMeta);
+              const sections = migrateTemplateFlatBlocks(flatBlocks);
+              const customized = customizeGeneratedSections(sections, "ppc", name, params);
+
+              initialEditorData = {
+                pageId,
+                pageName: name,
+                sections: recalculateSectionHeights(customized),
+                pageSettings: {
+                  ...createDefaultPageSettings(name),
+                  primaryColor: "#E11D48",
+                  seoTitle: `Landing Page Quảng cáo cho ${params.keyword}`,
+                },
+                schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+              };
+            }
+
+            const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || `page-${Date.now()}`;
+            const created = await createLandingPage({
+              id: pageId,
+              name,
+              slug,
+              editor_data: initialEditorData,
+            });
+
+            if (created?.id) {
+              const newPg: LandingPageItem = {
+                id: created.id,
+                name: created.name,
+                status: "UNPUBLISHED",
+                updatedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ", " + new Date().toLocaleDateString("vi-VN"),
+                views: 0,
+                conversions: 0,
+                revenue: 0,
+              };
+              setPages((prev) => [newPg, ...prev]);
+              setActiveJob(null);
+              router.push(`/landing-pages/editor/${created.id}`);
+            }
+          } catch (err) {
+            console.error("Failed to complete page generation:", err);
+            alert("Lỗi hoàn thành tiến trình khởi tạo.");
+            setActiveJob(null);
+          }
+        })();
+      } else {
+        let statusText = "Đang xử lý...";
+        if (type === "ai") {
+          if (currentProgress < 25) statusText = "Đang phân tích ý tưởng website và ngành nghề...";
+          else if (currentProgress < 50) statusText = "Đang khởi tạo các khối giao diện chuyên nghiệp...";
+          else if (currentProgress < 75) statusText = "Đang viết nội dung mô tả sản phẩm và dịch vụ bằng AI...";
+          else if (currentProgress < 95) statusText = "Đang thiết lập màu sắc phối màu và kiểu chữ...";
+          else statusText = "Đang tối ưu hóa giao diện di động...";
+        } else if (type === "clone") {
+          if (currentProgress < 25) statusText = `Đang kết nối tới URL nguồn...`;
+          else if (currentProgress < 50) statusText = "Đang phân tích cấu trúc DOM và file CSS...";
+          else if (currentProgress < 75) statusText = "Đang chuyển đổi cấu trúc DOM sang JSON Blocks...";
+          else if (currentProgress < 95) statusText = "Đang tải ảnh và asset giả lập...";
+          else statusText = "Đang hoàn thiện bản sao...";
+        } else if (type === "import") {
+          if (currentProgress < 25) statusText = "Đang giải nén tập tin ZIP thiết kế...";
+          else if (currentProgress < 55) statusText = "Đang quét các file HTML và tài nguyên media...";
+          else if (currentProgress < 85) statusText = "Đang chuyển đổi mã HTML sang khối Visual Editor...";
+          else statusText = "Đang định hình canvas...";
+        } else if (type === "ppc") {
+          if (currentProgress < 25) statusText = `Đang liên kết chiến dịch quảng cáo ${params.source}...`;
+          else if (currentProgress < 50) statusText = "Đang tối ưu tiêu đề chính theo từ khóa quảng cáo...";
+          else if (currentProgress < 75) statusText = "Đang chuẩn bị form thu thập thông tin khách hàng tiềm năng...";
+          else statusText = "Đang cấu hình nút kêu gọi hành động CTA...";
+        }
+
+        setActiveJob((prev) => prev ? { ...prev, progress: currentProgress, statusText } : null);
+      }
+    }, 900);
+  }, [pendingTemplate, router]);
 
   // Create page from template
   const handleUseTemplate = (template: TemplateItem) => {
-    setNewPageName(template.name.split("-")[0].trim().toLowerCase() + "-copy");
     setPendingTemplate(template);
     setIsCreateModalOpen(true);
   };
@@ -592,11 +848,45 @@ export default function LandingPagesManagement() {
           setPendingTemplate(null);
           setIsCreateModalOpen(false);
         }}
-        newPageName={newPageName}
-        setNewPageName={setNewPageName}
-        onCreatePage={handleCreatePage}
         isLoading={isCreating}
+        onGenerate={handleGeneratePage}
       />
+
+      {/* Background Simulation Progress Overlay */}
+      {activeJob && (
+        <div className="fixed inset-0 z-999999 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-gray-200 dark:border-zinc-800 text-center space-y-5 animate-scale-up">
+            <div className="h-16 w-16 mx-auto relative flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-dashed border-purple-600 animate-spin"></div>
+              <div className="h-11 w-11 bg-purple-100 dark:bg-purple-950/40 rounded-full flex items-center justify-center text-purple-600 font-extrabold text-sm">
+                AI
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">
+                {activeJob.type === "ai" ? "AI đang thiết kế Landing Page" :
+                 activeJob.type === "clone" ? "Đang Clone giao diện Website" :
+                 activeJob.type === "import" ? "Đang Import tệp thiết kế" :
+                 "Đang tạo trang PPC Campaign"}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 min-h-[36px] px-4 leading-relaxed font-semibold">
+                {activeJob.statusText}
+              </p>
+            </div>
+
+            <div className="space-y-1.5 px-4">
+              <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden shadow-inner">
+                <div
+                  className="bg-purple-600 h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${activeJob.progress}%` }}
+                ></div>
+              </div>
+              <span className="text-xs font-extrabold text-purple-600">{activeJob.progress}%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* 4. Modal for template preview */}
