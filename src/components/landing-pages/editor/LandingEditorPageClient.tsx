@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { VisualEditor } from "@/components/landing-pages/editor/VisualEditor";
 import { LandingPageItem } from "@/components/landing-pages/dung-chung/types";
 import { supabase } from "@/lib/supabase";
-import { getLocalBackupKey, isValidPageId } from "./core/editor-supabase-storage";
+import { getLocalBackupKey, isValidPageId, createLandingPage, deleteLandingPage } from "./core/editor-supabase-storage";
 
 interface Props {
   pageId: string;
@@ -13,12 +13,14 @@ interface Props {
 /**
  * Thin client wrapper that:
  * 1. Loads page metadata (name, status) by pageId from Supabase (or generates a local stub)
- * 2. Renders <VisualEditor page={...} /> which owns all editor/autosave/persist logic
- * 3. "Close" → navigate back to /landing-pages
+ * 2. Loads page summaries for all user pages (without editor_data payload)
+ * 3. Renders <VisualEditor page={...} pages={...} /> which owns all editor/autosave/persist logic
+ * 4. "Close" → navigate back to /landing-pages
  */
 export function LandingEditorPageClient({ pageId }: Props) {
   const router = useRouter();
   const [page, setPage] = useState<LandingPageItem | null>(null);
+  const [pages, setPages] = useState<LandingPageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +32,9 @@ export function LandingEditorPageClient({ pageId }: Props) {
           return;
         }
 
+        let currentLoadedPage: LandingPageItem | null = null;
+        let dbPages: LandingPageItem[] = [];
+
         // Try Supabase first
         if (supabase) {
           const { data, error: dbError } = await supabase
@@ -39,7 +44,7 @@ export function LandingEditorPageClient({ pageId }: Props) {
             .maybeSingle();
 
           if (!dbError && data) {
-            setPage({
+            currentLoadedPage = {
               id: data.id,
               name: data.name || "Untitled Page",
               templateId: data.editor_data?.templateId || undefined,
@@ -55,18 +60,39 @@ export function LandingEditorPageClient({ pageId }: Props) {
               views: 0,
               conversions: 0,
               revenue: 0,
-            });
-            return;
+            };
           }
 
-          if (!dbError && !data) {
-            setError(`Không tìm thấy landing page với ID: ${pageId}`);
-            return;
+          // Fetch summaries for all landing pages - select only summaries, no full editor_data
+          const { data: listData, error: listError } = await supabase
+            .from("landing_pages")
+            .select("id, name, status, updated_at")
+            .order("updated_at", { ascending: false });
+
+          if (!listError && listData) {
+            dbPages = listData.map((d: any) => ({
+              id: d.id,
+              name: d.name || "Untitled Page",
+              status: d.status === "published" ? "PUBLISHED" : "UNPUBLISHED",
+              updatedAt: d.updated_at
+                ? new Date(d.updated_at).toLocaleString("vi-VN")
+                : "",
+              views: 0,
+              conversions: 0,
+              revenue: 0,
+            }));
           }
 
           if (dbError) {
             console.warn("Supabase page meta load failed, trying local backup only:", dbError);
           }
+        }
+
+        if (currentLoadedPage) {
+          setPage(currentLoadedPage);
+          setPages(dbPages);
+          setLoading(false);
+          return;
         }
 
         // Fallback: check localStorage for this pageId
@@ -91,6 +117,29 @@ export function LandingEditorPageClient({ pageId }: Props) {
             conversions: 0,
             revenue: 0,
           });
+
+          // Fetch local page summaries
+          const keys = Object.keys(localStorage).filter(k => k.startsWith("landing-editor-autosave:"));
+          const localPages: LandingPageItem[] = keys.map(k => {
+            try {
+              const itemRaw = localStorage.getItem(k);
+              if (itemRaw) {
+                const itemBackup = JSON.parse(itemRaw);
+                return {
+                  id: itemBackup.pageId,
+                  name: itemBackup.editorData?.pageName || "Untitled Page",
+                  status: "UNPUBLISHED",
+                  updatedAt: itemBackup.savedAt ? new Date(itemBackup.savedAt).toLocaleString("vi-VN") : "",
+                  views: 0,
+                  conversions: 0,
+                  revenue: 0,
+                };
+              }
+            } catch {}
+            return null;
+          }).filter(Boolean) as LandingPageItem[];
+          setPages(localPages);
+          setLoading(false);
           return;
         }
 
@@ -121,6 +170,41 @@ export function LandingEditorPageClient({ pageId }: Props) {
       router.push(`/landing-pages/editor/${newPage.id}`);
     },
     [router]
+  );
+
+  const handleCreatePage = useCallback(
+    async (name: string) => {
+      try {
+        setLoading(true);
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "page-" + Date.now();
+        const created = await createLandingPage({ name, slug });
+        if (created) {
+          router.push(`/landing-pages/editor/${created.id}`);
+        }
+      } catch (err) {
+        console.error("Failed to create landing page:", err);
+        alert("Không thể tạo trang mới.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router]
+  );
+
+  const handleDeletePage = useCallback(
+    async (id: string) => {
+      try {
+        await deleteLandingPage(id);
+        setPages((prev) => prev.filter((p) => p.id !== id));
+        if (id === pageId) {
+          router.push("/landing-pages");
+        }
+      } catch (err) {
+        console.error("Failed to delete landing page:", err);
+        alert("Không thể xóa trang.");
+      }
+    },
+    [pageId, router]
   );
 
   // ── Loading State ────────────────────────────────────────────
@@ -157,9 +241,12 @@ export function LandingEditorPageClient({ pageId }: Props) {
     <VisualEditor
       key={page.id}
       page={page}
+      pages={pages}
       onClose={handleClose}
       onPublish={handlePublish}
       onSwitchPage={handleSwitchPage}
+      onCreatePage={handleCreatePage}
+      onDeletePage={handleDeletePage}
     />
   );
 }

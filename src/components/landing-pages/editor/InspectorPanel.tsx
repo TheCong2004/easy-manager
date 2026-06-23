@@ -650,6 +650,39 @@ export const PageSettingsPanel: React.FC<{
       ]}
       onChange={(v) => onUpdateSettings("fontFamily", v)}
     />
+    <SectionHeader title="Thiết lập SEO & Đường dẫn" />
+    <TextField
+      label="Đường dẫn (Slug)"
+      value={settings.slug ?? ""}
+      onChange={(v) => {
+        const cleanSlug = v.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+        onUpdateSettings("slug", cleanSlug);
+      }}
+      hint="vi-du-duong-dan"
+    />
+    <TextField
+      label="Tiêu đề SEO (Title)"
+      value={settings.seoTitle ?? ""}
+      onChange={(v) => onUpdateSettings("seoTitle", v)}
+    />
+    <TextField
+      label="Mô tả SEO (Description)"
+      value={settings.seoDescription ?? ""}
+      onChange={(v) => onUpdateSettings("seoDescription", v)}
+      multiline
+      rows={2}
+    />
+    <TextField
+      label="Canonical URL"
+      value={settings.canonicalUrl ?? ""}
+      onChange={(v) => onUpdateSettings("canonicalUrl", v)}
+      hint="https://domain.com/path"
+    />
+    <TextField
+      label="Facebook Pixel ID"
+      value={settings.pixelId ?? ""}
+      onChange={(v) => onUpdateSettings("pixelId", v)}
+    />
   </div>
 );
 

@@ -32,6 +32,7 @@ import {
 } from "./core/editor-supabase-storage";
 import { getEditorDataFingerprint, migrateEditorData } from "./core/editor-migration";
 import { findBlockRecursive } from "./core/editor-reducer";
+import { findMatchingCommand } from "./core/ai-command-registry";
 
 // Import modular split sub-panels
 import { PageListingPanel } from "./panels/PageListingPanel";
@@ -143,7 +144,7 @@ interface VisualEditorProps {
   onClose: () => void;
   onPublish?: (page: LandingPageItem) => void;
   onSwitchPage?: (page: LandingPageItem) => void;
-  onCreatePage?: (name: string) => LandingPageItem;
+  onCreatePage?: (name: string) => any;
   onDeletePage?: (id: string) => void;
 }
 
@@ -474,121 +475,99 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       let aiResponse = "Tôi đã tiếp nhận yêu cầu và đang tối ưu hóa thiết kế cho bạn.";
       let actionTaken = false;
 
-      const normalizedText = text.toLowerCase().trim();
-      const currentSelectedBlock = selectedId ? findBlockRecursive(data.sections, selectedId) : null;
+      const matchedCommand = findMatchingCommand(text);
 
-      if (currentSelectedBlock) {
-        const blockId = currentSelectedBlock.id;
-        const currentProps = { ...currentSelectedBlock.props };
+      if (matchedCommand) {
+        actionTaken = true;
+        aiResponse = matchedCommand.explanation;
 
-        if (normalizedText.includes("màu cam") || normalizedText.includes("orange")) {
-          if ("color" in currentProps) {
-            currentProps.color = "#f97316";
-            aiResponse = `Đã cập nhật màu sắc sang màu cam ấm (#f97316) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
-            actionTaken = true;
-          } else if ("ctaColor" in currentProps) {
-            currentProps.ctaColor = "#f97316";
-            aiResponse = `Đã cập nhật màu nút CTA sang màu cam ấm (#f97316) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
-            actionTaken = true;
-          }
-        }
-        else if (normalizedText.includes("màu đỏ") || normalizedText.includes("red")) {
-          if ("color" in currentProps) {
-            currentProps.color = "#ef4444";
-            aiResponse = `Đã đổi màu sắc sang màu đỏ (#ef4444) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
-            actionTaken = true;
-          } else if ("ctaColor" in currentProps) {
-            currentProps.ctaColor = "#ef4444";
-            aiResponse = `Đã đổi màu nút CTA sang màu đỏ (#ef4444) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
-            actionTaken = true;
-          }
-        }
-        else if (normalizedText.includes("màu đen") || normalizedText.includes("black")) {
-          if ("color" in currentProps) {
-            currentProps.color = "#000000";
-            aiResponse = `Đã đổi màu sang màu đen (#000000) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
-            actionTaken = true;
-          } else if ("bgColor" in currentProps) {
-            currentProps.bgColor = "#0f172a";
-            aiResponse = `Đã cập nhật nền tối màu sang đen tối (#0f172a) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
-            actionTaken = true;
-          }
-        }
-
-        const titleMatch = text.match(/(?:tiêu đề|tên nút|chữ thành|đổi chữ|sửa chữ)\s+['"“](.+?)['"”]/i) 
-          || text.match(/(?:tiêu đề|tên nút|chữ thành|đổi chữ|sửa chữ)\s+(.+)$/i);
-        if (titleMatch) {
-          const newText = titleMatch[1].trim();
-          if ("headline" in currentProps) {
-            currentProps.headline = newText;
-            aiResponse = `Đã sửa tiêu đề chính thành: "${newText}"!`;
-            actionTaken = true;
-          } else if ("content" in currentProps) {
-            currentProps.content = newText;
-            aiResponse = `Đã cập nhật nội dung văn bản thành: "${newText}"!`;
-            actionTaken = true;
-          } else if ("label" in currentProps) {
-            currentProps.label = newText;
-            aiResponse = `Đã đổi nhãn nút thành: "${newText}"!`;
-            actionTaken = true;
-          } else if ("title" in currentProps) {
-            currentProps.title = newText;
-            aiResponse = `Đã đổi tiêu đề thành: "${newText}"!`;
-            actionTaken = true;
-          }
-        }
-
-        if (normalizedText.includes("căn giữa") || normalizedText.includes("center")) {
-          if ("textAlign" in currentProps) {
-            currentProps.textAlign = "center";
-            aiResponse = `Đã căn giữa văn bản cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
-            actionTaken = true;
-          } else if ("align" in currentProps) {
-            currentProps.align = "center";
-            aiResponse = `Đã căn giữa nút cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
-            actionTaken = true;
-          }
-        }
-
-        if (actionTaken) {
-          handleUpdateBlock(blockId, currentProps);
+        if (matchedCommand.action === "insert_block" && matchedCommand.blockType) {
+          handleAddBlock(matchedCommand.blockType);
+        } else if (matchedCommand.action === "update_page_settings" && matchedCommand.updateKey) {
+          handleUpdatePageSettings(matchedCommand.updateKey, matchedCommand.updateValue);
         }
       }
 
       if (!actionTaken) {
-        if (normalizedText.includes("nền trang màu đen") || normalizedText.includes("nền đen")) {
-          handleUpdatePageSettings("bgColor", "#09090b");
-          aiResponse = "Đã cập nhật màu nền của toàn bộ Landing Page sang màu đen tuyền (#09090b).";
-          actionTaken = true;
-        } else if (normalizedText.includes("nền trang màu trắng") || normalizedText.includes("nền trắng")) {
-          handleUpdatePageSettings("bgColor", "#ffffff");
-          aiResponse = "Đã trả màu nền Landing Page về màu trắng tinh khôi (#ffffff).";
-          actionTaken = true;
-        } else if (normalizedText.includes("font") || normalizedText.includes("phông chữ")) {
-          handleUpdatePageSettings("fontFamily", "Georgia, serif");
-          aiResponse = "Đã chuyển font chữ toàn bộ trang sang phông Georgia sang trọng.";
-          actionTaken = true;
-        }
-      }
+        const currentSelectedBlock = selectedId ? findBlockRecursive(data.sections, selectedId) : null;
 
-      if (!actionTaken) {
-        if (normalizedText.includes("thêm block") || normalizedText.includes("tạo block") || normalizedText.includes("add block")) {
-          let typeToAdd: BlockType = "text";
-          if (normalizedText.includes("countdown") || normalizedText.includes("đếm ngược")) {
-            typeToAdd = "countdown";
-          } else if (normalizedText.includes("video")) {
-            typeToAdd = "video";
-          } else if (normalizedText.includes("button") || normalizedText.includes("nút")) {
-            typeToAdd = "button";
-          } else if (normalizedText.includes("hero")) {
-            typeToAdd = "hero";
-          } else if (normalizedText.includes("form") || normalizedText.includes("thu thập")) {
-            typeToAdd = "form_capture";
+        if (currentSelectedBlock) {
+          const blockId = currentSelectedBlock.id;
+          const currentProps = { ...currentSelectedBlock.props };
+          const normalizedText = text.toLowerCase().trim();
+
+          if (normalizedText.includes("màu cam") || normalizedText.includes("orange")) {
+            if ("color" in currentProps) {
+              currentProps.color = "#f97316";
+              aiResponse = `Đã cập nhật màu sắc sang màu cam ấm (#f97316) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
+              actionTaken = true;
+            } else if ("ctaColor" in currentProps) {
+              currentProps.ctaColor = "#f97316";
+              aiResponse = `Đã cập nhật màu nút CTA sang màu cam ấm (#f97316) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
+              actionTaken = true;
+            }
           }
-          
-          handleAddBlock(typeToAdd);
-          aiResponse = `Tôi đã tạo và chèn thêm một khối ${typeToAdd.toUpperCase()} mới vào cuối trang cho bạn!`;
-          actionTaken = true;
+          else if (normalizedText.includes("màu đỏ") || normalizedText.includes("red")) {
+            if ("color" in currentProps) {
+              currentProps.color = "#ef4444";
+              aiResponse = `Đã đổi màu sắc sang màu đỏ (#ef4444) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
+              actionTaken = true;
+            } else if ("ctaColor" in currentProps) {
+              currentProps.ctaColor = "#ef4444";
+              aiResponse = `Đã đổi màu nút CTA sang màu đỏ (#ef4444) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
+              actionTaken = true;
+            }
+          }
+          else if (normalizedText.includes("màu đen") || normalizedText.includes("black")) {
+            if ("color" in currentProps) {
+              currentProps.color = "#000000";
+              aiResponse = `Đã đổi màu sang màu đen (#000000) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
+              actionTaken = true;
+            } else if ("bgColor" in currentProps) {
+              currentProps.bgColor = "#0f172a";
+              aiResponse = `Đã cập nhật nền tối màu sang đen tối (#0f172a) cho block ${currentSelectedBlock.label || currentSelectedBlock.type}!`;
+              actionTaken = true;
+            }
+          }
+
+          const titleMatch = text.match(/(?:tiêu đề|tên nút|chữ thành|đổi chữ|sửa chữ)\s+['"“](.+?)['"”]/i) 
+            || text.match(/(?:tiêu đề|tên nút|chữ thành|đổi chữ|sửa chữ)\s+(.+)$/i);
+          if (titleMatch) {
+            const newText = titleMatch[1].trim();
+            if ("headline" in currentProps) {
+              currentProps.headline = newText;
+              aiResponse = `Đã sửa tiêu đề chính thành: "${newText}"!`;
+              actionTaken = true;
+            } else if ("content" in currentProps) {
+              currentProps.content = newText;
+              aiResponse = `Đã cập nhật nội dung văn bản thành: "${newText}"!`;
+              actionTaken = true;
+            } else if ("label" in currentProps) {
+              currentProps.label = newText;
+              aiResponse = `Đã đổi nhãn nút thành: "${newText}"!`;
+              actionTaken = true;
+            } else if ("title" in currentProps) {
+              currentProps.title = newText;
+              aiResponse = `Đã đổi tiêu đề thành: "${newText}"!`;
+              actionTaken = true;
+            }
+          }
+
+          if (normalizedText.includes("căn giữa") || normalizedText.includes("center")) {
+            if ("textAlign" in currentProps) {
+              currentProps.textAlign = "center";
+              aiResponse = `Đã căn giữa văn bản cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
+              actionTaken = true;
+            } else if ("align" in currentProps) {
+              currentProps.align = "center";
+              aiResponse = `Đã căn giữa nút cho block ${currentSelectedBlock.label || currentSelectedBlock.type}.`;
+              actionTaken = true;
+            }
+          }
+
+          if (actionTaken) {
+            handleUpdateBlock(blockId, currentProps);
+          }
         }
       }
 
@@ -721,27 +700,63 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     reader.readAsText(file);
   }, [applySnapshot, page.id, pageName]);
 
-  const handleImportHtml = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportHtml = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext === "zip") {
+      showToast("Đang tải lên và xử lý tệp ZIP...", "info");
       try {
-        const htmlCode = String(reader.result);
-        if (!htmlCode.trim()) {
-          throw new Error("File HTML trống");
+        const formData = new FormData();
+        formData.append("pageId", page.id);
+        formData.append("file", file);
+        formData.append("importMode", "append");
+
+        const response = await fetch("/api/landing-pages/import", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Không thể tải lên file ZIP.");
         }
-        handleAddBlock("html_code", { code: htmlCode, height: 400 });
-        showToast("Đã import HTML thành công", "success");
+
+        const result = await response.json();
+        alert(`Đã nhận file ZIP thiết kế!\nJob ID: ${result.jobId || "N/A"}\nTrạng thái: ${result.status}\n\nThông báo: Nhập ZIP yêu cầu xử lý từ backend (TODO).`);
       } catch (err: any) {
-        console.error("Import HTML failed:", err);
-        showToast(err.message || "File HTML không hợp lệ", "info");
+        console.error("ZIP import error:", err);
+        showToast(err.message || "Lỗi tải lên ZIP", "info");
       }
-    };
-    reader.readAsText(file);
-  }, [handleAddBlock, showToast]);
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const htmlCode = String(reader.result);
+          if (!htmlCode.trim()) {
+            throw new Error("File HTML trống");
+          }
+          handleAddBlock("html_code", { code: htmlCode, height: 400 });
+          showToast("Đã import HTML thành công", "success");
+        } catch (err: any) {
+          console.error("Import HTML failed:", err);
+          showToast(err.message || "File HTML không hợp lệ", "info");
+        }
+      };
+      reader.readAsText(file);
+    }
+  }, [page.id, handleAddBlock, showToast]);
+
+  const handleSwitchPageSafe = useCallback((targetPage: LandingPageItem) => {
+    if (!isSaved) {
+      const confirmSwitch = window.confirm("Trang hiện tại chưa được lưu. Bạn có muốn tiếp tục chuyển trang mà không lưu?");
+      if (!confirmSwitch) return;
+    }
+    if (onSwitchPage) {
+      onSwitchPage(targetPage);
+    }
+  }, [isSaved, onSwitchPage]);
 
   const handleCreateRevision = useCallback(async (name?: string) => {
     const versionName = name?.trim() || `Phiên bản ngày ${new Date().toLocaleString("vi-VN")}`;
@@ -860,7 +875,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         <input
           ref={importHtmlInputRef}
           type="file"
-          accept=".html"
+          accept=".html,.zip"
           className="hidden"
           onChange={handleImportHtml}
         />
@@ -912,7 +927,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 <PageListingPanel
                   page={page}
                   pages={pages}
-                  onSwitchPage={onSwitchPage}
+                  onSwitchPage={handleSwitchPageSafe}
                   onCreatePage={onCreatePage}
                   onDeletePage={onDeletePage}
                 />

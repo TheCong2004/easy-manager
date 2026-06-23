@@ -184,7 +184,7 @@ export async function saveLandingPage(pageId: string, editorData: EditorData): P
       const updatePayload: any = {
         id: pageId,
         name: editorData.pageName || "Untitled Page",
-        slug: editorData.pageName?.toLowerCase().replace(/\s+/g, "-") || `page-${pageId}`,
+        slug: editorData.pageSettings?.slug || editorData.pageName?.toLowerCase().replace(/\s+/g, "-") || `page-${pageId}`,
         status: "draft",
         editor_data: editorData,
         updated_at: nowStr,
@@ -209,7 +209,13 @@ export async function saveLandingPage(pageId: string, editorData: EditorData): P
 
       if (!response.ok) {
         const result = await response.json().catch(() => null);
-        throw new Error(result?.error || "Supabase save failed.");
+        const errMsg = result?.error || "Supabase save failed.";
+        // Handle unauthorized errors gracefully during local preview/testing without session
+        if (response.status === 401 || errMsg.toLowerCase().includes("unauthorized") || errMsg.toLowerCase().includes("sign in")) {
+          console.warn("User is unauthorized. Design saved to LocalStorage backup only.");
+          return;
+        }
+        throw new Error(errMsg);
       }
 
       console.info("[LandingEditor Save:supabase]", {
