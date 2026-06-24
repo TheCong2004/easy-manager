@@ -64,6 +64,39 @@ function getAppIcon(iconName: string) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
         </svg>
       );
+    case "e-learning":
+      return (
+        <svg className={baseClass} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5.25 3.75 9.75 12 14.25l8.25-4.5L12 5.25Z"/>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.15a60 60 0 0 0-.49 6.34A48.62 48.62 0 0 1 12 20.9c2.79 0 5.43-.22 8.01-.64a60 60 0 0 0-.49-6.35"/>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 14.25v6.5"/>
+        </svg>
+      );
+    case "facebook-ads":
+      return (
+        <svg className={baseClass} fill="currentColor" viewBox="0 0 24 24">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        </svg>
+      );
+    case "cloudphone":
+      return (
+        <svg className={baseClass} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <rect x="7" y="2.5" width="10" height="19" rx="2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 18.5h3" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 8.5a8.5 8.5 0 0 1 14 0" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a11 11 0 0 1 18 0" />
+        </svg>
+      );
+    case "offerkit":
+      return (
+        <svg className={baseClass} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5h16" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h3" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16h8" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m15 9 1 1 2-3" />
+        </svg>
+      );
     default:
       return (
         <svg className={baseClass} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
