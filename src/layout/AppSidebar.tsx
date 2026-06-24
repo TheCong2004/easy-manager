@@ -206,6 +206,100 @@ const othersItems: NavItem[] = [
     path: "/offerkit",
     appId: "15",
   },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        <path d="M2 12h20"/>
+      </svg>
+    ),
+    iconColor: "text-purple-600 dark:text-purple-400",
+    name: "AI SEO",
+    path: "/otto-seo",
+    appId: "17",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 3v18h18"/>
+        <path d="m18.7 8-5.1 5.2-2.8-2.7L7 14.3"/>
+      </svg>
+    ),
+    iconColor: "text-green-600 dark:text-green-400",
+    name: "Site Metrics",
+    path: "/site-metrics",
+    appId: "18",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    ),
+    iconColor: "text-orange-600 dark:text-orange-400",
+    name: "Local",
+    path: "/local",
+    appId: "19",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <line x1="10" y1="9" x2="8" y2="9"/>
+      </svg>
+    ),
+    iconColor: "text-amber-600 dark:text-amber-400",
+    name: "Content",
+    path: "/content",
+    appId: "20",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="7.5" cy="15.5" r="5.5"/>
+        <path d="m21 3-9 9"/>
+        <path d="m15 3 6 6"/>
+        <path d="m18 6-3 3"/>
+      </svg>
+    ),
+    iconColor: "text-indigo-600 dark:text-indigo-400",
+    name: "Keywords",
+    path: "/keywords",
+    appId: "21",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+    ),
+    iconColor: "text-rose-600 dark:text-rose-400",
+    name: "Reports",
+    path: "/bao-cao",
+    appId: "22",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    ),
+    iconColor: "text-teal-600 dark:text-teal-400",
+    name: "Authority",
+    path: "/authority",
+    appId: "23",
+  },
 ];
 
 const defaultInstalledApplicationIds = ["1", "2", "5", "6", "10", "14", "15"];

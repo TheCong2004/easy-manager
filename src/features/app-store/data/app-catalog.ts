@@ -79,15 +79,81 @@ export const initialApps: AppItem[] = [
     isPinned: true,
   },
   {
+    id: "17",
+    name: "AI SEO",
+    description: "Tự động hóa dự án SEO, theo dõi tiến độ công việc, hướng dẫn cài đặt và giám sát thu thập dữ liệu (crawl).",
+    iconName: "seo",
+    status: "NOT_INSTALLED",
+    category: "marketing",
+    price: "Từ 1.200.000 đ/năm",
+    downloads: "2.150",
+    tags: ["SEO Automation", "Crawl Monitor"],
+  },
+  {
+    id: "18",
+    name: "Site Metrics",
+    description: "Tổng quan tên miền, đo lường các chỉ số hiển thị lượng truy cập, điểm số kiểm tra và sức khỏe kỹ thuật.",
+    iconName: "metrics",
+    status: "NOT_INSTALLED",
+    category: "marketing",
+    price: "Miễn phí",
+    downloads: "1.890",
+    tags: ["Domain Audit", "Traffic Metrics"],
+  },
+  {
+    id: "19",
+    name: "Local",
+    description: "Quản lý Google Business Profile, bản đồ xếp hạng khu vực và kiểm tra danh mục trích dẫn (citation).",
+    iconName: "local",
+    status: "NOT_INSTALLED",
+    category: "marketing",
+    price: "Từ 800.000 đ/năm",
+    downloads: "1.240",
+    tags: ["Google Maps", "Local SEO"],
+  },
+  {
+    id: "20",
+    name: "Content",
+    description: "Trợ lý viết bài Content Assistant, xây dựng Topical Maps, chấm điểm Semantic Grader và viết lại bằng AI.",
+    iconName: "content",
+    status: "NOT_INSTALLED",
+    category: "content",
+    price: "Từ 1.500.000 đ/năm",
+    downloads: "4.120",
+    tags: ["Content AI", "Topical Maps"],
+  },
+  {
+    id: "21",
+    name: "Keywords",
+    description: "Cơ sở dữ liệu nghiên cứu từ khóa, đo lường độ khó từ khóa và ước lượng khối lượng tìm kiếm.",
+    iconName: "keywords",
+    status: "NOT_INSTALLED",
+    category: "content",
+    price: "Miễn phí",
+    downloads: "5.310",
+    tags: ["Keywords Research", "Search Volume"],
+  },
+  {
     id: "22",
     name: "Reports",
     description: "Trình tạo báo cáo SEO tùy chỉnh, tích hợp số liệu Google Search Console và tự động gửi PDF định kỳ.",
     iconName: "reports",
-    status: "INSTALLED",
+    status: "NOT_INSTALLED",
     category: "marketing",
-    price: "Đã cài đặt",
+    price: "Miễn phí",
     downloads: "1.740",
-    isPinned: true,
+    tags: ["Report Builder", "GSC Integration"],
+  },
+  {
+    id: "23",
+    name: "Authority",
+    description: "Theo dõi lịch sử backlink, phân tích tên miền giới thiệu và các công cụ tiếp cận xây dựng liên kết.",
+    iconName: "authority",
+    status: "NOT_INSTALLED",
+    category: "upcoming",
+    price: "Sắp ra mắt",
+    downloads: "890",
+    tags: ["Backlinks Track", "Link Building"],
   }
 ];
 
@@ -118,7 +184,7 @@ export const appDetailContent: Record<string, {
       { title: "Chuyển đổi số đơn giản", items: ["Tạo trang thanh toán cho bất kỳ sản phẩm, dịch vụ nào", "Mua bán online đơn giản cho cả doanh nghiệp và khách hàng"] },
       { title: "Thiết kế trang thanh toán linh hoạt", items: ["Không cần lập trình, tạo trang trong tích tắc", "Tích hợp lên website, landing page chỉ với 1 click"] },
       { title: "Đa dạng thanh toán & vận chuyển", items: ["Nhiều phương thức thanh toán phổ biến", "Kết nối đơn vị vận chuyển uy tín, tính phí tự động", "Mã ưu đãi từ đối tác thanh toán, vận chuyển"] },
-      { title: "Phu hợp mọi lĩnh vực kinh doanh", items: ["Hàng hoá, dịch vụ và cả sản phẩm số", "Trỏ tên miền riêng, miễn phí hosting"] },
+      { title: "Phù hợp mọi lĩnh vực kinh doanh", items: ["Hàng hoá, dịch vụ và cả sản phẩm số", "Trỏ tên miền riêng, miễn phí hosting"] },
     ],
     integrations: ["LadiSales", "VNPAY", "Giao Hàng Nhanh", "Facebook Pixel"],
   },
@@ -173,6 +239,52 @@ export const appDetailContent: Record<string, {
     ],
     integrations: ["Facebook Ads", "E-Learning", "Automation", "CRM"],
   },
+  "17": {
+    provider: "SearchAtlas",
+    price: "Từ 1.200.000 đ/năm",
+    features: ["Quản lý dự án SEO tự động", "Giám sát kỹ thuật crawl", "Theo dõi task tự động", "Hướng dẫn cài đặt code"],
+    benefits: [
+      { title: "SEO rảnh tay", items: ["Hệ thống tự động phát hiện lỗi và đề xuất sửa đổi", "Theo dõi tiến độ trực quan theo checklist"] },
+      { title: "Giám sát liên tục", items: ["Nhận thông báo khi bot tìm kiếm gặp lỗi thu thập dữ liệu"] }
+    ],
+    integrations: ["Website Builder", "Google Search Console", "Google Analytics"]
+  },
+  "18": {
+    provider: "SearchAtlas",
+    price: "Miễn phí",
+    features: ["Đo lường chỉ số tên miền", "Biểu đồ traffic tự nhiên", "Điểm kỹ thuật website", "Theo dõi từ khóa chính"],
+    benefits: [
+      { title: "Nắm bắt nhanh hiệu năng", items: ["Xem ngay lượng traffic ước tính và điểm tối ưu hóa SEO", "Báo cáo sức khỏe kỹ thuật tức thì"] }
+    ],
+    integrations: ["SearchAtlas API", "Google Search Console"]
+  },
+  "19": {
+    provider: "SearchAtlas",
+    price: "Từ 800.000 đ/năm",
+    features: ["Đồng bộ Google Business Profile", "Bản đồ xếp hạng vị trí (Heatmap)", "Audit trích dẫn doanh nghiệp", "Quản lý đánh giá khách hàng"],
+    benefits: [
+      { title: "Tăng trưởng khách hàng địa phương", items: ["Tối ưu hóa thứ hạng hiển thị trên Google Maps", "Theo dõi đối thủ cạnh tranh theo vị trí địa lý thực tế"] }
+    ],
+    integrations: ["Google Business Profile", "Google Maps"]
+  },
+  "20": {
+    provider: "SearchAtlas",
+    price: "Từ 1.500.000 đ/năm",
+    features: ["Content Assistant thông minh", "Trực quan Topical Maps", "Chấm điểm Semantic Grader", "AI Content Rewriter"],
+    benefits: [
+      { title: "Viết bài chuẩn SEO nhanh hơn", items: ["Gợi ý từ khóa LSI phù hợp thời gian thực", "Xây dựng cấu trúc bài viết phủ toàn bộ chủ đề ngành"] }
+    ],
+    integrations: ["OpenAI", "SearchAtlas Content Engine"]
+  },
+  "21": {
+    provider: "SearchAtlas",
+    price: "Miễn phí",
+    features: ["Bộ lọc từ khóa thông minh", "Đo lường độ khó (Keyword Difficulty)", "Ước lượng Search Volume", "Tìm kiếm từ khóa liên quan"],
+    benefits: [
+      { title: "Tìm đúng từ khóa mục tiêu", items: ["Phát hiện từ khóa volume cao, cạnh tranh thấp", "Lọc theo ý định tìm kiếm của người dùng"] }
+    ],
+    integrations: ["SearchAtlas Keyword DB"]
+  },
   "22": {
     provider: "SearchAtlas",
     price: "Miễn phí",
@@ -181,5 +293,14 @@ export const appDetailContent: Record<string, {
       { title: "Báo cáo chuyên nghiệp", items: ["Tạo mẫu báo cáo thương hiệu riêng trong 1 phút", "Tự động gửi cập nhật định kỳ cho khách hàng/quản lý"] }
     ],
     integrations: ["Google Search Console", "Google Analytics", "Email Server"]
+  },
+  "23": {
+    provider: "SearchAtlas",
+    price: "Sắp ra mắt",
+    features: ["Lịch sử Backlinks chi tiết", "Phân tích Referring Domains", "Quản lý chiến dịch Outreach", "Mẫu email kết nối đặt link"],
+    benefits: [
+      { title: "Xây dựng uy tín tên miền", items: ["Theo dõi tăng trưởng backlink tự nhiên", "Phát hiện nhanh link xấu/bị phạt để chủ động gỡ bỏ"] }
+    ],
+    integrations: ["SearchAtlas Backlink DB", "Email Client"]
   }
 };
