@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import { Inter } from "next/font/google";
 import { APP_INSTALLATION_EVENT, readInstalledAppIds } from "@/features/app-store/storage/app-installation";
+import { SEARCHATLAS_APPS } from "@/config/searchatlas-apps";
 
 const inter = Inter({ subsets: ["latin"] });
 import {
@@ -113,6 +114,27 @@ const navItems: NavItem[] = [
     iconColor: "text-rose-600 dark:text-rose-400",
     name: "Báo cáo",
     path: "/bao-cao",
+  },
+  {
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    ),
+    iconColor: "text-amber-500 dark:text-amber-400",
+    name: "SearchAtlas Apps",
+    subItems: [
+      { name: "App Launcher", path: "/apps" },
+      ...SEARCHATLAS_APPS.map((app) => ({
+        name: app.label,
+        path: app.route,
+        new: app.status === "partial" ? true : undefined,
+        pro: app.status === "coming_soon" ? true : undefined,
+      })),
+    ],
   },
 ];
 
