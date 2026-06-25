@@ -27,6 +27,8 @@ export default function AdminLayout({
     ? "lg:ml-[216px]"
     : "lg:ml-[72px]";
 
+  const isAiSeo = pathname?.startsWith("/ai-seo");
+
   return (
     <div className="min-h-screen xl:flex">
       {/* Sidebar and Backdrop */}
@@ -39,7 +41,7 @@ export default function AdminLayout({
         {/* Header */}
         <AppHeader />
         {/* Page Content */}
-        <div className={isFacebookAds || isCloudPhone || isOffice || isELearning || isOfferKit ? "min-w-0 w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
+        <div className={isFacebookAds || isCloudPhone || isOffice || isELearning || isOfferKit || isAiSeo ? "min-w-0 w-full" : "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6"}>{children}</div>
       </div>
     </div>
   );

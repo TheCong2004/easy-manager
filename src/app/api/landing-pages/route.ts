@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getVirtualProjectId, resolveOrgAndProject } from "../ai-seo/apiUtils";
 
 export const runtime = "nodejs";
 
@@ -98,6 +99,55 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return jsonError(error.message, 500);
+
+  // Synchronize to canonical website_pages table
+  if (data) {
+    try {
+      const { orgId, projectId } = await resolveOrgAndProject(supabase, userId);
+      const virtualProjectId = getVirtualProjectId(orgId);
+
+      // Ensure virtual website project exists
+      const { data: wp } = await supabase
+        .from("website_projects")
+        .select("id")
+        .eq("id", virtualProjectId)
+        .maybeSingle();
+
+      if (!wp && projectId) {
+        await supabase.from("website_projects").insert({
+          id: virtualProjectId,
+          organization_id: orgId,
+          project_id: projectId,
+          name: "Landing Page Builder (Hệ thống)",
+          domain: "builder-pages.local",
+          status: "active"
+        });
+      }
+
+      // Upsert to website_pages
+      if (projectId) {
+        await supabase.from("website_pages").upsert({
+          id: data.id,
+          organization_id: orgId,
+          website_project_id: virtualProjectId,
+          project_id: projectId,
+          title: data.name || "Untitled Page",
+          slug: data.slug,
+          page_url: `/p/${data.slug}`,
+          page_type: "landing_page",
+          status: data.status || "draft",
+          published_url: data.status === "published" ? `/p/${data.slug}` : null,
+          source_type: "builder",
+          source_landing_page_id: data.id,
+          sync_status: "synced",
+          last_synced_at: new Date().toISOString()
+        });
+      }
+    } catch (syncErr) {
+      console.warn("Failed to synchronize newly created landing page to website_pages:", syncErr);
+    }
+  }
+
   return NextResponse.json({ page: data });
 }
 
@@ -139,5 +189,54 @@ export async function PUT(request: NextRequest) {
     .single();
 
   if (error) return jsonError(error.message, 500);
+
+  // Synchronize to canonical website_pages table
+  if (data) {
+    try {
+      const { orgId, projectId } = await resolveOrgAndProject(supabase, userId);
+      const virtualProjectId = getVirtualProjectId(orgId);
+
+      // Ensure virtual website project exists
+      const { data: wp } = await supabase
+        .from("website_projects")
+        .select("id")
+        .eq("id", virtualProjectId)
+        .maybeSingle();
+
+      if (!wp && projectId) {
+        await supabase.from("website_projects").insert({
+          id: virtualProjectId,
+          organization_id: orgId,
+          project_id: projectId,
+          name: "Landing Page Builder (Hệ thống)",
+          domain: "builder-pages.local",
+          status: "active"
+        });
+      }
+
+      // Upsert to website_pages
+      if (projectId) {
+        await supabase.from("website_pages").upsert({
+          id: data.id,
+          organization_id: orgId,
+          website_project_id: virtualProjectId,
+          project_id: projectId,
+          title: data.name || "Untitled Page",
+          slug: data.slug,
+          page_url: `/p/${data.slug}`,
+          page_type: "landing_page",
+          status: data.status || "draft",
+          published_url: data.status === "published" ? `/p/${data.slug}` : null,
+          source_type: "builder",
+          source_landing_page_id: data.id,
+          sync_status: "synced",
+          last_synced_at: new Date().toISOString()
+        });
+      }
+    } catch (syncErr) {
+      console.warn("Failed to synchronize updated landing page to website_pages:", syncErr);
+    }
+  }
+
   return NextResponse.json({ page: data });
 }

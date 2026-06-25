@@ -93,7 +93,7 @@ export default function AppStorePage() {
     } else if (id === "6") {
       router.push("/e-learning");
     } else if (id === "17") {
-      router.push("/otto-seo");
+      router.push("/ai-seo");
     } else if (id === "18") {
       router.push("/site-metrics");
     } else if (id === "19") {

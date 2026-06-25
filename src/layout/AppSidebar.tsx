@@ -216,7 +216,7 @@ const othersItems: NavItem[] = [
     ),
     iconColor: "text-purple-600 dark:text-purple-400",
     name: "AI SEO",
-    path: "/otto-seo",
+    path: "/ai-seo",
     appId: "17",
   },
   {
@@ -302,7 +302,7 @@ const othersItems: NavItem[] = [
   },
 ];
 
-const defaultInstalledApplicationIds = ["1", "2", "5", "6", "10", "14", "15"];
+const defaultInstalledApplicationIds = ["1", "2", "5", "6", "10", "14", "15", "17"];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleSidebar } = useSidebar();
