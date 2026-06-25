@@ -15,8 +15,9 @@ import { TemplatePreviewModal } from "@/components/landing-pages/templates/Templ
 import { createLandingPage, deleteLandingPage, deleteLandingPages, isValidPageId } from "@/components/landing-pages/editor/core/editor-supabase-storage";
 import { LANDING_TEMPLATE_PRESETS, resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
 import { migrateTemplateFlatBlocks, migrateEditorData, recalculateSectionHeights } from "@/components/landing-pages/editor/core/editor-migration";
-import { createDefaultPageSettings, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
-import { parseHtmlToLandingPageSchema } from "@/components/landing-pages/editor/core/html-to-landing-schema";
+import { createDefaultPageSettings, ensureOnlookBlockMeta, EditorBlock } from "@/components/landing-pages/editor/types";
+import { parseHtmlToLandingPageSchema, parseHtmlToImportedPageSchema } from "@/features/landing-pages/import/html-to-landing-schema";
+import { importZipLandingPage } from "@/features/landing-pages/import/zip-importer";
 import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
 import { supabase } from "@/lib/supabase";
 import { listTemplates, incrementTemplateDownloads } from "@/components/landing-pages/templates/template-service";
@@ -577,27 +578,35 @@ export default function LandingPagesManagement() {
                 schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
               };
             } else if (type === "import") {
-              let htmlCode = "";
+              let parsedSections: EditorBlock[] = [];
+              let parsedGlobalCss = "";
+
               if (params.file) {
                 try {
-                  htmlCode = await params.file.text();
+                  const ext = params.file.name.split(".").pop()?.toLowerCase();
+                  if (ext === "zip") {
+                    const imported = await importZipLandingPage(params.file, pageId);
+                    parsedSections = imported.sections;
+                    parsedGlobalCss = imported.globalCss;
+                  } else {
+                    const htmlCode = await params.file.text();
+                    const imported = parseHtmlToImportedPageSchema(htmlCode);
+                    parsedSections = imported.sections;
+                    parsedGlobalCss = imported.globalCss;
+                  }
                 } catch (readErr) {
-                  console.error("Failed to read uploaded HTML file:", readErr);
-                  htmlCode = `<!-- Failed to read HTML file -->`;
+                  console.error("Failed to process imported file:", readErr);
                 }
               }
-              if (!htmlCode) {
-                htmlCode = `<div style="padding: 60px 20px; text-align: center; font-family: sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">\n  <h1>Trang thiết kế nhập từ ZIP/HTML</h1>\n  <p>Giải nén và cấu hình thành công! Chào mừng đến với trang ${name}</p>\n</div>`;
-              }
 
-              let parsedSections = parseHtmlToLandingPageSchema(htmlCode);
               if (parsedSections.length === 0) {
+                const fallbackHtml = `<div style="padding: 60px 20px; text-align: center; font-family: sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">\n  <h1>Trang thiết kế nhập từ ZIP/HTML</h1>\n  <p>Chào mừng đến với trang ${name}</p>\n</div>`;
                 const htmlBlock = ensureOnlookBlockMeta({
                   id: `html_${Date.now()}`,
                   type: "html_code",
                   label: "Mã HTML Nhập khẩu",
                   props: {
-                    code: htmlCode,
+                    code: fallbackHtml,
                     height: 800
                   }
                 });
@@ -608,7 +617,10 @@ export default function LandingPagesManagement() {
                 pageId,
                 pageName: name,
                 sections: parsedSections,
-                pageSettings: createDefaultPageSettings(name),
+                pageSettings: {
+                  ...createDefaultPageSettings(name),
+                  globalCss: parsedGlobalCss,
+                },
                 schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
               };
             } else if (type === "ppc") {

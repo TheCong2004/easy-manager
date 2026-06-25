@@ -27,7 +27,8 @@ const BlockRenderer: React.FC<{
   isSelected: boolean;
   onSelect: () => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
-}> = ({ block, isSelected, onSelect, onUpdateBlock }) => {
+  globalCss?: string;
+}> = ({ block, isSelected, onSelect, onUpdateBlock, globalCss }) => {
   const update = (nextProps: Record<string, unknown>) => onUpdateBlock(block.id, nextProps);
 
   switch (block.type) {
@@ -61,7 +62,7 @@ const BlockRenderer: React.FC<{
     case "table": return <TableBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "survey": return <SurveyBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "menu": return <MenuBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "html_code": return <HtmlCodeBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
+    case "html_code": return <HtmlCodeBlock props={block.props} isSelected={isSelected} onSelect={onSelect} globalCss={globalCss} />;
     default:
       return null;
   }
@@ -259,6 +260,7 @@ const AbsoluteElementWrapper: React.FC<{
   onDuplicateBlock: (id: string) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
   draftFrame: Partial<ElementFrame> | null;
+  globalCss?: string;
 }> = ({
   block,
   isSelected,
@@ -273,6 +275,7 @@ const AbsoluteElementWrapper: React.FC<{
   onDuplicateBlock,
   onMoveNodeZIndex,
   draftFrame,
+  globalCss,
 }) => {
   const frame = getEffectiveFrame(block, deviceMode);
   const finalX = draftFrame?.x !== undefined ? draftFrame.x : frame.x;
@@ -310,7 +313,7 @@ const AbsoluteElementWrapper: React.FC<{
       }}
     >
       <div style={{ width: "100%", height: "100%", pointerEvents: "none" }}>
-        <BlockRenderer block={block} isSelected={false} onSelect={() => {}} onUpdateBlock={onUpdateBlock} />
+        <BlockRenderer block={block} isSelected={false} onSelect={() => {}} onUpdateBlock={onUpdateBlock} globalCss={globalCss} />
       </div>
 
       {isSelected && (
@@ -501,6 +504,7 @@ interface CanvasProps {
   onAddSection: (blockType: BlockType, index?: number) => void;
   onAddElementToSection: (sectionId: string, blockType: BlockType, x: number, y: number) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
+  globalCss?: string;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -517,6 +521,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onUpdateNodeFrame,
   onUpdateResponsiveFrame,
   onMoveNodeZIndex,
+  globalCss,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -918,6 +923,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       isSelected={false}
                       onSelect={() => {}}
                       onUpdateBlock={onUpdateBlock}
+                      globalCss={globalCss}
                     />
                   </div>
 
@@ -955,6 +961,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       onDuplicateBlock={onDuplicateBlock}
                       onMoveNodeZIndex={onMoveNodeZIndex}
                       draftFrame={dragState?.blockId === element.id ? draftFrame : null}
+                      globalCss={globalCss}
                     />
                   ))}
                 </div>

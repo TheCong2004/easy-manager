@@ -1,7 +1,8 @@
-import { EditorBlock, BlockType, createDefaultBlock, ensureOnlookBlockMeta } from "../types";
+import { EditorBlock, BlockType, createDefaultBlock, ensureOnlookBlockMeta } from "@/components/landing-pages/editor/types";
+import { ImportedLandingPageSchema } from "./import-types";
 
 /**
- * Extracts inline style colors from an element.
+ * Lấy mã màu văn bản inline từ phần tử.
  */
 function getStyleColor(el: HTMLElement): string | null {
   if (el.style.color) return el.style.color;
@@ -9,7 +10,7 @@ function getStyleColor(el: HTMLElement): string | null {
 }
 
 /**
- * Extracts inline style text alignments from an element.
+ * Lấy hướng căn chỉnh văn bản inline từ phần tử.
  */
 function getStyleAlign(el: HTMLElement): "left" | "center" | "right" | null {
   if (el.style.textAlign) {
@@ -25,61 +26,64 @@ function getStyleAlign(el: HTMLElement): "left" | "center" | "right" | null {
 }
 
 /**
- * Checks if an element represents a complex layout container (flexbox, grid, columns, navbar, footer, table, etc.)
- * that should be preserved as an html_code block rather than being recursively flattened.
+ * Thuật toán Layout-Aware:
+ * Kiểm tra xem phần tử có phải là một container bố cục phức tạp (flex, grid, navbar, footer, table, form...)
+ * nên được giữ nguyên dưới dạng khối html_code thay vì bóc tách sâu hơn.
  */
-function isComplexLayoutContainer(el: HTMLElement): boolean {
+export function isComplexLayoutContainer(el: HTMLElement): boolean {
   const tagName = el.tagName.toLowerCase();
-  
-  // These tags should always be preserved as raw HTML blocks to keep their semantic layout/style
+
+  // Các thẻ semantic này luôn giữ nguyên cấu trúc HTML thô để bảo toàn layout
   if (/^(header|nav|footer|form|table|svg|ul|ol|iframe)$/i.test(tagName)) {
     return true;
   }
-  
-  // If it's a div, check if it has layout styles/classes
-  if (tagName === "div") {
-    const className = (el.className || "").toLowerCase();
-    const styleAttr = (el.getAttribute("style") || "").toLowerCase();
-    
-    if (
-      className.includes("flex") || 
-      className.includes("grid") || 
-      className.includes("col-") || 
-      className.includes("row-") || 
-      className.includes("inline") ||
-      className.includes("navbar") ||
-      className.includes("menu") ||
-      className.includes("card") ||
-      styleAttr.includes("display: flex") ||
-      styleAttr.includes("display: inline") ||
-      styleAttr.includes("display: grid") ||
-      styleAttr.includes("float:")
-    ) {
+
+  const className = (el.className || "").toLowerCase();
+  const styleAttr = (el.getAttribute("style") || "").toLowerCase();
+  const idName = (el.id || "").toLowerCase();
+  const classOrStyleOrId = `${className} ${styleAttr} ${idName}`;
+
+  // Kiểm tra các thuộc tính layout class, style hoặc id quan trọng
+  if (
+    classOrStyleOrId.includes("flex") ||
+    classOrStyleOrId.includes("grid") ||
+    classOrStyleOrId.includes("col-") ||
+    classOrStyleOrId.includes("row-") ||
+    classOrStyleOrId.includes("inline") ||
+    classOrStyleOrId.includes("navbar") ||
+    classOrStyleOrId.includes("menu") ||
+    classOrStyleOrId.includes("card") ||
+    classOrStyleOrId.includes("container") ||
+    classOrStyleOrId.includes("wrapper") ||
+    classOrStyleOrId.includes("columns") ||
+    classOrStyleOrId.includes("row") ||
+    classOrStyleOrId.includes("pricing-grid") ||
+    classOrStyleOrId.includes("section-wrapper") ||
+    styleAttr.includes("display: flex") ||
+    styleAttr.includes("display: inline") ||
+    styleAttr.includes("display: grid") ||
+    styleAttr.includes("float:")
+  ) {
+    return true;
+  }
+
+  // Nếu có nhiều phần tử con thuộc loại inline/nút liên kết cạnh nhau, có thể chúng xếp hàng ngang (navbar/menu)
+  const children = Array.from(el.children);
+  if (children.length > 2) {
+    const childTags = children.map((c) => c.tagName.toLowerCase());
+    const hasManyInline = childTags.filter((t) => /^(a|button|img|span)$/i.test(t)).length > 1;
+    if (hasManyInline) {
       return true;
     }
-    
-    // Also, if it has many direct child elements (e.g. more than 2) that are buttons, links, or images,
-    // they are likely laid out horizontally or in a grid.
-    const children = Array.from(el.children);
-    if (children.length > 2) {
-      const childTags = children.map(c => c.tagName.toLowerCase());
-      const hasManyInline = childTags.filter(t => /^(a|button|img|span)$/i.test(t)).length > 1;
-      if (hasManyInline) {
-        return true;
-      }
-    }
   }
-  
+
   return false;
 }
 
 /**
- * Checks if a DOM node is a section wrapper.
+ * Kiểm tra xem một phần tử có đại diện cho một semantic section hay không.
  */
-/**
- * Checks if a node is a semantic section container.
- */
-function isSemanticSection(el: HTMLElement): boolean {
+export function isSemanticSection(el: HTMLElement): boolean {
   const tagName = el.tagName.toLowerCase();
   if (/^(section|header|nav|footer|main|article|aside)$/i.test(tagName)) {
     return true;
@@ -104,58 +108,82 @@ function isSemanticSection(el: HTMLElement): boolean {
 }
 
 /**
- * Traverses the DOM tree to locate all semantic section wrappers.
- * If a section container contains other section containers, it recurses into them.
+ * Thuật toán Phân vùng không mất DOM (Lossless Partitioning):
+ * Duyệt cây DOM và phân bổ tất cả phần tử vào các section, gom phần tử tự do vào Virtual Sections.
  */
-function collectSections(el: HTMLElement): HTMLElement[] {
+export function partitionIntoSections(element: HTMLElement, doc: Document): HTMLElement[] {
   const sections: HTMLElement[] = [];
-  
-  function traverse(node: HTMLElement) {
-    const tagName = node.tagName.toLowerCase();
-    if (/^(script|style|noscript|iframe)$/i.test(tagName)) {
-      return;
-    }
-    
-    const isSec = isSemanticSection(node);
-    
-    if (isSec) {
-      // Check if it contains nested semantic sections
-      let hasNestedSection = false;
-      const children = Array.from(node.children) as HTMLElement[];
-      for (const child of children) {
-        const found = child.querySelector(
-          'section, header, nav, footer, main, article, aside, [class*="section"], [id*="section"], [class*="hero"], [id*="hero"]'
-        );
-        if (found) {
-          hasNestedSection = true;
-          break;
-        }
-        if (isSemanticSection(child)) {
-          hasNestedSection = true;
-          break;
-        }
-      }
-      
-      if (!hasNestedSection) {
-        sections.push(node);
-        return;
-      }
-    }
-    
-    const children = Array.from(node.children) as HTMLElement[];
-    for (const child of children) {
-      traverse(child);
+  let currentVirtualSection: HTMLDivElement | null = null;
+
+  function flushVirtualSection() {
+    if (currentVirtualSection && currentVirtualSection.childNodes.length > 0) {
+      sections.push(currentVirtualSection);
+      currentVirtualSection = null;
     }
   }
-  
-  traverse(el);
+
+  function appendToVirtualSection(node: Node) {
+    if (!currentVirtualSection) {
+      currentVirtualSection = doc.createElement("div");
+      currentVirtualSection.className = "virtual-section-wrapper";
+    }
+    currentVirtualSection.appendChild(node.cloneNode(true));
+  }
+
+  function traverse(el: HTMLElement) {
+    const children = Array.from(el.childNodes);
+    for (const child of children) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const text = child.textContent?.trim();
+        if (text) {
+          appendToVirtualSection(child);
+        }
+        continue;
+      }
+      if (child.nodeType !== Node.ELEMENT_NODE) {
+        continue;
+      }
+
+      const childEl = child as HTMLElement;
+      const tagName = childEl.tagName.toLowerCase();
+      if (/^(script|style|noscript)$/i.test(tagName)) {
+        continue;
+      }
+
+      const isSec = isSemanticSection(childEl);
+      const hasNestedSec =
+        childEl.querySelector(
+          'section, header, nav, footer, main, article, aside, [class*="section"], [id*="section"], [class*="hero"], [id*="hero"]'
+        ) !== null || Array.from(childEl.children).some((c) => isSemanticSection(c as HTMLElement));
+
+      if (isSec) {
+        if (!hasNestedSec) {
+          // Leaf section
+          flushVirtualSection();
+          sections.push(childEl);
+        } else {
+          // Section cha chứa các section con: duyệt sâu hơn để chia nhỏ
+          traverse(childEl);
+        }
+      } else if (hasNestedSec) {
+        // Layout wrapper (div) chứa các section con: duyệt sâu hơn
+        traverse(childEl);
+      } else {
+        // Phần tử nội dung thông thường: gom vào virtual section
+        appendToVirtualSection(childEl);
+      }
+    }
+    flushVirtualSection();
+  }
+
+  traverse(element);
   return sections;
 }
 
 /**
- * Recursively parses DOM nodes into editor blocks, appending them to a flat array.
+ * Duyệt đệ quy để trích xuất các phần tử con thành blocks trong Editor.
  */
-function extractElementsRecursive(
+export function extractElementsRecursive(
   node: Node,
   elements: EditorBlock[],
   sectionId: string,
@@ -200,31 +228,37 @@ function extractElementsRecursive(
   const el = node as HTMLElement;
   const tagName = el.tagName.toLowerCase();
 
-  // Strip unsafe or unsupported tags
+  // Bỏ qua thẻ script, style, noscript vì đã được xử lý ở bước giải nén/lọc độc
   if (/^(script|style|noscript)$/i.test(tagName)) {
     return;
   }
 
-  // Preserve complex container layouts (flex, grid, header, nav, footer, form, table) as raw html_code blocks
+  // Nếu gặp khối layout phức tạp, lưu nó thành mã nguồn HTML độc lập (html_code)
   if (isComplexLayoutContainer(el)) {
     const block = createDefaultBlock("html_code");
     block.id = `${tagName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     block.parentId = sectionId;
-    block.label = tagName === "header" || tagName === "nav" ? "Navbar / Header" :
-                  tagName === "footer" ? "Footer trang" :
-                  tagName === "table" ? "Bảng dữ liệu" :
-                  tagName === "form" ? "Form đăng ký" : "Khối bố cục HTML";
-                  
+    block.label =
+      tagName === "header" || tagName === "nav"
+        ? "Navbar / Header"
+        : tagName === "footer"
+        ? "Footer trang"
+        : tagName === "table"
+        ? "Bảng dữ liệu"
+        : tagName === "form"
+        ? "Form đăng ký"
+        : "Khối bố cục HTML";
+
     let estimatedHeight = 350;
     if (tagName === "header" || tagName === "nav") estimatedHeight = 80;
     else if (tagName === "footer") estimatedHeight = 240;
     else if (tagName === "svg") estimatedHeight = 64;
-    
+
     block.props = {
       code: el.outerHTML,
       height: estimatedHeight,
     };
-    
+
     const w = 1200;
     block.frame = {
       x: 40,
@@ -233,13 +267,13 @@ function extractElementsRecursive(
       height: estimatedHeight,
       zIndex: 10,
     };
-    
+
     elements.push(block);
     currentY.val += estimatedHeight + 24;
     return;
   }
 
-  // 1. Fallback tags like iframe/embed/object -> html_code block
+  // HTML embedded elements
   if (/^(iframe|embed|object)$/i.test(tagName)) {
     const block = createDefaultBlock("html_code");
     block.id = `html_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -263,7 +297,7 @@ function extractElementsRecursive(
     return;
   }
 
-  // SVG: map to html_code block
+  // Vector SVG
   if (tagName === "svg") {
     const block = createDefaultBlock("html_code");
     block.id = `svg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -288,7 +322,7 @@ function extractElementsRecursive(
     return;
   }
 
-  // 2. Heading tags (H1 - H6) -> text block with label Heading
+  // Heading tags (h1-h6)
   if (/^h[1-6]$/.test(tagName)) {
     const level = parseInt(tagName.substring(1));
     const text = el.textContent?.trim() || "";
@@ -326,7 +360,7 @@ function extractElementsRecursive(
     }
   }
 
-  // 3. Anchor or Button tag -> button block
+  // Button & Link tags
   if (tagName === "button" || tagName === "a") {
     const hasImgOrBlockChild = Array.from(el.children).some((child) =>
       /^(img|p|div|section|article|aside|h[1-6]|button|ul|ol|form|hr|table|svg)$/i.test(
@@ -357,7 +391,13 @@ function extractElementsRecursive(
       block.props = {
         label: text,
         url,
-        style: tagName === "a" && !el.style.backgroundColor && !el.classList.contains("btn") && !el.classList.contains("button") ? "outline" : "filled",
+        style:
+          tagName === "a" &&
+          !el.style.backgroundColor &&
+          !el.classList.contains("btn") &&
+          !el.classList.contains("button")
+            ? "outline"
+            : "filled",
         color,
         textColor,
         size: "md",
@@ -382,7 +422,7 @@ function extractElementsRecursive(
     }
   }
 
-  // 4. Image tag -> image block
+  // Images
   if (tagName === "img") {
     const src = el.getAttribute("src") || "";
     const alt = el.getAttribute("alt") || "Hình ảnh";
@@ -423,7 +463,7 @@ function extractElementsRecursive(
     }
   }
 
-  // 5. Paragraph / spans / simple list items -> Paragraph blocks
+  // Paragraph / spans / simple list items
   if (/^(p|span|small|li|label|figcaption)$/i.test(tagName)) {
     const text = el.textContent?.trim() || "";
     const hasBlockChildren = Array.from(el.children).some((child) =>
@@ -466,7 +506,7 @@ function extractElementsRecursive(
     }
   }
 
-  // 6. Divider line (hr)
+  // Divider line (hr)
   if (tagName === "hr") {
     const block = createDefaultBlock("divider");
     block.id = `divider_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -494,7 +534,7 @@ function extractElementsRecursive(
     return;
   }
 
-  // 7. Form tags
+  // Form tag
   if (tagName === "form") {
     const block = createDefaultBlock("form_capture");
     block.id = `form_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -515,7 +555,7 @@ function extractElementsRecursive(
     return;
   }
 
-  // Unknown containers (div, ul, ol, main, article, header, section, footer, nav, etc.)
+  // Khối chứa khác: duyệt đệ quy các con
   if (node.hasChildNodes()) {
     const childNodes = Array.from(node.childNodes);
     for (const child of childNodes) {
@@ -525,24 +565,52 @@ function extractElementsRecursive(
 }
 
 /**
- * Parses an HTML string using DOMParser and converts it to editor native sections and elements.
+ * Phiên bản tương thích ngược trả về danh sách sections phẳng.
  */
 export function parseHtmlToLandingPageSchema(html: string): EditorBlock[] {
+  const imported = parseHtmlToImportedPageSchema(html);
+  return imported.sections;
+}
+
+/**
+ * Triển khai đầy đủ phân tích HTML sang cấu trúc trang ImportedLandingPageSchema.
+ */
+export function parseHtmlToImportedPageSchema(html: string): ImportedLandingPageSchema {
   const sections: EditorBlock[] = [];
-  if (typeof window === "undefined" || !html) return sections;
+  if (typeof window === "undefined" || !html) {
+    return { globalCss: "", assets: [], sections: [] };
+  }
 
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
     const body = doc.body;
-    if (!body) return sections;
-
-    // Collect all semantic section elements in the body
-    let sectionElements = collectSections(body);
-    if (sectionElements.length === 0) {
-      sectionElements = [body];
+    if (!body) {
+      return { globalCss: "", assets: [], sections: [] };
     }
 
+    // 1. Trích xuất CSS toàn cục và chuyển đổi link CSS tuyệt đối thành @import
+    const styleTags = Array.from(doc.querySelectorAll("style"));
+    const styleContent = styleTags.map((tag) => tag.innerHTML).join("\n");
+
+    const linkTags = Array.from(doc.querySelectorAll("link[rel='stylesheet']"));
+    const linkImports = linkTags
+      .map((tag) => {
+        const href = tag.getAttribute("href");
+        if (href && /^(https?:|\/\/)/i.test(href)) {
+          return `@import url("${href}");`;
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n");
+
+    const globalCss = `${linkImports}\n${styleContent}`.trim();
+
+    // 2. Phân vùng body thành các semantic/virtual sections
+    const sectionElements = partitionIntoSections(body, doc);
+
+    // 3. Xử lý chi tiết từng phần
     for (let index = 0; index < sectionElements.length; index++) {
       const el = sectionElements[index];
       const tagName = el.tagName.toLowerCase();
@@ -592,27 +660,32 @@ export function parseHtmlToLandingPageSchema(html: string): EditorBlock[] {
 
       const currentY = { val: 40 };
       const elements: EditorBlock[] = [];
-      
-      // Parse child nodes inside this section element
+
+      // Phân tích đệ quy các phần tử con bên trong section này
       const childNodes = Array.from(el.childNodes);
       for (const childNode of childNodes) {
         extractElementsRecursive(childNode, elements, sectionId, currentY);
       }
 
       activeSection.children = elements;
-      
-      // Calculate section height based on its elements
+
+      // Tính toán chiều cao tự nhiên của Section
       activeSection.props.minHeight = Math.max(120, currentY.val + 40);
       if (activeSection.frame) {
         activeSection.frame.height = activeSection.props.minHeight;
       }
-      
+
       const normalized = ensureOnlookBlockMeta(activeSection);
       sections.push(normalized);
     }
+
+    return {
+      globalCss,
+      assets: [], // Bản thô không có assets, ZIP importer sẽ tự điền
+      sections,
+    };
   } catch (err) {
     console.error("Failed to parse HTML structure:", err);
+    return { globalCss: "", assets: [], sections: [] };
   }
-
-  return sections;
 }

@@ -686,7 +686,7 @@ export const MenuBlock: React.FC<{ props: MenuProps; isSelected: boolean; onSele
 };
 
 // ── HTML Code Block ───────────────────────────────────────────
-export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
+export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean; onSelect: () => void; globalCss?: string }> = ({ props, isSelected, onSelect, globalCss }) => {
   const { code, height } = props;
   const [iframeHeight, setIframeHeight] = useState<string>(height ? `${height}px` : "300px");
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -704,6 +704,7 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
             width: 100%;
           }
         </style>
+        ${globalCss ? `<style>${globalCss}</style>` : ""}
       </head>
       <body>
         ${code}

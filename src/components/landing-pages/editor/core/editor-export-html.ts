@@ -78,6 +78,7 @@ export function renderLandingPageHtml(data: EditorData): string {
     `* { box-sizing: border-box; }`,
     `img { max-width: 100%; display: block; }`,
     generatedCss,
+    normalized.pageSettings.globalCss || "",
     `</style>`,
     `</head>`,
     `<body>`,

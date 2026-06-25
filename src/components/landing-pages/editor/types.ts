@@ -594,6 +594,7 @@ export interface EditorPageSettings {
   posthogEnabled: boolean;
   posthogProjectKey: string;
   sessionReplayEnabled: boolean;
+  globalCss?: string;
 }
 
 export function createDefaultPageSettings(pageName = ""): EditorPageSettings {
@@ -624,6 +625,7 @@ export function createDefaultPageSettings(pageName = ""): EditorPageSettings {
     posthogEnabled: false,
     posthogProjectKey: "",
     sessionReplayEnabled: false,
+    globalCss: "",
   };
 }
 
