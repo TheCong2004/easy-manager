@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { mockDb } from "../mockDb";
+import { shouldFallbackToMock, jsonError } from "../apiUtils";
 
 export const runtime = "nodejs";
 
@@ -9,11 +10,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const orgId = request.headers.get("x-org-id") || searchParams.get("orgId") || "org-1";
     const type = searchParams.get("type");
+    const fallbackEnabled = shouldFallbackToMock();
 
     // Parent project list selection for wizard step 1
     if (type === "parent") {
       if (!supabase) {
-        return NextResponse.json(mockDb.getProjects(orgId));
+        if (fallbackEnabled) {
+          return NextResponse.json(mockDb.getProjects(orgId));
+        }
+        return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
       }
       const { data, error } = await supabase
         .from("projects")
@@ -22,15 +27,21 @@ export async function GET(request: NextRequest) {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.warn("Supabase fetch projects error, using mockDb:", error);
-        return NextResponse.json(mockDb.getProjects(orgId));
+        if (fallbackEnabled) {
+          console.warn("Supabase fetch projects error, using mockDb:", error);
+          return NextResponse.json(mockDb.getProjects(orgId));
+        }
+        return jsonError(error, "Failed to retrieve parent projects");
       }
       return NextResponse.json(data);
     }
 
     // Default: Return detailed AI SEO Automation project cards
     if (!supabase) {
-      return NextResponse.json(mockDb.getAiSeoProjects(orgId));
+      if (fallbackEnabled) {
+        return NextResponse.json(mockDb.getAiSeoProjects(orgId));
+      }
+      return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
     }
 
     const { data: parentProjects, error: parentError } = await supabase
@@ -38,8 +49,16 @@ export async function GET(request: NextRequest) {
       .select("id")
       .eq("organization_id", orgId);
 
-    if (parentError || !parentProjects) {
-      return NextResponse.json(mockDb.getAiSeoProjects(orgId));
+    if (parentError) {
+      if (fallbackEnabled) {
+        return NextResponse.json(mockDb.getAiSeoProjects(orgId));
+      }
+      return jsonError(parentError, "Failed to retrieve parent projects");
+    }
+
+    if (!parentProjects || parentProjects.length === 0) {
+      // No parent projects means empty list in real DB
+      return NextResponse.json([]);
     }
 
     const projectIds = parentProjects.map(p => p.id);
@@ -55,12 +74,15 @@ export async function GET(request: NextRequest) {
       .in("project_id", projectIds);
 
     if (error) {
-      console.warn("Supabase fetch ai_seo_projects error, using mockDb:", error);
-      return NextResponse.json(mockDb.getAiSeoProjects(orgId));
+      if (fallbackEnabled) {
+        console.warn("Supabase fetch ai_seo_projects error, using mockDb:", error);
+        return NextResponse.json(mockDb.getAiSeoProjects(orgId));
+      }
+      return jsonError(error, "Failed to retrieve AI SEO projects");
     }
 
     // Map database snake_case rows into SearchAtlas camelCase parameters
-    const mappedData = data.map(item => {
+    const mappedData = (data || []).map(item => {
       const score = item.scores?.[0] || {};
       const integration = item.integrations?.[0] || {};
       const installation = item.installations?.[0] || {};
@@ -108,7 +130,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(mappedData);
   } catch (err: any) {
     console.error("GET projects error:", err);
-    return NextResponse.json(mockDb.getAiSeoProjects("org-1"));
+    if (shouldFallbackToMock()) {
+      return NextResponse.json(mockDb.getAiSeoProjects("org-1"));
+    }
+    return jsonError(err, "Internal Server Error");
   }
 }
 
@@ -117,12 +142,16 @@ export async function POST(request: NextRequest) {
     const orgId = request.headers.get("x-org-id") || "org-1";
     const body = await request.json();
     const { name, hostname } = body;
+    const fallbackEnabled = shouldFallbackToMock();
 
     // Normal parent project creation (name only)
     if (name && !hostname) {
       if (!supabase) {
-        const proj = mockDb.createProject(orgId, name);
-        return NextResponse.json(proj);
+        if (fallbackEnabled) {
+          const proj = mockDb.createProject(orgId, name);
+          return NextResponse.json(proj);
+        }
+        return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
       }
 
       const { data, error } = await supabase
@@ -132,8 +161,11 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
-        console.warn("Supabase insert project error, using mockDb:", error);
-        return NextResponse.json(mockDb.createProject(orgId, name));
+        if (fallbackEnabled) {
+          console.warn("Supabase insert project error, using mockDb:", error);
+          return NextResponse.json(mockDb.createProject(orgId, name));
+        }
+        return jsonError(error, "Failed to create parent project");
       }
 
       return NextResponse.json(data);
@@ -145,8 +177,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!supabase) {
-      const proj = mockDb.createAiSeoProject(orgId, hostname, name || `Dự án ${hostname}`);
-      return NextResponse.json(proj);
+      if (fallbackEnabled) {
+        const proj = mockDb.createAiSeoProject(orgId, hostname, name || `Dự án ${hostname}`);
+        return NextResponse.json(proj);
+      }
+      return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
     }
 
     // Create parent project container
@@ -157,7 +192,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (parentError || !parentProject) {
-      throw new Error(`Failed to create parent project: ${parentError?.message}`);
+      throw parentError || new Error(`Failed to create parent project`);
     }
 
     // Create detailed AI SEO card
@@ -171,7 +206,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (aiSeoProjectError || !aiSeoProject) {
-      throw new Error(`Failed to create ai seo project: ${aiSeoProjectError?.message}`);
+      throw aiSeoProjectError || new Error(`Failed to create ai seo project`);
     }
 
     // Add empty scores record
@@ -197,6 +232,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(aiSeoProject);
   } catch (err: any) {
     console.error("POST projects error:", err);
-    return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
+    return jsonError(err, "Internal Server Error");
   }
 }
