@@ -1,9 +1,32 @@
 import { AiSeoProjectListItem } from "../types";
+import { createClient } from "@supabase/supabase-js";
 
-export async function fetchAiSeoProjects(orgId = "org-1"): Promise<AiSeoProjectListItem[]> {
-  const res = await fetch(`/api/ai-seo/projects?orgId=${orgId}`, {
-    headers: { "x-org-id": orgId },
-  });
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+async function getAuthHeaders(): Promise<HeadersInit> {
+  try {
+    const sb = getSupabaseClient();
+    if (!sb) return { "Content-Type": "application/json" };
+    const { data } = await sb.auth.getSession();
+    const token = data?.session?.access_token;
+    if (token) {
+      return {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+    }
+  } catch {}
+  return { "Content-Type": "application/json" };
+}
+
+export async function fetchAiSeoProjects(_orgId = "org-1"): Promise<AiSeoProjectListItem[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`/api/ai-seo/projects`, { headers });
   if (!res.ok) {
     throw new Error("Failed to fetch AI SEO projects");
   }
@@ -12,14 +35,12 @@ export async function fetchAiSeoProjects(orgId = "org-1"): Promise<AiSeoProjectL
 
 export async function createAiSeoProject(
   data: { name: string; hostname: string },
-  orgId = "org-1"
+  _orgId = "org-1"
 ): Promise<any> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`/api/ai-seo/projects`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-org-id": orgId,
-    },
+    headers,
     body: JSON.stringify(data),
   });
   if (!res.ok) {
@@ -31,14 +52,12 @@ export async function createAiSeoProject(
 
 export async function toggleFavoriteProject(
   projectId: string,
-  orgId = "org-1"
+  _orgId = "org-1"
 ): Promise<{ id: string; projectId: string; isFavorite: boolean }> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`/api/ai-seo/projects/${projectId}/favorite`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "x-org-id": orgId,
-    },
+    headers,
   });
   if (!res.ok) {
     throw new Error("Failed to update favorite status");
@@ -48,14 +67,12 @@ export async function toggleFavoriteProject(
 
 export async function toggleAgentStatus(
   projectId: string,
-  orgId = "org-1"
+  _orgId = "org-1"
 ): Promise<{ id: string; projectId: string; isEngaged: boolean }> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`/api/ai-seo/projects/${projectId}/agent-status`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "x-org-id": orgId,
-    },
+    headers,
   });
   if (!res.ok) {
     throw new Error("Failed to update agent status");
@@ -65,14 +82,12 @@ export async function toggleAgentStatus(
 
 export async function triggerProjectScan(
   projectId: string,
-  orgId = "org-1"
+  _orgId = "org-1"
 ): Promise<{ jobId: string; status: string }> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`/api/ai-seo/projects/${projectId}/scan`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-org-id": orgId,
-    },
+    headers,
   });
   if (!res.ok) {
     throw new Error("Failed to trigger scan");
@@ -82,14 +97,12 @@ export async function triggerProjectScan(
 
 export async function deleteProject(
   projectId: string,
-  orgId = "org-1"
+  _orgId = "org-1"
 ): Promise<{ success: boolean }> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`/api/ai-seo/projects/${projectId}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      "x-org-id": orgId,
-    },
+    headers,
   });
   if (!res.ok) {
     throw new Error("Failed to delete project");
