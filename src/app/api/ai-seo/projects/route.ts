@@ -1,237 +1,189 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { mockDb } from "../mockDb";
-import { shouldFallbackToMock, jsonError } from "../apiUtils";
+import { createClient } from "@supabase/supabase-js";
+import { jsonError } from "../apiUtils";
 
 export const runtime = "nodejs";
 
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  const key = process.env.SUPABASE_SECRET_KEY || "";
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
+function getSupabaseWithJwt(jwt: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  if (!url || !anonKey) return null;
+  return createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+  });
+}
+
+async function getUserId(request: NextRequest): Promise<string | null> {
+  const auth = request.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return null;
+  const jwt = auth.slice(7).trim();
+  const client = getSupabaseWithJwt(jwt);
+  if (!client) return null;
+  const { data } = await client.auth.getUser();
+  return data?.user?.id || null;
+}
+
+/**
+ * GET /api/ai-seo/projects
+ * Lấy danh sách landing pages của user và hiển thị trực tiếp trên dashboard AI SEO.
+ * Mỗi landing page = 1 thẻ dự án SEO, không cần tạo bảng organizations/projects trung gian.
+ */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const orgId = request.headers.get("x-org-id") || searchParams.get("orgId") || "org-1";
-    const type = searchParams.get("type");
-    const fallbackEnabled = shouldFallbackToMock();
-
-    // Parent project list selection for wizard step 1
-    if (type === "parent") {
-      if (!supabase) {
-        if (fallbackEnabled) {
-          return NextResponse.json(mockDb.getProjects(orgId));
-        }
-        return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
-      }
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("organization_id", orgId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        if (fallbackEnabled) {
-          console.warn("Supabase fetch projects error, using mockDb:", error);
-          return NextResponse.json(mockDb.getProjects(orgId));
-        }
-        return jsonError(error, "Failed to retrieve parent projects");
-      }
-      return NextResponse.json(data);
-    }
-
-    // Default: Return detailed AI SEO Automation project cards
+    const supabase = getSupabaseAdmin();
     if (!supabase) {
-      if (fallbackEnabled) {
-        return NextResponse.json(mockDb.getAiSeoProjects(orgId));
-      }
-      return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
+      return jsonError(new Error("Supabase chưa được cấu hình"), "Cấu hình Supabase thiếu");
     }
 
-    const { data: parentProjects, error: parentError } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("organization_id", orgId);
+    // Lấy user_id từ JWT để filter landing pages của đúng user
+    const userId = await getUserId(request);
 
-    if (parentError) {
-      if (fallbackEnabled) {
-        return NextResponse.json(mockDb.getAiSeoProjects(orgId));
-      }
-      return jsonError(parentError, "Failed to retrieve parent projects");
+    // Query landing_pages - nếu có JWT thì filter theo user_id, không thì lấy tất cả
+    let query = supabase.from("landing_pages").select("*").order("updated_at", { ascending: false });
+    if (userId) {
+      query = query.eq("user_id", userId);
     }
 
-    if (!parentProjects || parentProjects.length === 0) {
-      // No parent projects means empty list in real DB
+    const { data: landingPages, error } = await query;
+
+    if (error) {
+      return jsonError(error, "Không thể lấy danh sách landing pages");
+    }
+
+    if (!landingPages || landingPages.length === 0) {
       return NextResponse.json([]);
     }
 
-    const projectIds = parentProjects.map(p => p.id);
+    // Map mỗi landing page thành 1 card AI SEO project
+    const mapped = landingPages.map((lp: any) => ({
+      id: lp.id,
+      uuid: lp.id,
+      projectId: lp.id,
+      hostname: lp.slug || lp.name || "untitled",
+      name: lp.name || "Untitled Page",
+      slug: lp.slug,
+      status: lp.status || "draft",
+      siteAudit: {},
+      readyForProcessing: false,
+      isFirstProcessing: true,
+      taskStatus: "pending",
+      pixelTagState: "not_installed",
+      isFrozen: false,
+      isFavorite: false,
+      isEngaged: true,
+      atRiskOfWipe: false,
+      daysUntilWipe: null,
+      wipeScheduledAt: null,
+      lastAnalysis: null,
+      nextAnalysisAt: null,
+      timeSavedTotal: 0,
+      createdAt: lp.created_at,
+      updatedAt: lp.updated_at,
+      publishedAt: lp.published_at || null,
+      connectedData: {
+        isGscConnected: false,
+        isGbpConnected: false,
+        gscDetails: {},
+        gbpDetailsV2: {}
+      },
+      afterSummary: {
+        healthyPages: 0,
+        totalPages: 0
+      },
+      holisticScores: {
+        technicalsScore: 0,
+        uxScore: 0,
+        authorityScore: 0,
+        contentScore: 0
+      },
+      aiGradeOverall: 0
+    }));
 
-    const { data, error } = await supabase
-      .from("ai_seo_projects")
-      .select(`
-        *,
-        scores:ai_seo_project_scores(*),
-        integrations:ai_seo_project_integrations(*),
-        installations:ai_seo_project_installations(*)
-      `)
-      .in("project_id", projectIds);
-
-    if (error) {
-      if (fallbackEnabled) {
-        console.warn("Supabase fetch ai_seo_projects error, using mockDb:", error);
-        return NextResponse.json(mockDb.getAiSeoProjects(orgId));
-      }
-      return jsonError(error, "Failed to retrieve AI SEO projects");
-    }
-
-    // Map database snake_case rows into SearchAtlas camelCase parameters
-    const mappedData = (data || []).map(item => {
-      const score = item.scores?.[0] || {};
-      const integration = item.integrations?.[0] || {};
-      const installation = item.installations?.[0] || {};
-
-      return {
-        id: item.id,
-        uuid: item.uuid,
-        projectId: item.project_id,
-        hostname: item.hostname,
-        siteAudit: item.site_audit,
-        readyForProcessing: item.ready_for_processing,
-        isFirstProcessing: item.is_first_processing,
-        taskStatus: item.task_status,
-        pixelTagState: item.pixel_tag_state || installation.status || 'not_installed',
-        isFrozen: item.is_frozen,
-        isFavorite: item.is_favorite,
-        isEngaged: item.is_engaged,
-        atRiskOfWipe: item.at_risk_of_wipe,
-        daysUntilWipe: item.days_until_wipe,
-        wipeScheduledAt: item.wipe_scheduled_at,
-        lastAnalysis: item.last_analysis,
-        nextAnalysisAt: item.next_analysis_at,
-        timeSavedTotal: item.time_saved_total,
-        createdAt: item.created_at,
-        connectedData: {
-          isGscConnected: integration.is_gsc_connected || false,
-          isGbpConnected: integration.is_gbp_connected || false,
-          gscDetails: integration.gsc_details || {},
-          gbpDetailsV2: integration.gbp_details_v2 || {}
-        },
-        afterSummary: {
-          healthyPages: score.healthy_pages || 0,
-          totalPages: score.total_pages || 0
-        },
-        holisticScores: {
-          technicalsScore: score.technicals_score || 0,
-          uxScore: score.ux_score || 0,
-          authorityScore: score.authority_score || 0,
-          contentScore: score.content_score || 0
-        },
-        aiGradeOverall: score.ai_grade_overall || 0
-      };
-    });
-
-    return NextResponse.json(mappedData);
+    return NextResponse.json(mapped);
   } catch (err: any) {
-    console.error("GET projects error:", err);
-    if (shouldFallbackToMock()) {
-      return NextResponse.json(mockDb.getAiSeoProjects("org-1"));
-    }
-    return jsonError(err, "Internal Server Error");
+    console.error("GET /api/ai-seo/projects error:", err);
+    return jsonError(err, "Lỗi máy chủ");
   }
 }
 
+/**
+ * POST /api/ai-seo/projects
+ * Tạo landing page mới (sẽ được hiển thị tự động trong dashboard AI SEO).
+ */
 export async function POST(request: NextRequest) {
   try {
-    const orgId = request.headers.get("x-org-id") || "org-1";
-    const body = await request.json();
-    const { name, hostname } = body;
-    const fallbackEnabled = shouldFallbackToMock();
-
-    // Normal parent project creation (name only)
-    if (name && !hostname) {
-      if (!supabase) {
-        if (fallbackEnabled) {
-          const proj = mockDb.createProject(orgId, name);
-          return NextResponse.json(proj);
-        }
-        return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
-      }
-
-      const { data, error } = await supabase
-        .from("projects")
-        .insert({ organization_id: orgId, name })
-        .select()
-        .single();
-
-      if (error) {
-        if (fallbackEnabled) {
-          console.warn("Supabase insert project error, using mockDb:", error);
-          return NextResponse.json(mockDb.createProject(orgId, name));
-        }
-        return jsonError(error, "Failed to create parent project");
-      }
-
-      return NextResponse.json(data);
-    }
-
-    // AI SEO project creation (hostname details)
-    if (!hostname) {
-      return NextResponse.json({ error: "Missing parameter: hostname" }, { status: 400 });
-    }
-
+    const supabase = getSupabaseAdmin();
     if (!supabase) {
-      if (fallbackEnabled) {
-        const proj = mockDb.createAiSeoProject(orgId, hostname, name || `Dự án ${hostname}`);
-        return NextResponse.json(proj);
-      }
-      return jsonError(new Error("Supabase client not configured"), "Supabase not configured");
+      return jsonError(new Error("Supabase chưa được cấu hình"), "Cấu hình Supabase thiếu");
     }
 
-    // Create parent project container
-    const { data: parentProject, error: parentError } = await supabase
-      .from("projects")
-      .insert({ organization_id: orgId, name: name || `Dự án ${hostname}` })
-      .select()
-      .single();
+    const userId = await getUserId(request);
+    const body = await request.json();
+    const { hostname, name } = body;
 
-    if (parentError || !parentProject) {
-      throw parentError || new Error(`Failed to create parent project`);
+    if (!hostname) {
+      return NextResponse.json({ error: "Thiếu tham số: hostname (tên miền trang)" }, { status: 400 });
     }
 
-    // Create detailed AI SEO card
-    const { data: aiSeoProject, error: aiSeoProjectError } = await supabase
-      .from("ai_seo_projects")
+    // Tạo slug từ hostname
+    const slug = hostname
+      .replace(/^https?:\/\//, "")
+      .replace(/[^a-z0-9]+/gi, "-")
+      .toLowerCase()
+      .replace(/^-+|-+$/g, "");
+
+    const { data: lp, error } = await supabase
+      .from("landing_pages")
       .insert({
-        project_id: parentProject.id,
-        hostname
+        id: crypto.randomUUID(),
+        user_id: userId || null,
+        name: name || hostname,
+        slug,
+        status: "draft",
+        editor_data: {}
       })
       .select()
       .single();
 
-    if (aiSeoProjectError || !aiSeoProject) {
-      throw aiSeoProjectError || new Error(`Failed to create ai seo project`);
+    if (error || !lp) {
+      return jsonError(error || new Error("Không tạo được trang"), "Tạo dự án thất bại");
     }
 
-    // Add empty scores record
-    await supabase
-      .from("ai_seo_project_scores")
-      .insert({ ai_seo_project_id: aiSeoProject.id });
-
-    // Add empty integrations record
-    await supabase
-      .from("ai_seo_project_integrations")
-      .insert({ ai_seo_project_id: aiSeoProject.id });
-
-    // Add empty installations record
-    await supabase
-      .from("ai_seo_project_installations")
-      .insert({
-        ai_seo_project_id: aiSeoProject.id,
-        installation_type: "custom_script",
-        script_tag: `<script async src="https://api.otto-seo.com/sdk/${aiSeoProject.id}.js"></script>`,
-        status: "not_installed"
-      });
-
-    return NextResponse.json(aiSeoProject);
+    return NextResponse.json({
+      id: lp.id,
+      uuid: lp.id,
+      projectId: lp.id,
+      hostname: lp.slug,
+      name: lp.name,
+      slug: lp.slug,
+      status: lp.status,
+      createdAt: lp.created_at,
+      updatedAt: lp.updated_at,
+      taskStatus: "pending",
+      pixelTagState: "not_installed",
+      isFavorite: false,
+      isEngaged: true,
+      isFrozen: false,
+      atRiskOfWipe: false,
+      connectedData: { isGscConnected: false, isGbpConnected: false, gscDetails: {}, gbpDetailsV2: {} },
+      afterSummary: { healthyPages: 0, totalPages: 0 },
+      holisticScores: { technicalsScore: 0, uxScore: 0, authorityScore: 0, contentScore: 0 },
+      aiGradeOverall: 0,
+      siteAudit: {},
+      readyForProcessing: false,
+      isFirstProcessing: true,
+      timeSavedTotal: 0
+    });
   } catch (err: any) {
-    console.error("POST projects error:", err);
-    return jsonError(err, "Internal Server Error");
+    console.error("POST /api/ai-seo/projects error:", err);
+    return jsonError(err, "Lỗi máy chủ");
   }
 }
