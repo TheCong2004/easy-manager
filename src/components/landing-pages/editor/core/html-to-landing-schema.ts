@@ -25,6 +25,55 @@ function getStyleAlign(el: HTMLElement): "left" | "center" | "right" | null {
 }
 
 /**
+ * Checks if an element represents a complex layout container (flexbox, grid, columns, navbar, footer, table, etc.)
+ * that should be preserved as an html_code block rather than being recursively flattened.
+ */
+function isComplexLayoutContainer(el: HTMLElement): boolean {
+  const tagName = el.tagName.toLowerCase();
+  
+  // These tags should always be preserved as raw HTML blocks to keep their semantic layout/style
+  if (/^(header|nav|footer|form|table|svg|ul|ol|iframe)$/i.test(tagName)) {
+    return true;
+  }
+  
+  // If it's a div, check if it has layout styles/classes
+  if (tagName === "div") {
+    const className = (el.className || "").toLowerCase();
+    const styleAttr = (el.getAttribute("style") || "").toLowerCase();
+    
+    if (
+      className.includes("flex") || 
+      className.includes("grid") || 
+      className.includes("col-") || 
+      className.includes("row-") || 
+      className.includes("inline") ||
+      className.includes("navbar") ||
+      className.includes("menu") ||
+      className.includes("card") ||
+      styleAttr.includes("display: flex") ||
+      styleAttr.includes("display: inline") ||
+      styleAttr.includes("display: grid") ||
+      styleAttr.includes("float:")
+    ) {
+      return true;
+    }
+    
+    // Also, if it has many direct child elements (e.g. more than 2) that are buttons, links, or images,
+    // they are likely laid out horizontally or in a grid.
+    const children = Array.from(el.children);
+    if (children.length > 2) {
+      const childTags = children.map(c => c.tagName.toLowerCase());
+      const hasManyInline = childTags.filter(t => /^(a|button|img|span)$/i.test(t)).length > 1;
+      if (hasManyInline) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Checks if a DOM node is a section wrapper.
  */
 /**
@@ -153,6 +202,40 @@ function extractElementsRecursive(
 
   // Strip unsafe or unsupported tags
   if (/^(script|style|noscript)$/i.test(tagName)) {
+    return;
+  }
+
+  // Preserve complex container layouts (flex, grid, header, nav, footer, form, table) as raw html_code blocks
+  if (isComplexLayoutContainer(el)) {
+    const block = createDefaultBlock("html_code");
+    block.id = `${tagName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    block.parentId = sectionId;
+    block.label = tagName === "header" || tagName === "nav" ? "Navbar / Header" :
+                  tagName === "footer" ? "Footer trang" :
+                  tagName === "table" ? "Bảng dữ liệu" :
+                  tagName === "form" ? "Form đăng ký" : "Khối bố cục HTML";
+                  
+    let estimatedHeight = 350;
+    if (tagName === "header" || tagName === "nav") estimatedHeight = 80;
+    else if (tagName === "footer") estimatedHeight = 240;
+    else if (tagName === "svg") estimatedHeight = 64;
+    
+    block.props = {
+      code: el.outerHTML,
+      height: estimatedHeight,
+    };
+    
+    const w = 1200;
+    block.frame = {
+      x: 40,
+      y: currentY.val,
+      width: w,
+      height: estimatedHeight,
+      zIndex: 10,
+    };
+    
+    elements.push(block);
+    currentY.val += estimatedHeight + 24;
     return;
   }
 
@@ -488,6 +571,13 @@ export function parseHtmlToLandingPageSchema(html: string): EditorBlock[] {
         }
       }
 
+      let bgImage = "";
+      const styleAttr = el.getAttribute("style") || "";
+      const bgImgMatch = styleAttr.match(/background-image:\s*url\(['"]?([^'"]+)['"]?\)/i);
+      if (bgImgMatch && bgImgMatch[1]) {
+        bgImage = bgImgMatch[1];
+      }
+
       const activeSection = createDefaultBlock(blockType);
       activeSection.id = sectionId;
       activeSection.label = label;
@@ -497,6 +587,7 @@ export function parseHtmlToLandingPageSchema(html: string): EditorBlock[] {
         title: label,
         description: "Khối tùy chỉnh tạo từ mã HTML",
         bgColor: el.style.backgroundColor || (blockType === "footer" ? "#0f172a" : "#ffffff"),
+        bgImage: bgImage || activeSection.props.bgImage || "",
       };
 
       const currentY = { val: 40 };
