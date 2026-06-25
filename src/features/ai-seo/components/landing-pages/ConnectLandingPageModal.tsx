@@ -92,31 +92,31 @@ export function ConnectLandingPageModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 scale-100">
+    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-xs z-99999 flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 scale-100">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800">
           <div>
-            <h3 className="text-lg font-black text-slate-900 tracking-tight">Kết nối Landing Page</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Liên kết trang Landing Page để AI SEO theo dõi và chấm điểm</p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Kết nối Landing Page</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Liên kết trang Landing Page để AI SEO theo dõi và chấm điểm</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 hover:bg-slate-50 p-2 rounded-full transition"
+            className="text-slate-400 hover:text-slate-650 hover:bg-slate-50 dark:hover:bg-slate-800 p-2 rounded-full transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex p-1 bg-slate-100 mx-6 mt-6 rounded-xl">
+        <div className="flex p-1 bg-gray-100 dark:bg-gray-850 mx-6 mt-6 rounded-xl">
           <button
             onClick={() => { setSourceType("internal"); setSubmitError(null); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-extrabold rounded-lg transition duration-150 ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition duration-150 cursor-pointer select-none ${
               sourceType === "internal"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-800"
+                ? "bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-450 dark:hover:text-slate-200"
             }`}
           >
             <Library className="w-4 h-4" />
@@ -124,10 +124,10 @@ export function ConnectLandingPageModal({
           </button>
           <button
             onClick={() => { setSourceType("external"); setSubmitError(null); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-extrabold rounded-lg transition duration-150 ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition duration-150 cursor-pointer select-none ${
               sourceType === "external"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-800"
+                ? "bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-450 dark:hover:text-slate-200"
             }`}
           >
             <Globe className="w-4 h-4" />
@@ -138,7 +138,7 @@ export function ConnectLandingPageModal({
         {/* Content body */}
         <div className="p-6">
           {submitError && (
-            <div className="mb-4 bg-rose-50 border border-rose-100 text-rose-600 text-xs px-4 py-3 rounded-xl flex items-start gap-2.5 font-bold">
+            <div className="mb-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-450 text-xs px-4 py-3 rounded-xl flex items-start gap-2.5 font-bold animate-fadeIn">
               <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
               <span>{submitError}</span>
             </div>
@@ -148,12 +148,12 @@ export function ConnectLandingPageModal({
             <div className="space-y-4">
               {/* Project select */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                   Dự án Website Builder
                 </label>
                 {loadingProjects ? (
-                  <div className="flex items-center justify-center py-3 bg-slate-50 border border-slate-150 rounded-xl">
-                    <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                  <div className="flex items-center justify-center py-3 bg-gray-50 dark:bg-gray-950 border border-gray-150 dark:border-gray-800 rounded-lg">
+                    <Loader2 className="w-5 h-5 animate-spin text-lime-500" />
                   </div>
                 ) : (
                   <select
@@ -162,7 +162,7 @@ export function ConnectLandingPageModal({
                       setSelectedWebsiteProjectId(e.target.value);
                       setSelectedPageId("");
                     }}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
+                    className="w-full bg-white dark:bg-gray-950 border border-gray-250 dark:border-gray-800 rounded-lg px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-lime-400 focus:ring-2 focus:ring-lime-50 dark:focus:ring-lime-950/20 transition cursor-pointer"
                   >
                     <option value="">-- Chọn dự án website --</option>
                     {websiteProjects?.map((proj) => (
@@ -177,18 +177,18 @@ export function ConnectLandingPageModal({
               {/* Page select */}
               {selectedWebsiteProjectId && (
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                     Trang Landing Page con
                   </label>
                   {loadingPages ? (
-                    <div className="flex items-center justify-center py-3 bg-slate-50 border border-slate-150 rounded-xl">
-                      <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                    <div className="flex items-center justify-center py-3 bg-gray-50 dark:bg-gray-950 border border-gray-150 dark:border-gray-800 rounded-lg">
+                      <Loader2 className="w-5 h-5 animate-spin text-lime-500" />
                     </div>
                   ) : (
                     <select
                       value={selectedPageId}
                       onChange={(e) => setSelectedPageId(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
+                      className="w-full bg-white dark:bg-gray-950 border border-gray-250 dark:border-gray-800 rounded-lg px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-lime-400 focus:ring-2 focus:ring-lime-50 dark:focus:ring-lime-950/20 transition cursor-pointer"
                     >
                       <option value="">-- Chọn trang con --</option>
                       {websitePages?.map((page) => (
@@ -203,11 +203,11 @@ export function ConnectLandingPageModal({
 
               {/* Status Warning if draft */}
               {selectedPageId && websitePages?.find(p => p.id === selectedPageId)?.status === "draft" && (
-                <div className="bg-amber-50 border border-amber-100 text-amber-800 text-xs px-4 py-3.5 rounded-xl flex gap-2.5">
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-amber-805 dark:text-amber-350 text-xs px-4 py-3.5 rounded-xl flex gap-2.5">
                   <AlertCircle className="w-4.5 h-4.5 text-amber-500 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-extrabold block">Trang chưa được xuất bản!</span>
-                    <span className="text-[11px] font-medium text-amber-700 block mt-0.5">
+                    <span className="font-bold block">Trang chưa được xuất bản!</span>
+                    <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 block mt-0.5">
                       Trang này đang ở trạng thái bản nháp. Bạn vẫn có thể liên kết nó, nhưng cần xuất bản trước khi chạy quét SEO.
                     </span>
                   </div>
@@ -218,12 +218,12 @@ export function ConnectLandingPageModal({
                 <button
                   onClick={handleLinkInternal}
                   disabled={linkMutation.isPending || !selectedPageId}
-                  className="w-full bg-slate-950 text-white font-extrabold text-xs py-3.5 rounded-xl hover:bg-slate-900 transition flex items-center justify-center gap-2 shadow-lg shadow-slate-950/15 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-lime-500 text-white font-semibold text-xs py-3 rounded-lg hover:bg-lime-600 transition flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer"
                 >
                   {linkMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      Đang xử lý...
+                      Đang kết nối...
                     </>
                   ) : (
                     <>
@@ -237,7 +237,7 @@ export function ConnectLandingPageModal({
           ) : (
             <form onSubmit={handleSubmit(handleLinkExternal)} className="space-y-4">
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                   Đường dẫn Landing Page URL
                 </label>
                 <div className="relative">
@@ -245,13 +245,13 @@ export function ConnectLandingPageModal({
                     type="text"
                     placeholder="https://example.com/landing-page"
                     {...register("pageUrl")}
-                    className={`w-full bg-white border ${
-                      errors.pageUrl ? "border-rose-400 focus:ring-rose-200" : "border-slate-200 focus:ring-slate-900"
-                    } rounded-xl px-4 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:border-transparent transition`}
+                    className={`w-full bg-white dark:bg-gray-950 border ${
+                      errors.pageUrl ? "border-rose-450 focus:ring-rose-100" : "border-gray-250 dark:border-gray-800 focus:border-lime-400 focus:ring-lime-50 dark:focus:ring-lime-950/20"
+                    } rounded-lg px-4 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:border-transparent transition`}
                   />
                 </div>
                 {errors.pageUrl && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1.5">
+                  <p className="text-[10px] font-bold text-rose-500 mt-1.5 animate-fadeIn">
                     {errors.pageUrl.message}
                   </p>
                 )}
@@ -261,7 +261,7 @@ export function ConnectLandingPageModal({
                 <button
                   type="submit"
                   disabled={linkMutation.isPending}
-                  className="w-full bg-slate-950 text-white font-extrabold text-xs py-3.5 rounded-xl hover:bg-slate-900 transition flex items-center justify-center gap-2 shadow-lg shadow-slate-950/15 disabled:opacity-50"
+                  className="w-full bg-lime-500 text-white font-semibold text-xs py-3 rounded-lg hover:bg-lime-600 transition flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 select-none cursor-pointer"
                 >
                   {linkMutation.isPending ? (
                     <>

@@ -38,7 +38,7 @@ function SearchParamsToast() {
 
 export function SeoAutomationPage() {
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 min-h-screen text-slate-800 pb-16 relative">
+    <div className="flex-1 flex flex-col bg-gray-50/50 dark:bg-gray-900 min-h-screen text-slate-800 dark:text-gray-100 pb-16 relative">
       {/* Toast Notification wrapped in Suspense for search params */}
       <Suspense fallback={null}>
         <SearchParamsToast />
@@ -48,8 +48,8 @@ export function SeoAutomationPage() {
       <SeoAutomationHero />
 
       {/* Overlapping Rounded Projects Panel Container */}
-      <div className="max-w-7xl w-full mx-auto px-4 md:px-8 -mt-12 relative z-10">
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-2xl">
+      <div className="max-w-7xl w-full mx-auto px-4 md:px-8 -mt-10 relative z-10">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-250 dark:border-gray-800 p-6 md:p-8 shadow-theme-xs">
           <SeoProjectList />
         </div>
       </div>
