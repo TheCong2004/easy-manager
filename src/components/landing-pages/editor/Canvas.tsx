@@ -641,7 +641,12 @@ export const Canvas: React.FC<CanvasProps> = ({
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const canvasWidth = DEVICE_WIDTHS[deviceMode];
-  const minPageHeight = 1600;
+  const hasPreservedHtmlPage = sections.some(
+    (section) =>
+      section.type === "custom_section" &&
+      (section.children ?? []).some((child) => isPreservedHtmlBlock(child)),
+  );
+  const minPageHeight = hasPreservedHtmlPage ? 900 : 1600;
   const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
   
   const fitZoom = viewportWidth
