@@ -791,6 +791,26 @@ export const HtmlCodeBlock: React.FC<{
 }) => {
   const { code, height, preserveHtml, mode } = props;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const latestPropsRef = React.useRef(props);
+
+  React.useEffect(() => {
+    latestPropsRef.current = props;
+  }, [props]);
+
+  const emitPropsUpdate = React.useCallback(
+    (patch: Record<string, unknown>, silent = false) => {
+      const nextProps = {
+        ...latestPropsRef.current,
+        ...patch,
+      };
+
+      latestPropsRef.current = nextProps;
+      const updateFn = silent ? (onUpdateSilent || onUpdate) : onUpdate;
+      updateFn?.(nextProps);
+    },
+    [onUpdate, onUpdateSilent],
+  );
+
   const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
   const lastLoadedCodeRef = useRef<string>("");
 
@@ -1093,12 +1113,10 @@ export const HtmlCodeBlock: React.FC<{
       return ax - bx;
     });
 
-    const updateFn = onUpdateSilent || onUpdate;
-    updateFn?.({
-      ...props,
+    emitPropsUpdate({
       htmlOutline: outline.slice(0, 350),
-    });
-  }, [onUpdate, onUpdateSilent, props]);
+    }, true);
+  }, [emitPropsUpdate]);
 
   const getIframeElementInfo = React.useCallback((el: HTMLElement) => {
     const tag = el.tagName.toLowerCase();
@@ -1191,8 +1209,7 @@ export const HtmlCodeBlock: React.FC<{
 
     onSelect?.();
 
-    const updateFn = onUpdateSilent || onUpdate;
-    updateFn?.({
+    emitPropsUpdate({
       selectedHtmlElement: {
         id: elementId,
         tag,
@@ -1202,8 +1219,8 @@ export const HtmlCodeBlock: React.FC<{
         src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
         alt: tag === "img" ? el.getAttribute("alt") || "" : "",
       },
-    });
-  }, [onSelect, onUpdate, onUpdateSilent]);
+    }, true);
+  }, [onSelect, emitPropsUpdate]);
 
   const serializeIframeHtml = React.useCallback(() => {
     const iframe = iframeRef.current;
@@ -1365,8 +1382,7 @@ export const HtmlCodeBlock: React.FC<{
       const info = getIframeElementInfo(dragState.el);
       const nextHtml = serializeIframeHtml();
 
-      onUpdate?.({
-        ...props,
+      emitPropsUpdate({
         code: nextHtml,
         selectedHtmlElement: info,
       });
@@ -1384,9 +1400,8 @@ export const HtmlCodeBlock: React.FC<{
     doc.addEventListener("pointerup", handlePointerUp, true);
     doc.addEventListener("pointercancel", handlePointerUp, true);
   }, [
+    emitPropsUpdate,
     getIframeElementInfo,
-    onUpdate,
-    props,
     scanIframeDom,
     selectIframeElement,
     serializeIframeHtml,
@@ -1476,15 +1491,14 @@ export const HtmlCodeBlock: React.FC<{
       // Update the ref so the useEffect doesn't trigger iframe reload
       lastLoadedCodeRef.current = nextHtml;
 
-      onUpdate?.({
-        ...props,
+      emitPropsUpdate({
         code: nextHtml,
         selectedHtmlElement: nextSelectedElement,
       });
 
       window.setTimeout(scanIframeDom, 100);
     },
-    [onUpdate, props, scanIframeDom, serializeIframeHtml],
+    [emitPropsUpdate, scanIframeDom, serializeIframeHtml],
   );
 
   const handleIframeClick = useCallback((event: MouseEvent) => {
