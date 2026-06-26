@@ -1,110 +1,168 @@
-/**
- * Lọc và loại bỏ các thành phần nguy hại (XSS, script độc hại) từ mã HTML nguồn.
- */
-export function sanitizeHtml(html: string): string {
+export type SanitizeHtmlOptions = {
+  preserveScripts?: boolean;
+  removeOpenDesignScripts?: boolean;
+  allowIframes?: boolean;
+};
+
+function isOpenDesignScript(el: Element): boolean {
+  return Array.from(el.attributes).some((attr) => {
+    const name = attr.name.toLowerCase();
+    return (
+      name.startsWith("data-od") ||
+      name === "data-od-sandbox-shim" ||
+      name === "data-od-tweaks-bridge" ||
+      name === "data-od-snapshot-bridge" ||
+      name === "data-od-srcdoc-transport-activation"
+    );
+  });
+}
+
+function isDangerousUrl(value: string): boolean {
+  return /^\s*javascript:/i.test(value) || /^\s*vbscript:/i.test(value);
+}
+
+export function sanitizeHtml(
+  html: string,
+  options: SanitizeHtmlOptions = {},
+): string {
   if (typeof window === "undefined") {
-    // Dự phòng bằng Regex nếu chạy ở môi trường Node.js Serverless mà không có DOMParser
-    return fallbackRegexSanitize(html);
+    return fallbackRegexSanitize(html, options);
   }
 
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    
-    // Thực hiện khử độc trên toàn bộ tài liệu
-    sanitizeElement(doc.body);
-    if (doc.head) {
-      sanitizeElement(doc.head);
-    }
-    
-    // Trả về HTML đã lọc sạch
-    return doc.documentElement.innerHTML;
+
+    if (doc.head) sanitizeElement(doc.head, options);
+    if (doc.body) sanitizeElement(doc.body, options);
+
+    return `<!doctype html>\n${doc.documentElement.outerHTML}`;
   } catch (err) {
     console.error("DOMParser sanitize failed, using regex fallback:", err);
-    return fallbackRegexSanitize(html);
+    return fallbackRegexSanitize(html, options);
   }
 }
 
-/**
- * Quét DOM và xóa bỏ script, inline event handler và javascript: links trên phần tử.
- */
-export function sanitizeElement(root: HTMLElement): void {
-  // 1. Loại bỏ tất cả các thẻ script nguy hiểm
+export function sanitizeElement(
+  root: HTMLElement,
+  options: SanitizeHtmlOptions = {},
+): void {
+  const {
+    preserveScripts = false,
+    removeOpenDesignScripts = true,
+    allowIframes = true,
+  } = options;
+
   const scripts = Array.from(root.querySelectorAll("script"));
+
   for (const script of scripts) {
-    script.parentNode?.removeChild(script);
+    if (removeOpenDesignScripts && isOpenDesignScript(script)) {
+      script.remove();
+      continue;
+    }
+
+    if (!preserveScripts) {
+      script.remove();
+      continue;
+    }
+
+    const src = script.getAttribute("src");
+    if (src && isDangerousUrl(src)) {
+      script.remove();
+      continue;
+    }
+
+    // Giữ script chính của landing page trong preserve mode.
+    // Script sẽ chạy trong iframe sandbox, không chạy trực tiếp trong editor.
   }
 
-  // 2. Loại bỏ các thẻ nhúng mã nguồn bên ngoài nguy hiểm (embed, object)
-  const embeds = Array.from(root.querySelectorAll("embed, object"));
-  for (const el of embeds) {
-    el.parentNode?.removeChild(el);
+  const blockedEmbeds = Array.from(root.querySelectorAll("embed, object"));
+  for (const el of blockedEmbeds) {
+    el.remove();
   }
 
-  // 3. Quét tất cả các tag con để làm sạch thuộc tính
   const allElements = Array.from(root.querySelectorAll("*")) as HTMLElement[];
-  
-  // Đưa cả phần tử gốc vào danh sách quét
   allElements.push(root);
 
   for (const el of allElements) {
-    // 3.1 Xóa tất cả các thuộc tính sự kiện inline (bắt đầu bằng "on" như onclick, onerror, onload...)
+    const tagName = el.tagName.toLowerCase();
+
+    if (tagName === "iframe") {
+      if (!allowIframes) {
+        el.remove();
+        continue;
+      }
+
+      el.setAttribute(
+        "sandbox",
+        "allow-same-origin allow-scripts allow-forms allow-popups",
+      );
+    }
+
     const attrsToRemove: string[] = [];
+
     for (let i = 0; i < el.attributes.length; i++) {
       const attr = el.attributes[i];
-      if (attr.name.toLowerCase().startsWith("on")) {
+      const name = attr.name.toLowerCase();
+      const value = attr.value || "";
+
+      if (name.startsWith("on")) {
+        attrsToRemove.push(attr.name);
+        continue;
+      }
+
+      if (
+        ["href", "src", "xlink:href", "formaction", "action"].includes(name) &&
+        isDangerousUrl(value)
+      ) {
+        attrsToRemove.push(attr.name);
+        continue;
+      }
+
+      if (name === "style" && /url\(\s*['"]?\s*(javascript:|vbscript:)/i.test(value)) {
         attrsToRemove.push(attr.name);
       }
     }
-    for (const attrName of attrsToRemove) {
-      el.removeAttribute(attrName);
-    }
 
-    // 3.2 Lọc liên kết javascript: độc hại
-    const href = el.getAttribute("href");
-    if (href && href.trim().toLowerCase().startsWith("javascript:")) {
-      el.setAttribute("href", "#");
-    }
-
-    const src = el.getAttribute("src");
-    if (src && src.trim().toLowerCase().startsWith("javascript:")) {
-      el.removeAttribute("src");
-    }
-
-    const action = el.getAttribute("action");
-    if (action && action.trim().toLowerCase().startsWith("javascript:")) {
-      el.removeAttribute("action");
-    }
-    
-    // 3.3 Chặn iframe load script lạ hoặc gỡ bỏ sandboxing
-    if (el.tagName.toLowerCase() === "iframe") {
-      el.setAttribute("sandbox", "allow-same-origin allow-scripts");
+    for (const attr of attrsToRemove) {
+      el.removeAttribute(attr);
     }
   }
 }
 
-/**
- * Bộ lọc dự phòng bằng Regex để xử lý chuỗi thô khi không có môi trường DOM trình duyệt.
- */
-function fallbackRegexSanitize(html: string): string {
+function fallbackRegexSanitize(
+  html: string,
+  options: SanitizeHtmlOptions = {},
+): string {
   let cleaned = html;
-  
-  // Xóa bỏ hoàn toàn cặp thẻ <script>...</script>
-  cleaned = cleaned.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
-  
-  // Xóa bỏ các cặp thẻ nhúng <embed> và <object>
-  cleaned = cleaned.replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, "");
-  cleaned = cleaned.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "");
-  
-  // Xóa bỏ các inline event handler (ví dụ: onclick="...", onerror=...)
+
+  const {
+    preserveScripts = false,
+    removeOpenDesignScripts = true,
+  } = options;
+
+  if (removeOpenDesignScripts) {
+      cleaned = cleaned.replace(
+        /<script\b[^>]*(data-od[-\w]*)(?:=["'][^"']*["'])?[^>]*>[\s\S]*?<\/script>/gi,
+        "",
+      );
+  }
+
+  if (!preserveScripts) {
+    cleaned = cleaned.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  }
+
+  cleaned = cleaned.replace(/<embed\b[^>]*>[\s\S]*?<\/embed>/gi, "");
+  cleaned = cleaned.replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "");
+
   cleaned = cleaned.replace(/\s+on\w+\s*=\s*(['"]).*?\1/gi, "");
   cleaned = cleaned.replace(/\s+on\w+\s*=\s*[^>\s]+/gi, "");
-  
-  // Chặn giao thức javascript: trong liên kết
-  cleaned = cleaned.replace(/href\s*=\s*(['"])javascript:.*?\1/gi, 'href="#"');
-  cleaned = cleaned.replace(/src\s*=\s*(['"])javascript:.*?\1/gi, 'src=""');
-  cleaned = cleaned.replace(/action\s*=\s*(['"])javascript:.*?\1/gi, 'action=""');
-  
+
+  cleaned = cleaned.replace(/href\s*=\s*(['"])\s*javascript:.*?\1/gi, 'href="#"');
+  cleaned = cleaned.replace(/src\s*=\s*(['"])\s*javascript:.*?\1/gi, 'src=""');
+  cleaned = cleaned.replace(/action\s*=\s*(['"])\s*javascript:.*?\1/gi, 'action=""');
+
   return cleaned;
 }
+
 export default sanitizeHtml;

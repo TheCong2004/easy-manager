@@ -38,6 +38,7 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
 
   // Import fields
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [importMode, setImportMode] = useState<"preserve" | "convert">("preserve");
 
   // PPC fields
   const [ppcSource, setPpcSource] = useState("google_ads");
@@ -61,6 +62,7 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
       setCloneMode("visual_clone");
       setCloneKeyword("");
       setImportFile(null);
+      setImportMode("preserve");
       setPpcSource("google_ads");
       setPpcCampaignId("");
       setPpcKeyword("");
@@ -108,6 +110,7 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
       if (!targetName) targetName = importFile?.name.split(".")[0] || "Imported Page";
       params = {
         file: importFile,
+        importMode,
       };
     } else if (activeTab === "ppc") {
       if (!targetName) targetName = ppcKeyword ? `PPC ${ppcKeyword}` : "PPC Campaign Page";
@@ -358,6 +361,54 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
                       {importFile ? importFile.name : "Chọn file hoặc thả tệp .zip, .html vào đây"}
                     </span>
                     <span className="block text-[10px] text-slate-400 font-semibold">Tối đa 50MB</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Thêm lựa chọn Import Mode */}
+              <div className="space-y-1.5 pt-2">
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block">
+                  Chế độ nhập khẩu (Import Mode)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`flex flex-col p-3 border rounded-xl cursor-pointer transition select-none ${importMode === "preserve" ? "border-purple-650 bg-purple-500/5" : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-transparent"}`}>
+                    <input
+                      type="radio"
+                      name="importMode"
+                      value="preserve"
+                      checked={importMode === "preserve"}
+                      onChange={() => setImportMode("preserve")}
+                      className="sr-only"
+                    />
+                    <span className="text-xs font-bold text-slate-800 dark:text-gray-100 flex items-center gap-1.5">
+                      <span className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center ${importMode === "preserve" ? "border-purple-600" : "border-gray-400"}`}>
+                        {importMode === "preserve" && <span className="h-2 w-2 rounded-full bg-purple-600" />}
+                      </span>
+                      Bảo toàn bố cục (Preserve)
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">
+                      Khuyên dùng. Giữ nguyên 100% giao diện, CSS và cấu trúc gốc hiển thị qua Iframe.
+                    </span>
+                  </label>
+
+                  <label className={`flex flex-col p-3 border rounded-xl cursor-pointer transition select-none ${importMode === "convert" ? "border-purple-650 bg-purple-500/5" : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-transparent"}`}>
+                    <input
+                      type="radio"
+                      name="importMode"
+                      value="convert"
+                      checked={importMode === "convert"}
+                      onChange={() => setImportMode("convert")}
+                      className="sr-only"
+                    />
+                    <span className="text-xs font-bold text-slate-800 dark:text-gray-100 flex items-center gap-1.5">
+                      <span className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center ${importMode === "convert" ? "border-purple-600" : "border-gray-400"}`}>
+                        {importMode === "convert" && <span className="h-2 w-2 rounded-full bg-purple-600" />}
+                      </span>
+                      Khối kéo thả (Convert)
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">
+                      Thử nghiệm. Phân rã trang thành các khối Text, Image, Button để sửa đổi kéo thả.
+                    </span>
                   </label>
                 </div>
               </div>

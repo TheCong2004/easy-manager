@@ -1,4 +1,4 @@
-import { EditorBlock, EditorPageSettings } from "@/components/landing-pages/editor/types";
+import { EditorBlock } from "@/components/landing-pages/editor/types";
 
 /**
  * Kiểu dữ liệu mô tả một tài nguyên (ảnh, font, video...) được trích xuất từ file ZIP/HTML.

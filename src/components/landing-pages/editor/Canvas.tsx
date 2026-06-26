@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useDrop } from "react-dnd";
 import {
   EditorBlock, BlockType, DND_TYPES, DeviceMode, DEVICE_WIDTHS,
-  ONLOOK_ATTRIBUTES, ensureOnlookBlockMeta, ElementFrame, getEffectiveFrame,
+  ONLOOK_ATTRIBUTES, ElementFrame, getEffectiveFrame,
   getNodeKind,
 } from "./types";
 import { HeroBlock } from "./blocks/HeroBlock";
@@ -21,14 +21,76 @@ import {
   SurveyBlock, MenuBlock, HtmlCodeBlock
 } from "./blocks/NewLadiBlocks";
 
+function isPreservedHtmlBlock(block: EditorBlock): boolean {
+  if (block.type !== "html_code") return false;
+
+  const props = (block.props ?? {}) as {
+    preserveHtml?: boolean;
+    mode?: string;
+  };
+
+  return props.preserveHtml === true || props.mode === "iframe";
+}
+
+
+
+function getPreservedHtmlSectionHeight(section: EditorBlock): number | null {
+  const children = section.children ?? [];
+  let maxHeight = 0;
+
+  for (const child of children) {
+    if (!isPreservedHtmlBlock(child)) continue;
+
+    const props = (child.props ?? {}) as {
+      height?: number | string;
+    };
+
+    const childY = child.frame?.y ?? 0;
+
+    const propHeight = Number(props.height);
+    const frameHeight = Number(child.frame?.height);
+
+    const htmlHeight = Math.max(
+      Number.isFinite(propHeight) ? propHeight : 0,
+      Number.isFinite(frameHeight) ? frameHeight : 0,
+      1200
+    );
+
+    maxHeight = Math.max(maxHeight, childY + htmlHeight);
+  }
+
+  return maxHeight > 0 ? Math.ceil(maxHeight) : null;
+}
+
+function findBlockRecursive(nodes: EditorBlock[], id: string): EditorBlock | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findBlockRecursive(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 // ── Block Renderer ────────────────────────────────────────────
 const BlockRenderer: React.FC<{
   block: EditorBlock;
   isSelected: boolean;
   onSelect: () => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
   globalCss?: string;
-}> = ({ block, isSelected, onSelect, onUpdateBlock, globalCss }) => {
+  parentId?: string;
+}> = ({
+  block,
+  isSelected,
+  onSelect,
+  onUpdateBlock,
+  onUpdateNodeFrame,
+  globalCss,
+  parentId,
+}) => {
   const update = (nextProps: Record<string, unknown>) => onUpdateBlock(block.id, nextProps);
 
   switch (block.type) {
@@ -62,7 +124,28 @@ const BlockRenderer: React.FC<{
     case "table": return <TableBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "survey": return <SurveyBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "menu": return <MenuBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "html_code": return <HtmlCodeBlock props={block.props} isSelected={isSelected} onSelect={onSelect} globalCss={globalCss} />;
+    case "html_code": return (
+      <HtmlCodeBlock
+        props={block.props}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        globalCss={globalCss}
+        onHeightChange={(nextHeight) => {
+          console.log(`[Canvas/HtmlCodeBlock] Height changed for block ${block.id}: ${nextHeight}`);
+          onUpdateBlock(block.id, { height: nextHeight });
+          if (onUpdateNodeFrame) {
+            onUpdateNodeFrame(block.id, { height: nextHeight });
+          }
+          if (parentId) {
+            console.log(`[Canvas/HtmlCodeBlock] Updating parent section ${parentId} minHeight to ${nextHeight + 80}`);
+            onUpdateBlock(parentId, { minHeight: nextHeight + 80 });
+            if (onUpdateNodeFrame) {
+              onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
+            }
+          }
+        }}
+      />
+    );
     default:
       return null;
   }
@@ -256,6 +339,7 @@ const AbsoluteElementWrapper: React.FC<{
   onPointerDownResize: (e: React.PointerEvent, block: EditorBlock, direction: string) => void;
   onPointerDownRotate: (e: React.PointerEvent, block: EditorBlock) => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
@@ -271,6 +355,7 @@ const AbsoluteElementWrapper: React.FC<{
   onPointerDownResize,
   onPointerDownRotate,
   onUpdateBlock,
+  onUpdateNodeFrame,
   onDeleteBlock,
   onDuplicateBlock,
   onMoveNodeZIndex,
@@ -285,6 +370,8 @@ const AbsoluteElementWrapper: React.FC<{
   const finalZ = draftFrame?.zIndex !== undefined ? draftFrame.zIndex : frame.zIndex;
   const finalR = draftFrame?.rotate !== undefined ? draftFrame.rotate : (frame.rotate || 0);
 
+  const preservedHtmlBlock = isPreservedHtmlBlock(block);
+
   const style: React.CSSProperties = {
     position: "absolute",
     left: `${finalX}px`,
@@ -294,13 +381,23 @@ const AbsoluteElementWrapper: React.FC<{
     zIndex: finalZ,
     transform: finalR ? `rotate(${finalR}deg)` : undefined,
     userSelect: "none",
+    overflow: preservedHtmlBlock ? "visible" : undefined,
   };
 
   return (
     <div
       style={style}
       onPointerDown={(e) => {
-        if ((e.target as HTMLElement).closest("[data-handle]")) return;
+        const target = e.target as HTMLElement;
+
+        if (target.closest("[data-handle]")) return;
+
+        // Với imported HTML preserve mode, iframe cần nhận pointer/mousemove/scroll.
+        // Không kéo block khi click trực tiếp vào iframe.
+        if (preservedHtmlBlock && target.tagName.toLowerCase() === "iframe") {
+          return;
+        }
+
         onPointerDownDrag(e, block);
       }}
       onClick={onSelect}
@@ -312,8 +409,23 @@ const AbsoluteElementWrapper: React.FC<{
         [ONLOOK_ATTRIBUTES.DATA_ONLOOK_COMPONENT_NAME]: block.componentName,
       }}
     >
-      <div style={{ width: "100%", height: "100%", pointerEvents: "none" }}>
-        <BlockRenderer block={block} isSelected={false} onSelect={() => {}} onUpdateBlock={onUpdateBlock} globalCss={globalCss} />
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents: preservedHtmlBlock ? "auto" : "none",
+          overflow: preservedHtmlBlock ? "visible" : "hidden",
+        }}
+      >
+        <BlockRenderer
+          block={block}
+          isSelected={isSelected}
+          onSelect={() => {}}
+          onUpdateBlock={onUpdateBlock}
+          onUpdateNodeFrame={onUpdateNodeFrame}
+          globalCss={globalCss}
+          parentId={block.parentId || undefined}
+        />
       </div>
 
       {isSelected && (
@@ -353,7 +465,7 @@ const SectionDropZoneWrapper: React.FC<{
   ) => void;
   children: React.ReactNode;
 }> = ({ section, zoom, onDropItem, children }) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
 
   const [{ isOver, canDrop }, drop] = useDrop<
     { type: string; blockType?: BlockType; blockId?: string },
@@ -390,11 +502,14 @@ const SectionDropZoneWrapper: React.FC<{
     }),
   });
 
-  drop(ref);
+  const connectDrop = useCallback((node: HTMLDivElement | null) => {
+    ref.current = node;
+    drop(node);
+  }, [drop]);
 
   return (
     <div
-      ref={ref}
+      ref={connectDrop}
       className={`relative w-full transition-colors ${
         isOver && canDrop ? "bg-purple-500/5 ring-1 ring-purple-300" : ""
       }`}
@@ -533,7 +648,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     ? Math.min(1, Math.max(0.28, (viewportWidth - 48) / canvasWidth))
     : 1;
   const effectiveZoom = Math.min(zoom, fitZoom);
-  const scaledWidth = canvasWidth * effectiveZoom;
 
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [draftFrame, setDraftFrame] = useState<Partial<ElementFrame> | null>(null);
@@ -557,18 +671,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     const node = findBlockRecursive(sections, id);
     return node?.parentId ?? null;
   }, [sections]);
-
-  // Recursively find block
-  const findBlockRecursive = (nodes: EditorBlock[], id: string): EditorBlock | null => {
-    for (const node of nodes) {
-      if (node.id === id) return node;
-      if (node.children) {
-        const found = findBlockRecursive(node.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
 
   // Pointer Interaction Handlers
   const handlePointerDownDrag = useCallback((e: React.PointerEvent, block: EditorBlock) => {
@@ -868,13 +970,15 @@ export const Canvas: React.FC<CanvasProps> = ({
           />
         )}
 
-        {/* Stack Sections Vertically */}
         {sections.map((section, index) => {
-          const hasAbsoluteChildren = (section.children ?? []).length > 0;
+          const preservedHtmlHeight = getPreservedHtmlSectionHeight(section);
+          const hasPreservedHtmlChild = preservedHtmlHeight !== null;
 
-          const isSelfContained = SELF_CONTAINED_SECTION_TYPES.has(section.type);
+          const isSelfContained =
+            SELF_CONTAINED_SECTION_TYPES.has(section.type) ||
+            hasPreservedHtmlChild;
 
-          const naturalHeight =
+          const baseNaturalHeight =
             section.frame?.height ??
             (typeof section.props?.minHeight === "number"
               ? (section.props.minHeight as number)
@@ -882,18 +986,22 @@ export const Canvas: React.FC<CanvasProps> = ({
               ? 500
               : 120);
 
+          const naturalHeight = hasPreservedHtmlChild
+            ? Math.max(baseNaturalHeight, preservedHtmlHeight ?? 0, 1200)
+            : baseNaturalHeight;
+
           const sectionStyle: React.CSSProperties = isSelfContained
             ? {
-                // Let rich components render at their intrinsic height
+                // Preserve HTML cần visible để iframe/full page không bị cắt.
                 position: "relative",
                 width: "100%",
                 minHeight: `${naturalHeight}px`,
+                height: hasPreservedHtmlChild ? `${naturalHeight}px` : undefined,
                 zIndex: section.frame?.zIndex ?? 1,
                 overflow: "visible",
                 border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
               }
             : {
-                // Explicit height for container sections with absolute elements
                 position: "relative",
                 width: "100%",
                 height: `${naturalHeight}px`,
@@ -957,6 +1065,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       onPointerDownResize={handlePointerDownResize}
                       onPointerDownRotate={handlePointerDownRotate}
                       onUpdateBlock={onUpdateBlock}
+                      onUpdateNodeFrame={onUpdateNodeFrame}
                       onDeleteBlock={onDeleteBlock}
                       onDuplicateBlock={onDuplicateBlock}
                       onMoveNodeZIndex={onMoveNodeZIndex}

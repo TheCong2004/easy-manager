@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { parseHtmlToImportedPageSchema } from "./html-to-landing-schema";
+import { parseHtmlToEditableBlocksSchema, parseHtmlToPreservedHtmlSchema } from "./html-to-landing-schema";
 import { ImportedLandingPageSchema, ImportedAsset } from "./import-types";
 import { sanitizeElement } from "./html-sanitizer";
 import {
@@ -8,22 +8,70 @@ import {
   getBase64DataUrl,
   rewriteCssUrls,
   getMimeType,
+  unwrapProxyUrl,
+  findAssetInMap,
 } from "./asset-rewriter";
 
 /**
+ * Tìm một tập tin trong ZIP một cách linh hoạt, hỗ trợ so khớp đường dẫn chuẩn hóa
+ * và cơ chế tìm kiếm tên tệp dự phòng (filename fallback).
+ */
+export function findFileInZip(
+  zip: JSZip,
+  basePath: string,
+  relativePath: string
+): { file: JSZip.JSZipObject; zipPath: string } | null {
+  const resolved = resolveRelativePath(basePath, relativePath);
+  const normalized = resolved.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\//, "").toLowerCase();
+
+  // 1. Tìm khớp chính xác (sau khi chuẩn hóa)
+  const exactKey = Object.keys(zip.files).find((key) => {
+    const normKey = key.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\//, "").toLowerCase();
+    return normKey === normalized;
+  });
+
+  if (exactKey) {
+    return { file: zip.files[exactKey], zipPath: exactKey };
+  }
+
+  // 2. Tìm khớp tương đối bỏ qua folder cha (nếu toàn bộ zip nằm trong 1 folder cha)
+  const baseParts = basePath.split("/").slice(0, -1);
+  const rootFolder = baseParts.length > 0 ? baseParts[0] + "/" : "";
+  if (rootFolder) {
+    const resolvedWithRoot = resolveRelativePath(rootFolder + basePath.split("/").pop(), relativePath);
+    const normalizedWithRoot = resolvedWithRoot.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\//, "").toLowerCase();
+    const matchWithRoot = Object.keys(zip.files).find((key) => {
+      const normKey = key.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\//, "").toLowerCase();
+      return normKey === normalizedWithRoot;
+    });
+    if (matchWithRoot) {
+      return { file: zip.files[matchWithRoot], zipPath: matchWithRoot };
+    }
+  }
+
+  // 3. Cơ chế dự phòng cuối cùng: tìm theo tên file ở cuối đường dẫn
+  const fileName = relativePath.split("/").pop()?.split("?")[0].split("#")[0].toLowerCase();
+  if (fileName) {
+    const fallbackKey = Object.keys(zip.files).find((key) => {
+      const normKey = key.replace(/\\/g, "/").toLowerCase();
+      return normKey.endsWith("/" + fileName) || normKey === fileName;
+    });
+    if (fallbackKey) {
+      return { file: zip.files[fallbackKey], zipPath: fallbackKey };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Xử lý nhập khẩu toàn bộ tài liệu từ file ZIP tải lên ở client.
- * Quy trình:
- * 1. Giải nén ZIP
- * 2. Tìm tệp HTML chính (ưu tiên index.html)
- * 3. Tìm các file CSS tương đối và gộp (inline) nội dung đã được viết lại URL vào HTML
- * 4. Trích xuất và tải lên (hoặc inline base64) hình ảnh, font chữ, video
- * 5. Lọc mã độc hại (sanitize)
- * 6. Phân tích sang schema EditorBlock của trang.
  */
 export async function importZipLandingPage(
   file: File,
   pageId: string,
-  onProgress?: (progress: number, statusText: string) => void
+  onProgress?: (progress: number, statusText: string) => void,
+  importMode: "preserve" | "convert" = "preserve"
 ): Promise<ImportedLandingPageSchema> {
   const updateProgress = (progress: number, statusText: string) => {
     if (onProgress) onProgress(progress, statusText);
@@ -54,6 +102,34 @@ export async function importZipLandingPage(
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlRawContent, "text/html");
 
+  // 1.5 Khử bọc (unwrap) các liên kết ảnh/tài nguyên proxy (ví dụ: /api/asset-cache?url=...) về đường dẫn tuyệt đối trực tiếp
+  const allElementsWithProxy = Array.from(doc.querySelectorAll("[src], [srcset], [style], link[rel='stylesheet']"));
+  for (const el of allElementsWithProxy) {
+    const src = el.getAttribute("src");
+    if (src) {
+      const unwrapped = unwrapProxyUrl(src);
+      if (unwrapped !== src) el.setAttribute("src", unwrapped);
+    }
+    const srcset = el.getAttribute("srcset");
+    if (srcset) {
+      const unwrapped = unwrapProxyUrl(srcset);
+      if (unwrapped !== srcset) el.setAttribute("srcset", unwrapped);
+    }
+    const href = el.getAttribute("href");
+    if (href) {
+      const unwrapped = unwrapProxyUrl(href);
+      if (unwrapped !== href) el.setAttribute("href", unwrapped);
+    }
+    const style = el.getAttribute("style");
+    if (style && style.includes("url(")) {
+      const newStyle = style.replace(/url\(\s*(['"]?)(.*?)\1\s*\)/g, (match, quote, urlPath) => {
+        const unwrapped = unwrapProxyUrl(urlPath);
+        return `url(${quote}${unwrapped}${quote})`;
+      });
+      if (newStyle !== style) el.setAttribute("style", newStyle);
+    }
+  }
+
   // 2. Thu thập và xử lý các liên kết CSS nội bộ tương đối
   updateProgress(40, "Đang xử lý các tệp CSS tương đối...");
   const linkTags = Array.from(doc.querySelectorAll("link[rel='stylesheet']"));
@@ -65,9 +141,11 @@ export async function importZipLandingPage(
     if (!href || /^(https?:|\/\/|data:)/i.test(href)) {
       continue;
     }
-    const resolvedCssPath = resolveRelativePath(htmlFilePath, href);
-    if (loadedZip.files[resolvedCssPath]) {
-      localCssFiles.push({ tag: tag as HTMLLinkElement, zipPath: resolvedCssPath });
+    
+    // Tìm file CSS tương đối trong ZIP bằng cơ chế khớp linh hoạt
+    const foundCss = findFileInZip(zip, htmlFilePath, href);
+    if (foundCss) {
+      localCssFiles.push({ tag: tag as HTMLLinkElement, zipPath: foundCss.zipPath });
     }
   }
 
@@ -85,11 +163,10 @@ export async function importZipLandingPage(
     if (!src || /^(https?:|\/\/|data:)/i.test(src)) {
       continue;
     }
-    // Gỡ bỏ các query string nếu có (vd: image.png?v=1)
     const cleanSrc = src.split("?")[0].split("#")[0];
-    const resolvedAssetPath = resolveRelativePath(htmlFilePath, cleanSrc);
-    if (loadedZip.files[resolvedAssetPath]) {
-      localAssetPaths.add(resolvedAssetPath);
+    const foundAsset = findFileInZip(zip, htmlFilePath, cleanSrc);
+    if (foundAsset) {
+      localAssetPaths.add(foundAsset.zipPath);
     }
   }
 
@@ -102,9 +179,9 @@ export async function importZipLandingPage(
       const bgUrl = bgMatch[1].trim();
       if (!/^(https?:|\/\/|data:)/i.test(bgUrl)) {
         const cleanBg = bgUrl.split("?")[0].split("#")[0];
-        const resolvedAssetPath = resolveRelativePath(htmlFilePath, cleanBg);
-        if (loadedZip.files[resolvedAssetPath]) {
-          localAssetPaths.add(resolvedAssetPath);
+        const foundAsset = findFileInZip(zip, htmlFilePath, cleanBg);
+        if (foundAsset) {
+          localAssetPaths.add(foundAsset.zipPath);
         }
       }
     }
@@ -116,11 +193,12 @@ export async function importZipLandingPage(
     const urlsInCss = cssRaw.match(/url\(\s*(['"]?)(.*?)\1\s*\)/g) || [];
     for (const match of urlsInCss) {
       const urlPath = match.replace(/url\(\s*(['"]?)(.*?)\1\s*\)/, "$2").trim();
-      if (urlPath && !/^(https?:|\/\/|data:)/i.test(urlPath)) {
-        const cleanUrl = urlPath.split("?")[0].split("#")[0];
-        const resolvedAssetPath = resolveRelativePath(cssFile.zipPath, cleanUrl);
-        if (loadedZip.files[resolvedAssetPath]) {
-          localAssetPaths.add(resolvedAssetPath);
+      const unwrappedPath = unwrapProxyUrl(urlPath);
+      if (unwrappedPath && !/^(https?:|\/\/|data:)/i.test(unwrappedPath)) {
+        const cleanUrl = unwrappedPath.split("?")[0].split("#")[0];
+        const foundAsset = findFileInZip(zip, cssFile.zipPath, cleanUrl);
+        if (foundAsset) {
+          localAssetPaths.add(foundAsset.zipPath);
         }
       }
     }
@@ -160,7 +238,7 @@ export async function importZipLandingPage(
   for (const cssFile of localCssFiles) {
     let cssContent = await loadedZip.files[cssFile.zipPath].async("string");
     
-    // Viết lại url(...) trong CSS
+    // Viết lại url(...) trong CSS sử dụng assetMap
     cssContent = rewriteCssUrls(cssContent, cssFile.zipPath, assetMap);
 
     // Tạo thẻ <style> thay thế thẻ <link> để inlined CSS vào HTML trực tiếp
@@ -174,9 +252,7 @@ export async function importZipLandingPage(
   for (const el of elementsWithSrc) {
     const src = el.getAttribute("src");
     if (src && !/^(https?:|\/\/|data:)/i.test(src)) {
-      const cleanSrc = src.split("?")[0].split("#")[0];
-      const resolvedAssetPath = resolveRelativePath(htmlFilePath, cleanSrc);
-      const mappedUrl = assetMap.get(resolvedAssetPath);
+      const mappedUrl = findAssetInMap(htmlFilePath, src, assetMap);
       if (mappedUrl) {
         el.setAttribute("src", mappedUrl);
       }
@@ -184,9 +260,7 @@ export async function importZipLandingPage(
 
     const srcset = el.getAttribute("srcset");
     if (srcset && !/^(https?:|\/\/|data:)/i.test(srcset)) {
-      const cleanSrcset = srcset.split("?")[0].split("#")[0];
-      const resolvedAssetPath = resolveRelativePath(htmlFilePath, cleanSrcset);
-      const mappedUrl = assetMap.get(resolvedAssetPath);
+      const mappedUrl = findAssetInMap(htmlFilePath, srcset, assetMap);
       if (mappedUrl) {
         el.setAttribute("srcset", mappedUrl);
       }
@@ -201,9 +275,7 @@ export async function importZipLandingPage(
         if (/^(https?:|\/\/|data:)/i.test(urlPath)) {
           return match;
         }
-        const cleanBg = urlPath.split("?")[0].split("#")[0];
-        const resolvedAssetPath = resolveRelativePath(htmlFilePath, cleanBg);
-        const mappedUrl = assetMap.get(resolvedAssetPath);
+        const mappedUrl = findAssetInMap(htmlFilePath, urlPath, assetMap);
         if (mappedUrl) {
           return `url(${quote}${mappedUrl}${quote})`;
         }
@@ -214,20 +286,33 @@ export async function importZipLandingPage(
   }
 
   // 7. Bảo mật: Khử trùng, lọc mã độc hại (Sanitize HTML)
-  updateProgress(95, "Đang làm sạch và kiểm tra an toàn mã HTML...");
-  sanitizeElement(doc.body);
+ const shouldPreserveScripts = importMode === "preserve";
+
+  sanitizeElement(doc.body, {
+    preserveScripts: shouldPreserveScripts,
+    removeOpenDesignScripts: true,
+    allowIframes: shouldPreserveScripts,
+  });
+
   if (doc.head) {
-    sanitizeElement(doc.head);
+    sanitizeElement(doc.head, {
+      preserveScripts: shouldPreserveScripts,
+      removeOpenDesignScripts: true,
+      allowIframes: shouldPreserveScripts,
+    });
   }
 
   // 8. Chuyển đổi mã HTML sau khi inline hoàn chỉnh sang schema EditorBlock
-  updateProgress(98, "Đang phân tích cấu trúc và hoàn thiện giao diện...");
-  const inlinedHtmlContent = doc.documentElement.innerHTML;
-  const importedSchema = parseHtmlToImportedPageSchema(inlinedHtmlContent);
+  const fullHtmlForParser = `<!doctype html>\n${doc.documentElement.outerHTML}`;
 
-  // Gán lại danh sách assets đã import
-  importedSchema.assets = importedAssets;
+  const importedSchema =
+    importMode === "preserve"
+      ? parseHtmlToPreservedHtmlSchema(fullHtmlForParser)
+      : parseHtmlToEditableBlocksSchema(fullHtmlForParser);
 
-  updateProgress(100, "Nhập thiết kế thành công!");
-  return importedSchema;
-}
+    // Gán lại danh sách assets đã import
+    importedSchema.assets = importedAssets;
+
+    updateProgress(100, "Nhập thiết kế thành công!");
+    return importedSchema;
+  }

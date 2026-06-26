@@ -43,7 +43,7 @@ export const GalleryBlock: React.FC<{ props: GalleryProps; isSelected: boolean; 
 
 // ── Box Block ─────────────────────────────────────────────────
 export const BoxBlock: React.FC<{ props: BoxProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
-  const { bgColor, borderColor, borderWidth, borderRadius, paddingX, paddingY, shadow, title, description } = props;
+  const { bgColor, bgImage, borderColor, borderWidth, borderRadius, paddingX, paddingY, shadow, title, description } = props;
   const shadowClass = shadow === "sm" ? "shadow-sm" : shadow === "md" ? "shadow-md" : shadow === "lg" ? "shadow-lg" : "shadow-none";
 
   return (
@@ -57,6 +57,9 @@ export const BoxBlock: React.FC<{ props: BoxProps; isSelected: boolean; onSelect
         className={`w-full transition-all ${shadowClass}`}
         style={{
           backgroundColor: bgColor,
+          backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+          backgroundSize: bgImage ? "cover" : undefined,
+          backgroundPosition: bgImage ? "center" : undefined,
           borderColor: borderColor,
           borderWidth: `${borderWidth}px`,
           borderStyle: borderWidth > 0 ? "solid" : "none",
@@ -686,13 +689,22 @@ export const MenuBlock: React.FC<{ props: MenuProps; isSelected: boolean; onSele
 };
 
 // ── HTML Code Block ───────────────────────────────────────────
-export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean; onSelect: () => void; globalCss?: string }> = ({ props, isSelected, onSelect, globalCss }) => {
-  const { code, height } = props;
-  const [iframeHeight, setIframeHeight] = useState<string>(height ? `${height}px` : "300px");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+export const HtmlCodeBlock: React.FC<{
+  props: HtmlCodeProps;
+  isSelected: boolean;
+  onSelect: () => void;
+  globalCss?: string;
+  onHeightChange?: (height: number) => void;
+}> = ({ props, isSelected, onSelect, globalCss, onHeightChange }) => {
+  const { code, height, preserveHtml, mode } = props;
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
 
   // Prepend resets to prevent iframe default margins/scrollbars from causing layout issues
-  const iframeContent = `
+  const isPreserved = preserveHtml || mode === "iframe" || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
+  const iframeContent = isPreserved
+    ? code
+    : `
     <!DOCTYPE html>
     <html>
       <head>
@@ -712,45 +724,59 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
     </html>
   `;
 
-  // Function to adjust the height of the iframe based on its content scrollHeight
-  const adjustHeight = useCallback(() => {
+  const measureHeight = useCallback(() => {
     const iframe = iframeRef.current;
-    if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
-      if (!height) {
-        // Let it shrink first to get correct scrollHeight, then set it
-        iframe.style.height = "0px";
-        const scrollHeight = iframe.contentDocument.body.scrollHeight || iframe.contentDocument.documentElement.scrollHeight;
-        // Ensure a fallback minimum height of 100px so it's not invisible if empty
-        const finalHeight = Math.max(100, scrollHeight);
-        setIframeHeight(`${finalHeight}px`);
-        iframe.style.height = `${finalHeight}px`;
-      }
+    if (!iframe?.contentDocument) return;
+
+    const doc = iframe.contentDocument;
+    const nextHeight = Math.max(
+      doc.documentElement?.scrollHeight || 0,
+      doc.body?.scrollHeight || 0,
+      doc.documentElement?.offsetHeight || 0,
+      doc.body?.offsetHeight || 0,
+      height || 1200
+    );
+
+    console.log(`[HtmlCodeBlock] Measured height: ${nextHeight}px (current frameHeight: ${frameHeight}px)`);
+
+    if (nextHeight && Math.abs(nextHeight - frameHeight) > 20) {
+      setFrameHeight(nextHeight);
+      onHeightChange?.(nextHeight);
     }
-  }, [height]);
+  }, [height, frameHeight, onHeightChange]);
 
   useEffect(() => {
-    if (height) {
-      setIframeHeight(`${height}px`);
-    } else {
-      adjustHeight();
-      // Setup timers to account for async image rendering or fonts loading
-      const t1 = setTimeout(adjustHeight, 300);
-      const t2 = setTimeout(adjustHeight, 1000);
-      const t3 = setTimeout(adjustHeight, 2500);
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const handleLoad = () => {
+      console.log(`[HtmlCodeBlock] iframe loaded, starting measurements`);
+      measureHeight();
+
+      // Đợi ảnh/font load xong rồi đo lại
+      const t1 = setTimeout(measureHeight, 300);
+      const t2 = setTimeout(measureHeight, 1000);
+      const t3 = setTimeout(measureHeight, 2500);
+
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
         clearTimeout(t3);
       };
+    };
+
+    if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
+      handleLoad();
     }
-  }, [code, height, adjustHeight]);
+
+    iframe.addEventListener("load", handleLoad);
+    return () => iframe.removeEventListener("load", handleLoad);
+  }, [iframeContent, measureHeight]);
 
   useEffect(() => {
-    if (!height) {
-      window.addEventListener("resize", adjustHeight);
-      return () => window.removeEventListener("resize", adjustHeight);
-    }
-  }, [height, adjustHeight]);
+    window.addEventListener("resize", measureHeight);
+    return () => window.removeEventListener("resize", measureHeight);
+  }, [measureHeight]);
 
   return (
     <div
@@ -760,19 +786,22 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
       }`}
     >
       {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
-      <div className="absolute inset-0 z-10 bg-transparent" />
+      <div className="absolute inset-0 z-10 bg-transparent pointer-events-none" />
 
       <iframe
         ref={iframeRef}
-        title="HTML Code Embed"
+        title="Imported HTML"
         srcDoc={iframeContent}
-        onLoad={adjustHeight}
-        className="w-full border-none pointer-events-none"
+        className="w-full border-none"
         style={{
-          height: iframeHeight,
+          width: "100%",
+          height: `${frameHeight}px`,
+          border: 0,
           display: "block",
+          background: "white",
+          overflow: "hidden",
         }}
-        sandbox="allow-same-origin allow-scripts"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
       />
 
       {isSelected && (

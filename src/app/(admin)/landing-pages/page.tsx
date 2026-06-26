@@ -16,7 +16,7 @@ import { createLandingPage, deleteLandingPage, deleteLandingPages, isValidPageId
 import { LANDING_TEMPLATE_PRESETS, resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
 import { migrateTemplateFlatBlocks, migrateEditorData, recalculateSectionHeights } from "@/components/landing-pages/editor/core/editor-migration";
 import { createDefaultPageSettings, ensureOnlookBlockMeta, EditorBlock } from "@/components/landing-pages/editor/types";
-import { parseHtmlToLandingPageSchema, parseHtmlToImportedPageSchema } from "@/features/landing-pages/import/html-to-landing-schema";
+import { parseHtmlToImportedPageSchema, parseHtmlToPreservedHtmlSchema } from "@/features/landing-pages/import/html-to-landing-schema";
 import { importZipLandingPage } from "@/features/landing-pages/import/zip-importer";
 import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
 import { supabase } from "@/lib/supabase";
@@ -580,19 +580,25 @@ export default function LandingPagesManagement() {
             } else if (type === "import") {
               let parsedSections: EditorBlock[] = [];
               let parsedGlobalCss = "";
+              let parsedAssets: any[] = [];
 
               if (params.file) {
                 try {
                   const ext = params.file.name.split(".").pop()?.toLowerCase();
+                  const mode = params.importMode || "preserve";
                   if (ext === "zip") {
-                    const imported = await importZipLandingPage(params.file, pageId);
+                    const imported = await importZipLandingPage(params.file, pageId, undefined, mode);
                     parsedSections = imported.sections;
                     parsedGlobalCss = imported.globalCss;
+                    parsedAssets = imported.assets || [];
                   } else {
                     const htmlCode = await params.file.text();
-                    const imported = parseHtmlToImportedPageSchema(htmlCode);
+                    const imported = mode === "preserve"
+                      ? parseHtmlToPreservedHtmlSchema(htmlCode)
+                      : parseHtmlToImportedPageSchema(htmlCode);
                     parsedSections = imported.sections;
                     parsedGlobalCss = imported.globalCss;
+                    parsedAssets = imported.assets || [];
                   }
                 } catch (readErr) {
                   console.error("Failed to process imported file:", readErr);
@@ -617,6 +623,7 @@ export default function LandingPagesManagement() {
                 pageId,
                 pageName: name,
                 sections: parsedSections,
+                assets: parsedAssets,
                 pageSettings: {
                   ...createDefaultPageSettings(name),
                   globalCss: parsedGlobalCss,

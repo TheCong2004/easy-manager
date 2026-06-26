@@ -365,6 +365,7 @@ export interface GalleryProps {
 
 export interface BoxProps {
   bgColor: string;
+  bgImage?: string;
   borderColor: string;
   borderWidth: number;
   borderRadius: number;
@@ -468,6 +469,8 @@ export interface MenuProps {
 export interface HtmlCodeProps {
   code: string;
   height: number;
+  preserveHtml?: boolean;
+  mode?: "div" | "iframe";
 }
 
 // ── Union of all block props ─────────────────────────────────
@@ -567,6 +570,7 @@ export interface EditorData {
   sections: EditorBlock[];
   pageSettings: EditorPageSettings;
   schemaVersion: number;
+  assets?: any[];
 }
 
 export interface EditorPageSettings {

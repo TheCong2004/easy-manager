@@ -60,6 +60,21 @@ export function createEditorSnapshot(
 
 export function renderLandingPageHtml(data: EditorData): string {
   const normalized = normalizeEditorData(data);
+
+  // Check if there is a preserved HTML block
+  for (const section of normalized.sections) {
+    if (section.type === "html_code" && section.props?.preserveHtml === true) {
+      return String(section.props.code || "");
+    }
+    if (section.children) {
+      for (const child of section.children) {
+        if (child.type === "html_code" && child.props?.preserveHtml === true) {
+          return String(child.props.code || "");
+        }
+      }
+    }
+  }
+
   const body = normalized.sections.map(renderBlockHtml).join("\n");
   const generatedCss = collectCssRules(normalized.sections);
 
@@ -232,6 +247,10 @@ function renderBlockHtml(block: EditorBlock): string {
     }
     case "html_code": {
       const code = str(props.code);
+      if (props.preserveHtml === true || props.mode === "iframe") {
+        const heightVal = props.height ? `${props.height}px` : "100%";
+        return `<iframe ${attrs} id="${b.id}" srcdoc="${escapeAttr(code)}" style="width:100%;height:${heightVal};border:none;" sandbox="allow-same-origin allow-scripts"></iframe>`;
+      }
       return `<div ${attrs} id="${b.id}">${code}</div>`;
     }
     default:

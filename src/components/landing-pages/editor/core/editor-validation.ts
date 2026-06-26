@@ -48,7 +48,15 @@ function validateBlock(block: EditorBlock, path: string, issues: EditorValidatio
     });
   }
 
-  if (block.type === "html_code" && /<script|\son\w+=|javascript:/i.test(String(props.code ?? ""))) {
+  const isPreservedHtml =
+    block.type === "html_code" &&
+    (block.props?.preserveHtml === true || block.props?.mode === "iframe");
+
+  if (
+    block.type === "html_code" &&
+    !isPreservedHtml &&
+    /<script|\son\w+=|javascript:/i.test(String(props.code ?? ""))
+  ) {
     issues.push({ severity: "error", path: `${path}.props.code`, message: "HTML code contains unsafe script or event handler." });
   }
 

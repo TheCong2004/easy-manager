@@ -110,6 +110,67 @@ export async function uploadAssetToSupabase(
 }
 
 /**
+ * Trích xuất URL gốc từ proxy URL cache/CDN (ví dụ: /api/asset-cache?url=https://...)
+ */
+export function unwrapProxyUrl(url: string): string {
+  if (!url) return url;
+  if (url.includes("asset-cache") && url.includes("url=")) {
+    try {
+      const match = url.match(/[?&]url=([^&]+)/);
+      if (match && match[1]) {
+        const unwrapped = decodeURIComponent(match[1]);
+        if (/^(https?:|\/\/|data:)/i.test(unwrapped)) {
+          return unwrapped;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return url;
+}
+
+/**
+ * Khớp và tìm kiếm một URL tài nguyên trong assetMap một cách linh hoạt,
+ * hỗ trợ so khớp chính xác, chuẩn hóa đường dẫn, hoặc so khớp theo tên tệp (filename fallback).
+ */
+export function findAssetInMap(
+  cssFilePath: string,
+  urlPath: string,
+  assetMap: Map<string, string>
+): string | null {
+  const unwrappedUrl = unwrapProxyUrl(urlPath);
+  const resolved = resolveRelativePath(cssFilePath, unwrappedUrl);
+  const normalized = resolved.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\//, "").toLowerCase();
+
+  // 1. Khớp chính xác
+  if (assetMap.has(resolved)) {
+    return assetMap.get(resolved) || null;
+  }
+
+  // 2. Khớp sau khi chuẩn hóa các key của assetMap
+  for (const [key, value] of assetMap.entries()) {
+    const normKey = key.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\//, "").toLowerCase();
+    if (normKey === normalized) {
+      return value;
+    }
+  }
+
+  // 3. Khớp theo tên file (cơ chế dự phòng cuối cùng)
+  const fileName = unwrappedUrl.split("/").pop()?.split("?")[0].split("#")[0].toLowerCase();
+  if (fileName) {
+    for (const [key, value] of assetMap.entries()) {
+      const normKey = key.replace(/\\/g, "/").toLowerCase();
+      if (normKey.endsWith("/" + fileName) || normKey === fileName) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Quét toàn bộ quy tắc CSS và cập nhật đường dẫn tương đối trong các thẻ url() sử dụng assetMap.
  */
 export function rewriteCssUrls(
@@ -118,19 +179,21 @@ export function rewriteCssUrls(
   assetMap: Map<string, string>
 ): string {
   return cssContent.replace(/url\(\s*(['"]?)(.*?)\1\s*\)/g, (match, quote, urlPath) => {
+    // Trước hết, unwrap nếu là proxy URL
+    const unwrappedUrl = unwrapProxyUrl(urlPath);
+
     // Giữ nguyên các đường dẫn tuyệt đối hoặc Base64
-    if (/^(https?:|data:|\/\/)/i.test(urlPath)) {
-      return match;
+    if (/^(https?:|data:|\/\/)/i.test(unwrappedUrl)) {
+      return `url(${quote}${unwrappedUrl}${quote})`;
     }
 
-    // Giải quyết đường dẫn tương đối theo vị trí của file CSS
-    const resolvedPath = resolveRelativePath(cssFilePath, urlPath);
-    const mappedUrl = assetMap.get(resolvedPath);
+    // So khớp linh hoạt đường dẫn tương đối trong assetMap
+    const mappedUrl = findAssetInMap(cssFilePath, unwrappedUrl, assetMap);
 
     if (mappedUrl) {
       return `url(${quote}${mappedUrl}${quote})`;
     }
 
-    return match;
+    return `url(${quote}${unwrappedUrl}${quote})`;
   });
 }
