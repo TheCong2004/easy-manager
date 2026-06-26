@@ -791,6 +791,8 @@ export const HtmlCodeBlock: React.FC<{
 }) => {
   const { code, height, preserveHtml, mode } = props;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const isDraggingHtmlElementRef = React.useRef(false);
+  const dragRafRef = React.useRef<number | null>(null);
   const latestPropsRef = React.useRef(props);
 
   React.useEffect(() => {
@@ -877,6 +879,8 @@ export const HtmlCodeBlock: React.FC<{
   }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId]);
 
   const scanIframeDom = React.useCallback(() => {
+    if (isDraggingHtmlElementRef.current) return;
+
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
     const win = iframe?.contentWindow;
@@ -1146,7 +1150,7 @@ export const HtmlCodeBlock: React.FC<{
     };
   }, []);
 
-  const selectIframeElement = React.useCallback((elementId: string) => {
+  const selectIframeElement = React.useCallback((elementId: string, options?: { scroll?: boolean }) => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
 
@@ -1188,11 +1192,13 @@ export const HtmlCodeBlock: React.FC<{
 
     doc.body.appendChild(overlay);
 
-    el.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "center",
-    });
+    if (options?.scroll !== false) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
 
     window.setTimeout(() => {
       const nextRect = el.getBoundingClientRect();
@@ -1261,8 +1267,9 @@ export const HtmlCodeBlock: React.FC<{
   const enableIframeElementDrag = React.useCallback(() => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
+    const win = iframe?.contentWindow;
 
-    if (!iframe || !doc) return;
+    if (!iframe || !doc || !win) return;
 
     const anyDoc = doc as Document & {
       __EASY_MANAGER_DRAG_BOUND__?: boolean;
@@ -1279,13 +1286,18 @@ export const HtmlCodeBlock: React.FC<{
       baseMoveX: number;
       baseMoveY: number;
       baseTransform: string;
+      started: boolean;
+      nextX: number;
+      nextY: number;
+      oldTransition: string;
+      oldWillChange: string;
+      oldZIndex: string;
+      oldPosition: string;
     } | null = null;
 
     const updateOverlay = (el: HTMLElement) => {
       const overlay = doc.getElementById("__easy_manager_html_selection_overlay");
-      const win = iframe.contentWindow;
-
-      if (!overlay || !win) return;
+      if (!overlay) return;
 
       const rect = el.getBoundingClientRect();
 
@@ -1295,7 +1307,26 @@ export const HtmlCodeBlock: React.FC<{
       overlay.style.height = `${rect.height}px`;
     };
 
+    const applyDragFrame = () => {
+      dragRafRef.current = null;
+
+      if (!dragState) return;
+
+      dragState.el.style.transform =
+        `${dragState.baseTransform} translate3d(${dragState.nextX}px, ${dragState.nextY}px, 0)`.trim();
+
+      updateOverlay(dragState.el);
+    };
+
+    const scheduleDragFrame = () => {
+      if (dragRafRef.current !== null) return;
+
+      dragRafRef.current = win.requestAnimationFrame(applyDragFrame);
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+
       const target = event.target as HTMLElement | null;
       if (!target) return;
 
@@ -1318,17 +1349,14 @@ export const HtmlCodeBlock: React.FC<{
       event.preventDefault();
       event.stopPropagation();
 
-      selectIframeElement(elementId);
+      selectIframeElement(elementId, { scroll: false });
 
-      const computed = iframe.contentWindow?.getComputedStyle(el);
-      const currentPosition = computed?.position || "";
+      const computed = win.getComputedStyle(el);
+      const currentPosition = computed.position || "";
 
       if (currentPosition === "static" || !currentPosition) {
         el.style.position = "relative";
       }
-
-      el.style.zIndex = "9999";
-      el.style.cursor = "move";
 
       if (!el.dataset.emBaseTransform) {
         el.dataset.emBaseTransform = el.style.transform || "";
@@ -1345,54 +1373,115 @@ export const HtmlCodeBlock: React.FC<{
         baseMoveX,
         baseMoveY,
         baseTransform: el.dataset.emBaseTransform || "",
+        started: false,
+        nextX: baseMoveX,
+        nextY: baseMoveY,
+        oldTransition: el.style.transition,
+        oldWillChange: el.style.willChange,
+        oldZIndex: el.style.zIndex,
+        oldPosition: el.style.position,
       };
 
       doc.body.style.userSelect = "none";
-      doc.body.style.cursor = "move";
     };
 
     const handlePointerMove = (event: PointerEvent) => {
       if (!dragState) return;
 
+      const rawDx = event.clientX - dragState.startX;
+      const rawDy = event.clientY - dragState.startY;
+
+      /**
+       * Chưa vượt ngưỡng 4px thì coi như click chọn,
+       * không kích hoạt kéo để tránh rung/nhảy khi click.
+       */
+      if (!dragState.started) {
+        const distance = Math.sqrt(rawDx * rawDx + rawDy * rawDy);
+
+        if (distance < 4) return;
+
+        dragState.started = true;
+        isDraggingHtmlElementRef.current = true;
+
+        dragState.el.style.transition = "none";
+        dragState.el.style.willChange = "transform";
+        dragState.el.style.zIndex = "2147483000";
+        dragState.el.style.cursor = "grabbing";
+
+        doc.body.style.cursor = "grabbing";
+      }
+
       event.preventDefault();
       event.stopPropagation();
 
-      const dx = Math.round(event.clientX - dragState.startX);
-      const dy = Math.round(event.clientY - dragState.startY);
+      const dx = Math.round(rawDx);
+      const dy = Math.round(rawDy);
 
       const nextX = dragState.baseMoveX + dx;
       const nextY = dragState.baseMoveY + dy;
 
+      dragState.nextX = nextX;
+      dragState.nextY = nextY;
+
       dragState.el.dataset.emMoveX = String(nextX);
       dragState.el.dataset.emMoveY = String(nextY);
 
-      dragState.el.style.transform = `${dragState.baseTransform} translate(${nextX}px, ${nextY}px)`.trim();
-      dragState.el.style.willChange = "transform";
-
-      updateOverlay(dragState.el);
+      scheduleDragFrame();
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (event: PointerEvent) => {
       if (!dragState) return;
 
-      // Reset temporary drag indicators (zIndex and cursor) on the element
-      dragState.el.style.zIndex = "";
-      dragState.el.style.cursor = "";
+      event.preventDefault();
+      event.stopPropagation();
 
-      const info = getIframeElementInfo(dragState.el);
-      const nextHtml = serializeIframeHtml();
+      const wasDragging = dragState.started;
+      const currentEl = dragState.el;
 
-      emitPropsUpdate({
-        code: nextHtml,
-        selectedHtmlElement: info,
-      });
+      if (dragRafRef.current !== null) {
+        win.cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = null;
+      }
 
-      window.setTimeout(scanIframeDom, 120);
+      if (wasDragging) {
+        currentEl.style.transform =
+          `${dragState.baseTransform} translate3d(${dragState.nextX}px, ${dragState.nextY}px, 0)`.trim();
 
-      dragState = null;
+        updateOverlay(currentEl);
+
+        const info = getIframeElementInfo(currentEl);
+        const nextHtml = serializeIframeHtml();
+
+        emitPropsUpdate({
+          code: nextHtml,
+          selectedHtmlElement: info,
+        });
+
+        window.setTimeout(() => {
+          isDraggingHtmlElementRef.current = false;
+          scanIframeDom();
+        }, 250);
+      } else {
+        isDraggingHtmlElementRef.current = false;
+      }
+
+      currentEl.style.transition = dragState.oldTransition;
+      currentEl.style.willChange = dragState.oldWillChange;
+      currentEl.style.cursor = "";
+
+      /**
+       * Không restore zIndex/position nếu element đã được move,
+       * vì nó cần z-index/relative để transform hiển thị ổn định.
+       */
+      if (!wasDragging) {
+        currentEl.style.zIndex = dragState.oldZIndex;
+        currentEl.style.position = dragState.oldPosition;
+      }
 
       doc.body.style.userSelect = "";
       doc.body.style.cursor = "";
+
+      dragState = null;
     };
 
     doc.addEventListener("pointerdown", handlePointerDown, true);
@@ -1557,7 +1646,7 @@ export const HtmlCodeBlock: React.FC<{
 
       if (!detail || detail.blockId !== blockId || !detail.elementId) return;
 
-      selectIframeElement(detail.elementId);
+      selectIframeElement(detail.elementId, { scroll: true });
     };
 
     window.addEventListener(
