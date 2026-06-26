@@ -306,15 +306,57 @@ export async function createLandingPage(input: {
   return pageData;
 }
 
-export async function publishLandingPage(pageId: string, html: string): Promise<void> {
+export async function publishLandingPage(
+  pageId: string,
+  html: string
+): Promise<void> {
   assertValidPageId(pageId);
   const nowStr = new Date().toISOString();
 
   if (supabase) {
+    // 1. Fetch AI SEO connection if exists
+    let finalHtml = html;
+    try {
+      const { data: connectedPage } = await supabase
+        .from("ai_seo_project_pages")
+        .select("ai_seo_project_id")
+        .eq("website_page_id", pageId)
+        .maybeSingle();
+
+      if (connectedPage && connectedPage.ai_seo_project_id) {
+        const scriptTag = `<script async src="https://api.otto-seo.com/sdk/${connectedPage.ai_seo_project_id}.js"></script>`;
+        if (!finalHtml.includes(scriptTag)) {
+          if (finalHtml.includes("</head>")) {
+            finalHtml = finalHtml.replace("</head>", `${scriptTag}</head>`);
+          } else {
+            finalHtml = finalHtml + scriptTag;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to check AI SEO script connection:", err);
+    }
+
+    // 2. Fetch page slug for matching URLs
+    let slug = pageId;
+    try {
+      const { data: lp } = await supabase
+        .from("landing_pages")
+        .select("slug")
+        .eq("id", pageId)
+        .maybeSingle();
+      if (lp?.slug) {
+        slug = lp.slug;
+      }
+    } catch (err) {
+      console.warn("Failed to retrieve landing page slug:", err);
+    }
+
+    // 3. Update landing_pages
     const { error } = await supabase
       .from("landing_pages")
       .update({
-        published_html: html,
+        published_html: finalHtml,
         status: "published",
         visibility: "public",  // Xuất bản = công khai
         published_at: nowStr,
@@ -322,6 +364,22 @@ export async function publishLandingPage(pageId: string, html: string): Promise<
       })
       .eq("id", pageId);
     if (error) throw error;
+
+    // 4. Update canonical website_pages table
+    try {
+      await supabase
+        .from("website_pages")
+        .update({
+          status: "published",
+          published_url: `/p/${slug}`,
+          sync_status: "synced",
+          last_synced_at: nowStr,
+          updated_at: nowStr
+        })
+        .eq("id", pageId);
+    } catch (syncErr) {
+      console.warn("Failed to update sync_status on website_pages:", syncErr);
+    }
   } else {
     console.warn("Supabase not configured, cannot publish page to remote DB.");
   }

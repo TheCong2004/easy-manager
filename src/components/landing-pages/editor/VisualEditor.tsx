@@ -33,7 +33,8 @@ import {
 import { getEditorDataFingerprint, migrateEditorData } from "./core/editor-migration";
 import { findBlockRecursive } from "./core/editor-reducer";
 import { findMatchingCommand } from "./core/ai-command-registry";
-import { parseHtmlToLandingPageSchema } from "./core/html-to-landing-schema";
+import { parseHtmlToImportedPageSchema } from "../../../features/landing-pages/import/html-to-landing-schema";
+import { importZipLandingPage } from "../../../features/landing-pages/import/zip-importer";
 
 // Import modular split sub-panels
 import { PageListingPanel } from "./panels/PageListingPanel";
@@ -80,6 +81,10 @@ function useHistory<T>(initial: T) {
     setFuture([]);
   }, []);
 
+  const silentUpdate = useCallback((next: T) => {
+    setPresent(next);
+  }, []);
+
   return {
     state: present,
     push,
@@ -88,6 +93,7 @@ function useHistory<T>(initial: T) {
     redo,
     canUndo: past.length > 0,
     canRedo: future.length > 0,
+    silentUpdate,
   };
 }
 
@@ -158,7 +164,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onCreatePage,
   onDeletePage,
 }) => {
-  const { state: data, push, replace, undo, redo, canUndo, canRedo } = useHistory<EditorData>(
+  const { state: data, push, replace, undo, redo, canUndo, canRedo, silentUpdate } = useHistory<EditorData>(
     {
       pageId: page.id,
       pageName: page.name,
@@ -446,6 +452,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     handleMoveDown,
     handleMoveUp,
     handleUpdateBlock,
+    handleUpdateBlockSilent,
     handleUpdatePageSettings,
     handleUseAsset,
     handleUpdateNodeFrame,
@@ -459,6 +466,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     data,
     handleSelectBlock,
     push,
+    silentUpdate,
     recordAction,
     selectedId,
     setSelectedId,
@@ -708,53 +716,49 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (ext === "zip") {
-      showToast("Đang tải lên và xử lý tệp ZIP...", "info");
       try {
-        const formData = new FormData();
-        formData.append("landingPageId", page.id);
-        formData.append("file", file);
-        formData.append("mode", "append");
-
-        const response = await fetch("/api/landing-pages/import-zip", {
-          method: "POST",
-          body: formData,
+        const imported = await importZipLandingPage(file, page.id, (progress, statusText) => {
+          showToast(`[ZIP Import ${progress}%] ${statusText}`, "info");
         });
 
-        if (!response.ok) {
-          throw new Error("Không thể tải lên file ZIP.");
-        }
-
-        const result = await response.json();
-        
-        if (result.sections && result.sections.length > 0) {
+        if (imported.sections && imported.sections.length > 0) {
           const confirmReplace = window.confirm(
-            "Đã bóc tách thành công ZIP từ backend!\n\n" +
+            "Đã bóc tách thành công ZIP thiết kế!\n\n" +
             "Bạn có muốn GHI ĐÈ toàn bộ trang hiện tại không?\n" +
             "- Chọn 'OK' để GHI ĐÈ.\n" +
             "- Chọn 'Cancel' để THÊM VÀO CUỐI trang hiện tại (Append)."
           );
-          
+
           let nextSections = data.sections;
+          let nextGlobalCss = data.pageSettings.globalCss || "";
+
           if (confirmReplace) {
             const doubleConfirm = window.confirm("Hành động này sẽ XÓA HẾT các khối hiện tại trên canvas. Bạn có chắc chắn muốn tiếp tục?");
             if (!doubleConfirm) return;
-            nextSections = result.sections;
+            nextSections = imported.sections;
+            nextGlobalCss = imported.globalCss;
           } else {
-            nextSections = [...data.sections, ...result.sections];
+            nextSections = [...data.sections, ...imported.sections];
+            nextGlobalCss = (nextGlobalCss + "\n" + imported.globalCss).trim();
           }
 
           push({
             ...data,
             sections: nextSections,
+            pageSettings: {
+              ...data.pageSettings,
+              globalCss: nextGlobalCss,
+            },
           });
+
           setSelectedId(null);
-          showToast("Đã nhập ZIP thiết kế thành công", "success");
+          showToast("Đã nhập ZIP thiết kế thành công!", "success");
         } else {
-          alert(`Đã nhận file ZIP thiết kế!\nJob ID: ${result.jobId || "N/A"}\nTrạng thái: ${result.status}\n\nThông báo: Nhập ZIP yêu cầu xử lý từ backend (TODO).`);
+          showToast("ZIP rỗng hoặc lỗi phân tích cấu trúc.", "info");
         }
       } catch (err: any) {
         console.error("ZIP import error:", err);
-        showToast(err.message || "Lỗi tải lên ZIP", "info");
+        showToast(err.message || "Lỗi xử lý ZIP", "info");
       }
     } else {
       const reader = new FileReader();
@@ -764,8 +768,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           if (!htmlCode.trim()) {
             throw new Error("File HTML trống");
           }
-          
-          // Prompt the user to choose conversion style
+
+          // Hỏi người dùng cách thức chuyển đổi
           const confirmNative = window.confirm(
             "Bạn có muốn CHUYỂN ĐỔI file HTML thành các khối thiết kế chỉnh sửa được (Editable Native Blocks - Khuyên dùng) không?\n\n" +
             "- Chọn 'OK' để chuyển đổi tự động thành Sections/Headings/Paragraphs/Buttons/Images...\n" +
@@ -773,8 +777,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           );
 
           let parsedSections: EditorBlock[] = [];
+          let parsedGlobalCss = "";
+
           if (confirmNative) {
-            parsedSections = parseHtmlToLandingPageSchema(htmlCode);
+            const imported = parseHtmlToImportedPageSchema(htmlCode);
+            parsedSections = imported.sections;
+            parsedGlobalCss = imported.globalCss;
             if (parsedSections.length === 0) {
               throw new Error("Không tìm thấy cấu trúc section/element phù hợp trong file HTML.");
             }
@@ -791,32 +799,35 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             parsedSections = [rawBlock];
           }
 
-          // Add user-requested logs
-          const allParsedBlocks = parsedSections.flatMap(s => [s, ...(s.children || [])]);
-          console.log("[HTML_IMPORT] parsedBlocks", allParsedBlocks);
-          console.log("[HTML_IMPORT] blockTypes", allParsedBlocks.map(b => b.type));
-
-          // Ask the user to choose import mode: Replace vs Append
+          // Hỏi người dùng ghi đè hay chèn tiếp
           const confirmReplace = window.confirm(
             "Bạn có muốn GHI ĐÈ (Replace) toàn bộ trang hiện tại bằng nội dung HTML mới không?\n\n" +
             "- Chọn 'OK' để GHI ĐÈ toàn bộ các khối hiện tại.\n" +
             "- Chọn 'Cancel' để THÊM VÀO CUỐI trang hiện tại (Append)."
           );
-          
+
           let nextSections = data.sections;
+          let nextGlobalCss = data.pageSettings.globalCss || "";
+
           if (confirmReplace) {
             const doubleConfirm = window.confirm("Hành động này sẽ XÓA HẾT các khối hiện tại trên canvas. Bạn có chắc chắn muốn tiếp tục?");
             if (!doubleConfirm) return;
             nextSections = parsedSections;
+            nextGlobalCss = parsedGlobalCss;
           } else {
             nextSections = [...data.sections, ...parsedSections];
+            nextGlobalCss = (nextGlobalCss + "\n" + parsedGlobalCss).trim();
           }
 
           push({
             ...data,
             sections: nextSections,
+            pageSettings: {
+              ...data.pageSettings,
+              globalCss: nextGlobalCss,
+            },
           });
-          
+
           setSelectedId(null);
           showToast("Đã import HTML thành công!", "success");
         } catch (err: any) {
@@ -1089,6 +1100,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               onMoveUp={handleMoveUp}
               onMoveDown={handleMoveDown}
               onUpdateBlock={handleUpdateBlock}
+              onUpdateBlockSilent={handleUpdateBlockSilent}
               onUpdateNodeFrame={handleUpdateNodeFrame}
               onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
               onAddSection={handleAddSection}

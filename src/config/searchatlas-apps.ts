@@ -17,12 +17,12 @@ export const SEARCHATLAS_APPS: SearchAtlasApp[] = [
     icon: "coworker",
   },
   {
-    key: "otto-seo",
-    label: "OTTO SEO",
-    route: "/otto-seo",
+    key: "ai-seo",
+    label: "AI SEO",
+    route: "/ai-seo",
     description: "SEO automation projects, task tracking, installation guides, and crawl monitoring.",
     status: "partial",
-    icon: "otto-seo",
+    icon: "ai-seo",
   },
   {
     key: "site-metrics",

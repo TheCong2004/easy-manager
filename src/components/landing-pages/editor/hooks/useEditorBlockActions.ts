@@ -18,6 +18,7 @@ interface UseEditorBlockActionsOptions {
   data: EditorData;
   handleSelectBlock: (id: string | null) => void;
   push: (data: EditorData) => void;
+  silentUpdate: (data: EditorData) => void;
   recordAction: (action: LandingEditorAction) => void;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
@@ -28,6 +29,7 @@ export function useEditorBlockActions({
   data,
   handleSelectBlock,
   push,
+  silentUpdate,
   recordAction,
   selectedId,
   setSelectedId,
@@ -289,6 +291,10 @@ export function useEditorBlockActions({
     }
   }, [data, push, recordAction]);
 
+  const handleUpdateBlockSilent = useCallback((id: string, newProps: Record<string, unknown>) => {
+    silentUpdate(editorReducer(data, { type: "UPDATE_BLOCK_PROPS", blockId: id, props: newProps }));
+  }, [data, silentUpdate]);
+
   const handleUpdatePageSettings = useCallback((key: string, value: string | number | boolean) => {
     push(editorReducer(data, { type: "UPDATE_PAGE_SETTINGS", key, value }));
     recordAction({ type: "update-page-settings", key, timestamp: Date.now() });
@@ -416,6 +422,7 @@ export function useEditorBlockActions({
     handleMoveDown,
     handleMoveUp,
     handleUpdateBlock,
+    handleUpdateBlockSilent,
     handleUpdatePageSettings,
     handleUseAsset,
     handleUpdateNodeFrame,

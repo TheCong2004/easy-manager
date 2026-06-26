@@ -104,6 +104,7 @@ export function migrateEditorData(data: any, pageId: string): EditorData {
       sections: validatedSections,
       pageSettings,
       schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+      assets: data.assets,
     };
   }
 
@@ -209,6 +210,7 @@ export function migrateEditorData(data: any, pageId: string): EditorData {
     sections,
     pageSettings,
     schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
+    assets: data.assets,
   };
 }
 

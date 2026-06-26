@@ -88,8 +88,24 @@ export default function AppStorePage() {
       router.push("/landing-pages");
     } else if (id === "2") {
       router.push("/ban-hang");
+    } else if (id === "5") {
+      router.push("/automation");
     } else if (id === "6") {
       router.push("/e-learning");
+    } else if (id === "17") {
+      router.push("/ai-seo");
+    } else if (id === "18") {
+      router.push("/site-metrics");
+    } else if (id === "19") {
+      router.push("/local");
+    } else if (id === "20") {
+      router.push("/content");
+    } else if (id === "21") {
+      router.push("/keywords");
+    } else if (id === "22") {
+      router.push("/bao-cao");
+    } else if (id === "23") {
+      router.push("/authority");
     } else {
       alert(`Mở ứng dụng: ${app?.name}`);
     }

@@ -111,6 +111,79 @@ export default function AppCard({ app, onInstall, onUninstall, onOpen, onDetails
             </svg>
           </div>
         );
+      case "reports":
+        return (
+          <div className="w-12 h-12 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+        );
+      case "seo":
+        return (
+          <div className="w-12 h-12 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20"/>
+            </svg>
+          </div>
+        );
+      case "metrics":
+        return (
+          <div className="w-12 h-12 text-green-600 dark:text-green-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m18.7 8-5.1 5.2-2.8-2.7L7 14.3"/>
+            </svg>
+          </div>
+        );
+      case "local":
+        return (
+          <div className="w-12 h-12 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+        );
+      case "content":
+        return (
+          <div className="w-12 h-12 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <line x1="10" y1="9" x2="8" y2="9"/>
+            </svg>
+          </div>
+        );
+      case "keywords":
+        return (
+          <div className="w-12 h-12 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <circle cx="7.5" cy="15.5" r="5.5"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m21 3-9 9"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m15 3 6 6"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m18 6-3 3"/>
+            </svg>
+          </div>
+        );
+      case "authority":
+        return (
+          <div className="w-12 h-12 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 17l10 5 10-5"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+        );
       default:
         return (
           <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-950/20 text-gray-600 dark:text-gray-400 flex items-center justify-center border border-gray-100 dark:border-gray-900/30">

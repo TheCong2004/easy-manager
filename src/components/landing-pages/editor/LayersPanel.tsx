@@ -294,6 +294,50 @@ const LayerItem: React.FC<{
           })}
         </div>
       )}
+
+      {isOpen && block.type === "html_code" &&
+        Array.isArray(block.props?.htmlOutline) &&
+        block.props.htmlOutline.length > 0 && (
+          <div className="ml-6 mt-1 space-y-1 border-l border-gray-200 pl-2">
+            {(block.props.htmlOutline as Array<{
+              id: string;
+              tag: string;
+              kind?: string;
+              label: string;
+            }>).slice(0, 120).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`block w-full truncate rounded px-2 py-1 text-left text-xs transition ${
+                  ["HEADER", "NAV", "HERO", "SECTION", "MAIN", "FOOTER"].includes(
+                    String(item.kind || "").toUpperCase(),
+                  )
+                    ? "bg-gray-50 font-bold text-gray-900 hover:bg-purple-100 hover:text-purple-700"
+                    : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+                }`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelectBlock(block.id);
+                  window.dispatchEvent(
+                    new CustomEvent("EASY_MANAGER_HTML_SELECT_REQUEST", {
+                      detail: {
+                        blockId: block.id,
+                        elementId: item.id,
+                      },
+                    }),
+                  );
+                }}
+                title={item.label}
+              >
+                {["HEADER", "NAV", "HERO", "SECTION", "MAIN", "FOOTER"].includes(
+                  String(item.kind || "").toUpperCase(),
+                )
+                  ? `▣ ${item.label}`
+                  : `• ${item.label}`}
+              </button>
+            ))}
+          </div>
+        )}
     </div>
   );
 };

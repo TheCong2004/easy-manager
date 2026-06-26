@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   GalleryProps, BoxProps, IconProps, ProductCardProps, CollectionListProps,
   CarouselProps, TabsProps, FrameProps, AccordionProps, TableProps,
-  SurveyProps, MenuProps, HtmlCodeProps
+  SurveyProps, MenuProps, HtmlCodeProps, ElementFrame
 } from "../types";
 import { useCart, parsePriceNum } from "../../cart/CartContext";
 
@@ -43,7 +43,7 @@ export const GalleryBlock: React.FC<{ props: GalleryProps; isSelected: boolean; 
 
 // ── Box Block ─────────────────────────────────────────────────
 export const BoxBlock: React.FC<{ props: BoxProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
-  const { bgColor, borderColor, borderWidth, borderRadius, paddingX, paddingY, shadow, title, description } = props;
+  const { bgColor, bgImage, borderColor, borderWidth, borderRadius, paddingX, paddingY, shadow, title, description } = props;
   const shadowClass = shadow === "sm" ? "shadow-sm" : shadow === "md" ? "shadow-md" : shadow === "lg" ? "shadow-lg" : "shadow-none";
 
   return (
@@ -57,6 +57,9 @@ export const BoxBlock: React.FC<{ props: BoxProps; isSelected: boolean; onSelect
         className={`w-full transition-all ${shadowClass}`}
         style={{
           backgroundColor: bgColor,
+          backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+          backgroundSize: bgImage ? "cover" : undefined,
+          backgroundPosition: bgImage ? "center" : undefined,
           borderColor: borderColor,
           borderWidth: `${borderWidth}px`,
           borderStyle: borderWidth > 0 ? "solid" : "none",
@@ -685,15 +688,120 @@ export const MenuBlock: React.FC<{ props: MenuProps; isSelected: boolean; onSele
   );
 };
 
-// ── HTML Code Block ───────────────────────────────────────────
-export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
-  const { code, height } = props;
-  const [iframeHeight, setIframeHeight] = useState<string>(height ? `${height}px` : "300px");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+function buildOutlineFromDoc(doc: Document, iframe: HTMLIFrameElement) {
+  const selector = [
+    "header",
+    "nav",
+    "main",
+    "section",
+    "article",
+    "aside",
+    "footer",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "p",
+    "a",
+    "button",
+    "img",
+    "video",
+    "form",
+    "input",
+    "textarea",
+    "select",
+    "li",
+  ].join(",");
 
-  // Prepend resets to prevent iframe default margins/scrollbars from causing layout issues
-  const iframeContent = `
-    <!DOCTYPE html>
+  const nodes = Array.from(doc.querySelectorAll(selector)) as HTMLElement[];
+  let index = 1;
+
+  return nodes
+    .filter((el) => {
+      const rect = el.getBoundingClientRect();
+      const style = iframe.contentWindow?.getComputedStyle(el);
+
+      if (!style) return false;
+      if (style.display === "none") return false;
+      if (style.visibility === "hidden") return false;
+      if (rect.width < 3 || rect.height < 3) return false;
+
+      return true;
+    })
+    .slice(0, 300)
+    .map((el) => {
+      if (!el.dataset.emId) {
+        el.dataset.emId = `em-${index++}`;
+      }
+
+      const tag = el.tagName.toLowerCase();
+      const text = String(el.innerText || el.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      let label = tag.toUpperCase();
+
+      if (tag === "img") {
+        label = `IMG · ${el.getAttribute("alt") || el.getAttribute("src") || "Image"}`;
+      } else if (tag === "a") {
+        label = `A · ${text || el.getAttribute("href") || "Link"}`;
+      } else if (tag === "button") {
+        label = `BUTTON · ${text || "Button"}`;
+      } else if (/^h[1-6]$/.test(tag)) {
+        label = `${tag.toUpperCase()} · ${text}`;
+      } else if (text) {
+        label = `${tag.toUpperCase()} · ${text.slice(0, 60)}`;
+      }
+
+      return {
+        id: el.dataset.emId,
+        tag,
+        label,
+        text,
+        href: tag === "a" ? el.getAttribute("href") || "" : "",
+        src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
+        alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+      };
+    });
+}
+
+// ── HTML Code Block ───────────────────────────────────────────
+export const HtmlCodeBlock: React.FC<{
+  blockId?: string;
+  props: HtmlCodeProps;
+  isSelected: boolean;
+  onSelect: () => void;
+  onUpdate?: (nextProps: Record<string, unknown>) => void;
+  onUpdateSilent?: (nextProps: Record<string, unknown>) => void;
+  onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
+  parentId?: string;
+  globalCss?: string;
+}> = ({
+  blockId = "html-code-block",
+  props,
+  isSelected,
+  onSelect,
+  onUpdate,
+  onUpdateSilent,
+  onUpdateNodeFrame,
+  parentId,
+  globalCss,
+}) => {
+  const { code, height, preserveHtml, mode } = props;
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
+  const lastLoadedCodeRef = useRef<string>("");
+
+  const isPreserved = preserveHtml || mode === "iframe" || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
+
+  const iframeContent = React.useMemo(() => {
+    if (isPreserved) {
+      return code;
+    }
+
+    return `<!DOCTYPE html>
     <html>
       <head>
         <style>
@@ -704,52 +812,589 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
             width: 100%;
           }
         </style>
+        ${globalCss ? `<style>${globalCss}</style>` : ""}
       </head>
-      <body>
+      <body style="margin:0;">
         ${code}
       </body>
-    </html>
-  `;
+    </html>`;
+  }, [code, globalCss, isPreserved]);
 
-  // Function to adjust the height of the iframe based on its content scrollHeight
-  const adjustHeight = useCallback(() => {
+  useEffect(() => {
     const iframe = iframeRef.current;
-    if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
-      if (!height) {
-        // Let it shrink first to get correct scrollHeight, then set it
-        iframe.style.height = "0px";
-        const scrollHeight = iframe.contentDocument.body.scrollHeight || iframe.contentDocument.documentElement.scrollHeight;
-        // Ensure a fallback minimum height of 100px so it's not invisible if empty
-        const finalHeight = Math.max(100, scrollHeight);
-        setIframeHeight(`${finalHeight}px`);
-        iframe.style.height = `${finalHeight}px`;
+    if (iframe && lastLoadedCodeRef.current !== code) {
+      lastLoadedCodeRef.current = code;
+      iframe.srcdoc = iframeContent;
+    }
+  }, [code, iframeContent]);
+
+  const measureHeight = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentDocument) return;
+
+    const doc = iframe.contentDocument;
+    const nextHeight = Math.max(
+      doc.documentElement?.scrollHeight || 0,
+      doc.body?.scrollHeight || 0,
+      doc.documentElement?.offsetHeight || 0,
+      doc.body?.offsetHeight || 0,
+      height || 1200
+    );
+
+    if (nextHeight && Math.abs(nextHeight - frameHeight) > 20) {
+      setFrameHeight(nextHeight);
+      const updateFn = onUpdateSilent || onUpdate;
+      updateFn?.({
+        height: nextHeight
+      });
+      if (onUpdateNodeFrame) {
+        onUpdateNodeFrame(blockId, { height: nextHeight });
+      }
+      if (parentId && onUpdateNodeFrame) {
+        onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
       }
     }
-  }, [height]);
+  }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId]);
 
-  useEffect(() => {
-    if (height) {
-      setIframeHeight(`${height}px`);
-    } else {
-      adjustHeight();
-      // Setup timers to account for async image rendering or fonts loading
-      const t1 = setTimeout(adjustHeight, 300);
-      const t2 = setTimeout(adjustHeight, 1000);
-      const t3 = setTimeout(adjustHeight, 2500);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
+  const scanIframeDom = React.useCallback(() => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    const win = iframe?.contentWindow;
+
+    if (!doc || !win) return;
+
+    const sectionSelector = [
+      "header",
+      "nav",
+      "main",
+      "section",
+      "article",
+      "aside",
+      "footer",
+      "[role='banner']",
+      "[role='navigation']",
+      "[role='main']",
+      "[role='contentinfo']",
+      "[id*='header' i]",
+      "[id*='navbar' i]",
+      "[id*='nav' i]",
+      "[id*='hero' i]",
+      "[id*='section' i]",
+      "[id*='about' i]",
+      "[id*='story' i]",
+      "[id*='benefit' i]",
+      "[id*='feature' i]",
+      "[id*='service' i]",
+      "[id*='work' i]",
+      "[id*='gallery' i]",
+      "[id*='pricing' i]",
+      "[id*='rate' i]",
+      "[id*='faq' i]",
+      "[id*='contact' i]",
+      "[id*='footer' i]",
+      "[class*='header' i]",
+      "[class*='navbar' i]",
+      "[class*='nav' i]",
+      "[class*='hero' i]",
+      "[class*='section' i]",
+      "[class*='about' i]",
+      "[class*='story' i]",
+      "[class*='benefit' i]",
+      "[class*='feature' i]",
+      "[class*='service' i]",
+      "[class*='work' i]",
+      "[class*='gallery' i]",
+      "[class*='pricing' i]",
+      "[class*='rate' i]",
+      "[class*='faq' i]",
+      "[class*='contact' i]",
+      "[class*='footer' i]",
+      "body > div",
+      "body > main > div",
+      "main > div",
+    ].join(",");
+
+    const elementSelector = [
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "p",
+      "a",
+      "button",
+      "img",
+      "video",
+      "form",
+      "input",
+      "textarea",
+      "select",
+      "li",
+    ].join(",");
+
+    const isVisible = (el: HTMLElement) => {
+      const rect = el.getBoundingClientRect();
+      const style = win.getComputedStyle(el);
+
+      if (style.display === "none") return false;
+      if (style.visibility === "hidden") return false;
+      if (Number(style.opacity || 1) === 0) return false;
+      if (rect.width < 4 || rect.height < 4) return false;
+
+      return true;
+    };
+
+    const shortText = (value: string, max = 70) => {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      return text.length > max ? `${text.slice(0, max)}...` : text;
+    };
+
+    const getKind = (el: HTMLElement) => {
+      const tag = el.tagName.toLowerCase();
+      const id = el.id.toLowerCase();
+      const cls = String(el.className || "").toLowerCase();
+      const role = String(el.getAttribute("role") || "").toLowerCase();
+      const combined = `${tag} ${id} ${cls} ${role}`;
+
+      if (tag === "header" || role === "banner" || /header|navbar|nav-bar/.test(combined)) {
+        return "HEADER";
+      }
+
+      if (tag === "nav" || role === "navigation" || /\bnav\b|navbar|menu/.test(combined)) {
+        return "NAV";
+      }
+
+      if (/hero|banner|intro|masthead/.test(combined)) {
+        return "HERO";
+      }
+
+      if (/feature|benefit|service|about|story|work|gallery|pricing|rate|faq|contact|cta/.test(combined)) {
+        return "SECTION";
+      }
+
+      if (tag === "footer" || role === "contentinfo" || /footer/.test(combined)) {
+        return "FOOTER";
+      }
+
+      if (tag === "main" || role === "main") {
+        return "MAIN";
+      }
+
+      if (tag === "section" || tag === "article" || tag === "aside") {
+        return "SECTION";
+      }
+
+      return "";
+    };
+
+    const makeInfo = (el: HTMLElement, forcedKind?: string) => {
+      if (!el.dataset.emId) {
+        el.dataset.emId = `em-${Math.random().toString(36).slice(2, 10)}`;
+      }
+
+      const tag = el.tagName.toLowerCase();
+      const rect = el.getBoundingClientRect();
+      const text = shortText(el.innerText || el.textContent || "", 90);
+      const kind = forcedKind || getKind(el);
+
+      let label = kind || tag.toUpperCase();
+
+      if (kind) {
+        if (text) label = `${kind} · ${text}`;
+      } else if (tag === "img") {
+        label = `IMG · ${el.getAttribute("alt") || el.getAttribute("src") || "Image"}`;
+      } else if (tag === "a") {
+        label = `A · ${text || el.getAttribute("href") || "Link"}`;
+      } else if (tag === "button") {
+        label = `BUTTON · ${text || "Button"}`;
+      } else if (/^h[1-6]$/.test(tag)) {
+        label = `${tag.toUpperCase()} · ${text}`;
+      } else if (text) {
+        label = `${tag.toUpperCase()} · ${text}`;
+      }
+
+      return {
+        id: el.dataset.emId,
+        tag,
+        kind: kind || tag.toUpperCase(),
+        label,
+        text: String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim(),
+        href: tag === "a" ? el.getAttribute("href") || "" : "",
+        src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
+        alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+        x: Math.round(rect.left + win.scrollX),
+        y: Math.round(rect.top + win.scrollY),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
       };
+    };
+
+    const sectionNodes = Array.from(
+      doc.querySelectorAll(sectionSelector),
+    ) as HTMLElement[];
+
+    const elementNodes = Array.from(
+      doc.querySelectorAll(elementSelector),
+    ) as HTMLElement[];
+
+    const picked = new Set<HTMLElement>();
+    const outline: Array<Record<string, unknown>> = [];
+
+    sectionNodes.forEach((el) => {
+      if (!isVisible(el)) return;
+
+      const rect = el.getBoundingClientRect();
+      const kind = getKind(el);
+
+      const looksLikeLargeSection =
+        rect.width >= 320 &&
+        rect.height >= 120 &&
+        el.children.length > 0;
+
+      if (!kind && !looksLikeLargeSection) return;
+
+      if (picked.has(el)) return;
+      picked.add(el);
+
+      outline.push(makeInfo(el, kind || "SECTION"));
+    });
+
+    elementNodes.forEach((el) => {
+      if (!isVisible(el)) return;
+      if (picked.has(el)) return;
+
+      const tag = el.tagName.toLowerCase();
+      const text = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+
+      if (
+        !text &&
+        tag !== "img" &&
+        tag !== "video" &&
+        tag !== "input" &&
+        tag !== "textarea"
+      ) {
+        return;
+      }
+
+      picked.add(el);
+      outline.push(makeInfo(el));
+    });
+
+    outline.sort((a, b) => {
+      const ay = Number(a.y || 0);
+      const by = Number(b.y || 0);
+
+      if (Math.abs(ay - by) > 20) return ay - by;
+
+      const ax = Number(a.x || 0);
+      const bx = Number(b.x || 0);
+
+      return ax - bx;
+    });
+
+    const updateFn = onUpdateSilent || onUpdate;
+    updateFn?.({
+      ...props,
+      htmlOutline: outline.slice(0, 350),
+    });
+  }, [onUpdate, onUpdateSilent, props]);
+
+  const selectIframeElement = React.useCallback((elementId: string) => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+
+    if (!doc || !iframe) return;
+
+    const oldSelected = Array.from(
+      doc.querySelectorAll("[data-em-selected='true']"),
+    ) as HTMLElement[];
+
+    oldSelected.forEach((node) => {
+      node.removeAttribute("data-em-selected");
+    });
+
+    const oldOverlay = doc.getElementById("__easy_manager_html_selection_overlay");
+    oldOverlay?.remove();
+
+    const el = doc.querySelector(`[data-em-id="${elementId}"]`) as HTMLElement | null;
+    if (!el) return;
+
+    el.dataset.emSelected = "true";
+
+    const rect = el.getBoundingClientRect();
+    const win = iframe.contentWindow;
+
+    const overlay = doc.createElement("div");
+    overlay.id = "__easy_manager_html_selection_overlay";
+    overlay.style.position = "absolute";
+    overlay.style.left = `${rect.left + (win?.scrollX ?? 0)}px`;
+    overlay.style.top = `${rect.top + (win?.scrollY ?? 0)}px`;
+    overlay.style.width = `${rect.width}px`;
+    overlay.style.height = `${rect.height}px`;
+    overlay.style.border = "2px solid #8b5cf6";
+    overlay.style.outline = "3px solid rgba(139,92,246,.25)";
+    overlay.style.boxShadow = "0 0 0 99999px rgba(139,92,246,.03)";
+    overlay.style.borderRadius = "4px";
+    overlay.style.zIndex = "2147483647";
+    overlay.style.pointerEvents = "none";
+    overlay.style.boxSizing = "border-box";
+
+    doc.body.appendChild(overlay);
+
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "center",
+    });
+
+    window.setTimeout(() => {
+      const nextRect = el.getBoundingClientRect();
+      if (win) {
+        overlay.style.left = `${nextRect.left + win.scrollX}px`;
+        overlay.style.top = `${nextRect.top + win.scrollY}px`;
+        overlay.style.width = `${nextRect.width}px`;
+        overlay.style.height = `${nextRect.height}px`;
+      }
+    }, 450);
+
+    const tag = el.tagName.toLowerCase();
+    const text = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+
+    onSelect?.();
+
+    const updateFn = onUpdateSilent || onUpdate;
+    updateFn?.({
+      selectedHtmlElement: {
+        id: elementId,
+        tag,
+        label: `${tag.toUpperCase()} · ${text.slice(0, 80)}`,
+        text,
+        href: tag === "a" ? el.getAttribute("href") || "" : "",
+        src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
+        alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+      },
+    });
+  }, [onSelect, onUpdate, onUpdateSilent]);
+
+  const serializeIframeHtml = React.useCallback(() => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+
+    if (!doc) return code;
+
+    const cloned = doc.documentElement.cloneNode(true) as HTMLElement;
+
+    cloned.querySelectorAll("[data-em-selected='true']").forEach((el) => {
+      el.removeAttribute("data-em-selected");
+      (el as HTMLElement).style.outline = "";
+      (el as HTMLElement).style.outlineOffset = "";
+      (el as HTMLElement).style.boxShadow = "";
+    });
+
+    const overlay = cloned.querySelector("#__easy_manager_html_selection_overlay");
+    overlay?.remove();
+
+    cloned.querySelectorAll("[data-em-id]").forEach((el) => {
+      el.removeAttribute("data-em-id");
+    });
+
+    return "<!DOCTYPE html>\n" + cloned.outerHTML;
+  }, [code]);
+
+  const patchIframeElement = React.useCallback(
+    (elementId: string, patch: Record<string, unknown>) => {
+      const iframe = iframeRef.current;
+      const doc = iframe?.contentDocument;
+
+      if (!doc) return;
+
+      const el = doc.querySelector(
+        `[data-em-id="${elementId}"]`,
+      ) as HTMLElement | null;
+
+      if (!el) return;
+
+      const tag = el.tagName.toLowerCase();
+
+      if (Object.prototype.hasOwnProperty.call(patch, "textContent")) {
+        if (
+          tag !== "img" &&
+          tag !== "video" &&
+          tag !== "input" &&
+          tag !== "textarea" &&
+          tag !== "select"
+        ) {
+          el.textContent = String(patch.textContent ?? "");
+        }
+
+        if (tag === "input" || tag === "textarea") {
+          (el as HTMLInputElement).value = String(patch.textContent ?? "");
+          el.setAttribute("value", String(patch.textContent ?? ""));
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "href")) {
+        if (tag === "a") {
+          el.setAttribute("href", String(patch.href ?? ""));
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "src")) {
+        if (tag === "img" || tag === "video") {
+          el.setAttribute("src", String(patch.src ?? ""));
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "alt")) {
+        if (tag === "img") {
+          el.setAttribute("alt", String(patch.alt ?? ""));
+        }
+      }
+
+      if (patch.style && typeof patch.style === "object") {
+        Object.entries(patch.style as Record<string, string>).forEach(
+          ([key, value]) => {
+            if (!key) return;
+            el.style.setProperty(
+              key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`),
+              String(value ?? ""),
+            );
+          },
+        );
+      }
+
+      const text = String(el.innerText || el.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const nextSelectedElement = {
+        id: elementId,
+        tag,
+        label: `${tag.toUpperCase()} · ${text.slice(0, 80)}`,
+        text,
+        href: tag === "a" ? el.getAttribute("href") || "" : "",
+        src:
+          tag === "img" || tag === "video"
+            ? el.getAttribute("src") || ""
+            : "",
+        alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+      };
+
+      const nextHtml = serializeIframeHtml();
+
+      // Update the ref so the useEffect doesn't trigger iframe reload
+      lastLoadedCodeRef.current = nextHtml;
+
+      onUpdate?.({
+        ...props,
+        code: nextHtml,
+        selectedHtmlElement: nextSelectedElement,
+      });
+
+      window.setTimeout(scanIframeDom, 100);
+    },
+    [onUpdate, props, scanIframeDom, serializeIframeHtml],
+  );
+
+  const handleIframeClick = useCallback((event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (!target) return;
+
+    const selector = [
+      "header", "nav", "main", "section", "article", "aside", "footer",
+      "h1", "h2", "h3", "h4", "h5", "h6", "p", "a", "button", "img", "video",
+      "form", "input", "textarea", "select", "li", "div"
+    ];
+    
+    let el: HTMLElement | null = target;
+    while (el && el !== el.ownerDocument.body) {
+      const tag = el.tagName.toLowerCase();
+      if (el.dataset.emId || selector.includes(tag)) {
+        break;
+      }
+      el = el.parentElement;
     }
-  }, [code, height, adjustHeight]);
+
+    if (!el || el === el.ownerDocument.body) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!el.dataset.emId) {
+      el.dataset.emId = `em-clicked-${Date.now()}`;
+    }
+
+    selectIframeElement(el.dataset.emId);
+  }, [selectIframeElement]);
 
   useEffect(() => {
-    if (!height) {
-      window.addEventListener("resize", adjustHeight);
-      return () => window.removeEventListener("resize", adjustHeight);
-    }
-  }, [height, adjustHeight]);
+    window.addEventListener("resize", measureHeight);
+    return () => {
+      window.removeEventListener("resize", measureHeight);
+      if (iframeRef.current && (iframeRef.current as any).__heightObserver) {
+        try {
+          (iframeRef.current as any).__heightObserver.disconnect();
+        } catch (e) {
+          console.warn("Failed to disconnect height observer", e);
+        }
+      }
+    };
+  }, [measureHeight]);
+
+  React.useEffect(() => {
+    const handleSelectRequest = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        blockId?: string;
+        elementId?: string;
+      }>;
+
+      const detail = customEvent.detail;
+
+      if (!detail || detail.blockId !== blockId || !detail.elementId) return;
+
+      selectIframeElement(detail.elementId);
+    };
+
+    window.addEventListener(
+      "EASY_MANAGER_HTML_SELECT_REQUEST",
+      handleSelectRequest as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "EASY_MANAGER_HTML_SELECT_REQUEST",
+        handleSelectRequest as EventListener,
+      );
+    };
+  }, [blockId, selectIframeElement]);
+
+  React.useEffect(() => {
+    const handlePatchRequest = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        blockId?: string;
+        elementId?: string;
+        patch?: Record<string, unknown>;
+      }>;
+
+      const detail = customEvent.detail;
+      if (!detail || detail.blockId !== blockId || !detail.elementId) return;
+
+      patchIframeElement(detail.elementId, detail.patch || {});
+    };
+
+    window.addEventListener(
+      "EASY_MANAGER_HTML_PATCH_REQUEST",
+      handlePatchRequest as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "EASY_MANAGER_HTML_PATCH_REQUEST",
+        handlePatchRequest as EventListener,
+      );
+    };
+  }, [blockId, patchIframeElement]);
 
   return (
     <div
@@ -757,21 +1402,64 @@ export const HtmlCodeBlock: React.FC<{ props: HtmlCodeProps; isSelected: boolean
       className={`relative w-full cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
+      style={{
+        width: "100%",
+        height: frameHeight,
+        minHeight: frameHeight,
+        position: "relative",
+        border: isSelected ? "1.5px solid #8b5cf6" : "none",
+        background: "#ffffff",
+        overflow: "visible",
+      }}
     >
       {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
-      <div className="absolute inset-0 z-10 bg-transparent" />
+      <div className="absolute inset-0 z-10 bg-transparent pointer-events-none" />
 
       <iframe
         ref={iframeRef}
-        title="HTML Code Embed"
-        srcDoc={iframeContent}
-        onLoad={adjustHeight}
-        className="w-full border-none pointer-events-none"
-        style={{
-          height: iframeHeight,
-          display: "block",
+        title="Imported HTML"
+        className="w-full border-none"
+        onLoad={() => {
+          measureHeight();
+          const doc = iframeRef.current?.contentDocument;
+          const win = iframeRef.current?.contentWindow;
+          if (doc) {
+            doc.removeEventListener("click", handleIframeClick, true);
+            doc.addEventListener("click", handleIframeClick, true);
+
+            // Disconnect old observer if exists
+            if ((iframeRef.current as any).__heightObserver) {
+              try {
+                (iframeRef.current as any).__heightObserver.disconnect();
+              } catch (e) {}
+            }
+
+            // Create new observer using the iframe window's ResizeObserver if available
+            const ResizeObserverClass = (win as any)?.ResizeObserver || (window as any).ResizeObserver;
+            if (ResizeObserverClass && doc.body) {
+              const observer = new ResizeObserverClass(() => {
+                measureHeight();
+              });
+              observer.observe(doc.body);
+              (iframeRef.current as any).__heightObserver = observer;
+            }
+          }
+          window.setTimeout(scanIframeDom, 300);
+          window.setTimeout(scanIframeDom, 1200);
+          window.setTimeout(measureHeight, 500);
+          window.setTimeout(measureHeight, 1500);
         }}
-        sandbox="allow-same-origin allow-scripts"
+        style={{
+          width: "100%",
+          height: frameHeight,
+          minHeight: frameHeight,
+          border: 0,
+          display: "block",
+          background: "#ffffff",
+          overflow: "hidden",
+          pointerEvents: isSelected ? "auto" : "none",
+        }}
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
       />
 
       {isSelected && (

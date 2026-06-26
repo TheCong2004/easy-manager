@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     remotePatterns: [
       {
@@ -17,16 +16,23 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
-    
-    turbopack: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
-  
+  },
+  async redirects() {
+    return [
+      {
+        source: "/seo-automation-v3",
+        destination: "/ai-seo",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
