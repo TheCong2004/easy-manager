@@ -391,16 +391,18 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
     htmlBlock.label = "Mã HTML Bảo toàn Bố cục";
     htmlBlock.props = {
       code: fullHtml,
-      height,
+      height: 900,
+      editorViewportHeight: 900,
       preserveHtml: true,
       mode: "iframe",
-      autoResize: true,
+      autoResize: false,
     };
     htmlBlock.frame = {
+      ...(htmlBlock.frame ?? {}),
       x: 0,
       y: 0,
       width: CANVAS_WIDTH,
-      height,
+      height: 900,
       zIndex: 10,
     };
 
@@ -412,7 +414,7 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
       ...section.props,
       title: "Preserved Section",
       description: "Khối chứa toàn bộ trang HTML gốc",
-      minHeight: height + 80,
+      minHeight: 900,
       bgColor: "#ffffff",
     };
 
@@ -420,7 +422,7 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
       section.frame.x = 0;
       section.frame.y = 0;
       section.frame.width = CANVAS_WIDTH;
-      section.frame.height = height + 80;
+      section.frame.height = 900;
     }
 
     return {

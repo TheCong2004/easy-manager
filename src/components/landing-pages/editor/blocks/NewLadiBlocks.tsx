@@ -789,7 +789,25 @@ export const HtmlCodeBlock: React.FC<{
   parentId,
   globalCss,
 }) => {
-  const { code, height, preserveHtml, mode } = props;
+  const { code, height } = props;
+  const preserveHtml = props?.preserveHtml === true || props?.mode === "iframe";
+
+  const editorViewportHeight =
+    typeof (props as any)?.editorViewportHeight === "number"
+      ? (props as any).editorViewportHeight
+      : Number((props as any)?.editorViewportHeight || 900);
+
+  const normalHeight =
+    typeof height === "number"
+      ? height
+      : Number(height || 900);
+
+  const initialHeight = preserveHtml ? editorViewportHeight : normalHeight;
+
+  const [frameHeight, setFrameHeight] = React.useState(
+    Number.isFinite(initialHeight) ? initialHeight : 900,
+  );
+
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const isDraggingHtmlElementRef = React.useRef(false);
   const dragRafRef = React.useRef<number | null>(null);
@@ -813,10 +831,9 @@ export const HtmlCodeBlock: React.FC<{
     [onUpdate, onUpdateSilent],
   );
 
-  const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
   const lastLoadedCodeRef = useRef<string>("");
 
-  const isPreserved = preserveHtml || mode === "iframe" || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
+  const isPreserved = preserveHtml || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
 
   const iframeContent = React.useMemo(() => {
     if (isPreserved) {
@@ -851,6 +868,8 @@ export const HtmlCodeBlock: React.FC<{
   }, [code, iframeContent]);
 
   const measureHeight = useCallback(() => {
+    if (preserveHtml) return;
+
     const iframe = iframeRef.current;
     if (!iframe?.contentDocument) return;
 
@@ -876,7 +895,7 @@ export const HtmlCodeBlock: React.FC<{
         onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
       }
     }
-  }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId]);
+  }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId, preserveHtml]);
 
   const scanIframeDom = React.useCallback(() => {
     if (isDraggingHtmlElementRef.current) return;
@@ -1702,7 +1721,7 @@ export const HtmlCodeBlock: React.FC<{
         position: "relative",
         border: isSelected ? "1.5px solid #8b5cf6" : "none",
         background: "#ffffff",
-        overflow: "visible",
+        overflow: "hidden",
       }}
     >
       {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
@@ -1712,6 +1731,7 @@ export const HtmlCodeBlock: React.FC<{
         ref={iframeRef}
         title="Imported HTML"
         className="w-full border-none"
+        scrolling="yes"
         onLoad={() => {
           measureHeight();
           const doc = iframeRef.current?.contentDocument;
@@ -1756,7 +1776,7 @@ export const HtmlCodeBlock: React.FC<{
           border: 0,
           display: "block",
           background: "#ffffff",
-          overflow: "hidden",
+          overflow: "auto",
           pointerEvents: isSelected ? "auto" : "none",
         }}
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
