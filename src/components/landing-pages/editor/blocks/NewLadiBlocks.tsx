@@ -800,6 +800,7 @@ export const HtmlCodeBlock: React.FC<{
           display: "block",
           background: "white",
           overflow: "hidden",
+          pointerEvents: isSelected ? "auto" : "none",
         }}
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
       />
