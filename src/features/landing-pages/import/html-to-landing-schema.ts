@@ -245,7 +245,39 @@ function estimatePreservedHeight(doc: Document): number {
   return Math.min(height, MAX_PRESERVED_HEIGHT);
 }
 
+function replaceVhUnitsInDocument(doc: Document, globalCss: string): string {
+  const vhRegex = /(\d+(?:\.\d+)?)\s*vh\b/gi;
+  const replaceFn = (match: string, p1: string) => {
+    const vhValue = parseFloat(p1);
+    // Convert vh to px assuming a standard 900px viewport height
+    return `${(vhValue / 100) * 900}px`;
+  };
+
+  // 1. Replace in globalCss
+  const cleanGlobalCss = globalCss.replace(vhRegex, replaceFn);
+
+  // 2. Replace in style tags
+  doc.querySelectorAll("style").forEach((styleEl) => {
+    if (styleEl.textContent) {
+      styleEl.textContent = styleEl.textContent.replace(vhRegex, replaceFn);
+    }
+  });
+
+  // 3. Replace in inline styles
+  doc.querySelectorAll("[style]").forEach((el) => {
+    const styleAttr = el.getAttribute("style");
+    if (styleAttr) {
+      el.setAttribute("style", styleAttr.replace(vhRegex, replaceFn));
+    }
+  });
+
+  return cleanGlobalCss;
+}
+
 function buildFullHtmlDocument(doc: Document, globalCss: string): string {
+  // Replace vh units with px to prevent viewport-dependent feedback loops
+  const cleanGlobalCss = replaceVhUnitsInDocument(doc, globalCss);
+
   const htmlEl = doc.documentElement;
   const body = doc.body;
 
@@ -255,7 +287,7 @@ function buildFullHtmlDocument(doc: Document, globalCss: string): string {
   const forcedHtmlStyle = [
     originalHtmlStyle,
     "width:100% !important",
-    "min-height:100% !important",
+    "min-height:auto !important",
     "height:auto !important",
     "overflow:visible !important",
   ]
@@ -265,7 +297,7 @@ function buildFullHtmlDocument(doc: Document, globalCss: string): string {
   const forcedBodyStyle = [
     originalBodyStyle,
     "width:100% !important",
-    "min-height:100% !important",
+    "min-height:auto !important",
     "height:auto !important",
     "overflow:visible !important",
   ]
@@ -283,7 +315,7 @@ function buildFullHtmlDocument(doc: Document, globalCss: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   ${headHtml}
   <style id="easy-manager-import-runtime-css">
-${getRuntimeCss(globalCss)}
+${getRuntimeCss(cleanGlobalCss)}
   </style>
 </head>
 <body class="${escapeAttr(bodyClass)}" style="${escapeAttr(forcedBodyStyle)}">
