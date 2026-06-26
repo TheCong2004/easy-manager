@@ -646,7 +646,33 @@ export const Canvas: React.FC<CanvasProps> = ({
       section.type === "custom_section" &&
       (section.children ?? []).some((child) => isPreservedHtmlBlock(child)),
   );
-  const minPageHeight = hasPreservedHtmlPage ? 900 : 1600;
+
+  const preservedHtmlPageHeight = sections.reduce((max, section) => {
+    const sectionHeight = Number(section.frame?.height || 0);
+
+    const childMax = Math.max(
+      0,
+      ...((section.children ?? []).map((child) => {
+        const props = child.props as { preserveHtml?: boolean; mode?: string; height?: number | string };
+        const isHtml =
+          child.type === "html_code" &&
+          (props?.preserveHtml === true || props?.mode === "iframe");
+
+        if (!isHtml) return 0;
+
+        const childY = Number(child.frame?.y || 0);
+        const childHeight = Number(props.height || child.frame?.height || 900);
+
+        return childY + childHeight;
+      })),
+    );
+
+    return Math.max(max, sectionHeight, childMax);
+  }, 0);
+
+  const minPageHeight = hasPreservedHtmlPage
+    ? Math.max(900, preservedHtmlPageHeight)
+    : 1600;
   const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
   
   const fitZoom = viewportWidth

@@ -790,7 +790,25 @@ export const HtmlCodeBlock: React.FC<{
   globalCss,
 }) => {
   const { code, height } = props;
+  const rawCode = String(code || "");
   const preserveHtml = props?.preserveHtml === true || props?.mode === "iframe";
+
+  const isViewportSensitiveHtml = React.useMemo(() => {
+    const lower = rawCode.toLowerCase();
+
+    return (
+      lower.includes("100vh") ||
+      lower.includes("100svh") ||
+      lower.includes("position: sticky") ||
+      lower.includes("position:sticky") ||
+      lower.includes("position: fixed") ||
+      lower.includes("position:fixed") ||
+      lower.includes("parallax") ||
+      lower.includes("requestanimationframe") ||
+      lower.includes("window.scrolly") ||
+      lower.includes("scrolltrigger")
+    );
+  }, [rawCode]);
 
   const editorViewportHeight =
     typeof (props as any)?.editorViewportHeight === "number"
@@ -802,7 +820,9 @@ export const HtmlCodeBlock: React.FC<{
       ? height
       : Number(height || 900);
 
-  const initialHeight = preserveHtml ? editorViewportHeight : normalHeight;
+  const initialHeight = preserveHtml
+    ? Number(height || editorViewportHeight || 900)
+    : normalHeight;
 
   const [frameHeight, setFrameHeight] = React.useState(
     Number.isFinite(initialHeight) ? initialHeight : 900,
@@ -867,35 +887,79 @@ export const HtmlCodeBlock: React.FC<{
     }
   }, [code, iframeContent]);
 
-  const measureHeight = useCallback(() => {
-    if (preserveHtml) return;
-
+  const measureHeight = React.useCallback(() => {
     const iframe = iframeRef.current;
-    if (!iframe?.contentDocument) return;
+    const doc = iframe?.contentDocument;
 
-    const doc = iframe.contentDocument;
-    const nextHeight = Math.max(
-      doc.documentElement?.scrollHeight || 0,
-      doc.body?.scrollHeight || 0,
-      doc.documentElement?.offsetHeight || 0,
-      doc.body?.offsetHeight || 0,
-      height || 1200
-    );
+    if (!iframe || !doc) return;
 
-    if (nextHeight && Math.abs(nextHeight - frameHeight) > 20) {
-      setFrameHeight(nextHeight);
-      const updateFn = onUpdateSilent || onUpdate;
-      updateFn?.({
-        height: nextHeight
+    try {
+      const body = doc.body;
+      const html = doc.documentElement;
+
+      const measuredHeight = Math.max(
+        body?.scrollHeight || 0,
+        html?.scrollHeight || 0,
+        body?.offsetHeight || 0,
+        html?.offsetHeight || 0,
+        body?.clientHeight || 0,
+        html?.clientHeight || 0,
+      );
+
+      if (!measuredHeight) return;
+
+      /**
+       * Nếu HTML dùng 100vh/sticky/parallax:
+       * - Không bung iframe lên 12000/24000px
+       * - Vì sẽ làm 100vh bị tính sai và layout vỡ
+       */
+      if (preserveHtml && isViewportSensitiveHtml) {
+        const safeHeight = Math.min(
+          Math.max(measuredHeight, 640),
+          editorViewportHeight || 900,
+        );
+
+        setFrameHeight(safeHeight);
+        if (onUpdateNodeFrame) {
+          onUpdateNodeFrame(blockId, { height: safeHeight });
+        }
+        if (parentId && onUpdateNodeFrame) {
+          onUpdateNodeFrame(parentId, { height: safeHeight + 80 });
+        }
+        return;
+      }
+
+      /**
+       * HTML thường:
+       * - Co theo nội dung thật
+       * - Nhưng không cho vượt quá 5000 để tránh phá canvas
+       */
+      const nextHeight = preserveHtml
+        ? Math.min(Math.max(measuredHeight, 480), 5000)
+        : Math.min(Math.max(measuredHeight, 240), 5000);
+
+      setFrameHeight((current) => {
+        if (Math.abs(current - nextHeight) > 20) {
+          emitPropsUpdate({
+            height: nextHeight,
+          });
+
+          if (onUpdateNodeFrame) {
+            onUpdateNodeFrame(blockId, { height: nextHeight });
+          }
+          if (parentId && onUpdateNodeFrame) {
+            onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
+          }
+
+          return nextHeight;
+        }
+
+        return current;
       });
-      if (onUpdateNodeFrame) {
-        onUpdateNodeFrame(blockId, { height: nextHeight });
-      }
-      if (parentId && onUpdateNodeFrame) {
-        onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
-      }
+    } catch {
+      // Giữ height hiện tại nếu browser không cho đo.
     }
-  }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId, preserveHtml]);
+  }, [editorViewportHeight, emitPropsUpdate, isViewportSensitiveHtml, preserveHtml, onUpdateNodeFrame, blockId, parentId]);
 
   const scanIframeDom = React.useCallback(() => {
     if (isDraggingHtmlElementRef.current) return;
@@ -1758,16 +1822,21 @@ export const HtmlCodeBlock: React.FC<{
             }
           }
           window.setTimeout(() => {
+            measureHeight();
             scanIframeDom();
             enableIframeElementDrag();
           }, 300);
 
           window.setTimeout(() => {
+            measureHeight();
             scanIframeDom();
             enableIframeElementDrag();
           }, 1200);
-          window.setTimeout(measureHeight, 500);
-          window.setTimeout(measureHeight, 1500);
+
+          window.setTimeout(() => {
+            measureHeight();
+            scanIframeDom();
+          }, 2500);
         }}
         style={{
           width: "100%",
