@@ -124,28 +124,19 @@ const BlockRenderer: React.FC<{
     case "table": return <TableBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "survey": return <SurveyBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "menu": return <MenuBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "html_code": return (
-      <HtmlCodeBlock
-        props={block.props}
-        isSelected={isSelected}
-        onSelect={onSelect}
-        globalCss={globalCss}
-        onHeightChange={(nextHeight) => {
-          console.log(`[Canvas/HtmlCodeBlock] Height changed for block ${block.id}: ${nextHeight}`);
-          onUpdateBlock(block.id, { height: nextHeight });
-          if (onUpdateNodeFrame) {
-            onUpdateNodeFrame(block.id, { height: nextHeight });
-          }
-          if (parentId) {
-            console.log(`[Canvas/HtmlCodeBlock] Updating parent section ${parentId} minHeight to ${nextHeight + 80}`);
-            onUpdateBlock(parentId, { minHeight: nextHeight + 80 });
-            if (onUpdateNodeFrame) {
-              onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
-            }
-          }
-        }}
-      />
-    );
+    case "html_code":
+      return (
+        <HtmlCodeBlock
+          blockId={block.id}
+          props={block.props}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          onUpdate={update}
+          onUpdateNodeFrame={onUpdateNodeFrame}
+          parentId={parentId || undefined}
+          globalCss={globalCss}
+        />
+      );
     default:
       return null;
   }

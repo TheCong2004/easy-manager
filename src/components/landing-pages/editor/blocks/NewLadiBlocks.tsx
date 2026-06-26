@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   GalleryProps, BoxProps, IconProps, ProductCardProps, CollectionListProps,
   CarouselProps, TabsProps, FrameProps, AccordionProps, TableProps,
-  SurveyProps, MenuProps, HtmlCodeProps
+  SurveyProps, MenuProps, HtmlCodeProps, ElementFrame
 } from "../types";
 import { useCart, parsePriceNum } from "../../cart/CartContext";
 
@@ -688,24 +688,394 @@ export const MenuBlock: React.FC<{ props: MenuProps; isSelected: boolean; onSele
   );
 };
 
+function injectEasyManagerHtmlBridge(html: string, blockId: string): string {
+  if (!html || html.includes("data-easy-manager-html-bridge")) {
+    return html;
+  }
+
+  const bridgeScript = `
+<script data-easy-manager-html-bridge>
+(function () {
+  if (window.__EASY_MANAGER_HTML_BRIDGE__) return;
+  window.__EASY_MANAGER_HTML_BRIDGE__ = true;
+
+  var BLOCK_ID = ${JSON.stringify(blockId)};
+  var selectedId = null;
+
+  var SELECTOR = [
+    "header",
+    "nav",
+    "main",
+    "section",
+    "article",
+    "aside",
+    "footer",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "p",
+    "span",
+    "a",
+    "button",
+    "img",
+    "video",
+    "form",
+    "input",
+    "textarea",
+    "select",
+    "ul",
+    "ol",
+    "li",
+    "div"
+  ].join(",");
+
+  function shortText(value, max) {
+    var text = String(value || "").replace(/\\s+/g, " ").trim();
+    if (text.length <= max) return text;
+    return text.slice(0, max) + "...";
+  }
+
+  function isVisible(el) {
+    if (!el || !el.getBoundingClientRect) return false;
+    var rect = el.getBoundingClientRect();
+    var style = window.getComputedStyle(el);
+    return (
+      rect.width > 2 &&
+      rect.height > 2 &&
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      Number(style.opacity || 1) !== 0
+    );
+  }
+
+  function shouldUseElement(el) {
+    if (!el || !isVisible(el)) return false;
+
+    var tag = el.tagName.toLowerCase();
+
+    if (
+      tag === "script" ||
+      tag === "style" ||
+      tag === "meta" ||
+      tag === "link" ||
+      tag === "html" ||
+      tag === "body"
+    ) {
+      return false;
+    }
+
+    if (tag === "div") {
+      var text = shortText(el.innerText || el.textContent || "", 80);
+      var children = el.children ? el.children.length : 0;
+
+      if (!text && children > 0) return false;
+      if (children > 8) return false;
+    }
+
+    return true;
+  }
+
+  function ensureIds() {
+    var nodes = Array.prototype.slice.call(document.querySelectorAll(SELECTOR));
+    var index = 1;
+
+    nodes.forEach(function (el) {
+      if (!shouldUseElement(el)) return;
+
+      if (!el.getAttribute("data-em-id")) {
+        el.setAttribute("data-em-id", "em-" + index++);
+      }
+
+      el.style.cursor = "pointer";
+    });
+  }
+
+  function getElementLabel(el) {
+    var tag = el.tagName.toLowerCase();
+
+    if (tag === "img") {
+      return "Image" + (el.getAttribute("alt") ? " - " + el.getAttribute("alt") : "");
+    }
+
+    if (tag === "a") {
+      return "Link - " + shortText(el.innerText || el.textContent || el.getAttribute("href"), 40);
+    }
+
+    if (tag === "button") {
+      return "Button - " + shortText(el.innerText || el.textContent, 40);
+    }
+
+    if (/^h[1-6]$/.test(tag)) {
+      return tag.toUpperCase() + " - " + shortText(el.innerText || el.textContent, 40);
+    }
+
+    if (tag === "section") return "Section";
+    if (tag === "nav") return "Navigation";
+    if (tag === "header") return "Header";
+    if (tag === "footer") return "Footer";
+
+    return tag.toUpperCase() + (shortText(el.innerText || el.textContent, 40) ? " - " + shortText(el.innerText || el.textContent, 40) : "");
+  }
+
+  function getElementInfo(el) {
+    var tag = el.tagName.toLowerCase();
+    var rect = el.getBoundingClientRect();
+    var style = window.getComputedStyle(el);
+
+    return {
+      id: el.getAttribute("data-em-id"),
+      tag: tag,
+      label: getElementLabel(el),
+      text: tag === "img" || tag === "video" ? "" : shortText(el.innerText || el.textContent || "", 500),
+      href: tag === "a" ? el.getAttribute("href") || "" : "",
+      src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
+      alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+      className: el.getAttribute("class") || "",
+      color: style.color || "",
+      backgroundColor: style.backgroundColor || "",
+      fontSize: style.fontSize || "",
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      x: Math.round(rect.left + window.scrollX),
+      y: Math.round(rect.top + window.scrollY)
+    };
+  }
+
+  function buildOutline() {
+    ensureIds();
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll("[data-em-id]"));
+
+    return nodes
+      .filter(function (el) {
+        var tag = el.tagName.toLowerCase();
+
+        return [
+          "header",
+          "nav",
+          "main",
+          "section",
+          "article",
+          "footer",
+          "h1",
+          "h2",
+          "h3",
+          "button",
+          "a",
+          "img"
+        ].indexOf(tag) >= 0;
+      })
+      .slice(0, 250)
+      .map(function (el) {
+        return getElementInfo(el);
+      });
+  }
+
+  function removeSelectedClass() {
+    var selected = document.querySelectorAll(".__em_selected");
+    Array.prototype.forEach.call(selected, function (el) {
+      el.classList.remove("__em_selected");
+    });
+  }
+
+  function selectElement(el, shouldScroll) {
+    if (!el) return;
+
+    ensureIds();
+    removeSelectedClass();
+
+    selectedId = el.getAttribute("data-em-id");
+    el.classList.add("__em_selected");
+
+    if (shouldScroll) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center"
+      });
+    }
+
+    window.parent.postMessage(
+      {
+        type: "EASY_MANAGER_HTML_ELEMENT_SELECTED",
+        blockId: BLOCK_ID,
+        element: getElementInfo(el)
+      },
+      "*"
+    );
+  }
+
+  function serializeHtml(elementInfo) {
+    var clonedHtml = document.documentElement.cloneNode(true);
+
+    var bridge = clonedHtml.querySelector("script[data-easy-manager-html-bridge]");
+    if (bridge) bridge.remove();
+
+    var selected = clonedHtml.querySelectorAll(".__em_selected");
+    Array.prototype.forEach.call(selected, function (el) {
+      el.classList.remove("__em_selected");
+    });
+
+    var serialized = "<!DOCTYPE html>\n" + clonedHtml.outerHTML;
+
+    window.parent.postMessage(
+      {
+        type: "EASY_MANAGER_HTML_SERIALIZED",
+        blockId: BLOCK_ID,
+        html: serialized,
+        element: elementInfo || null,
+        outline: buildOutline()
+      },
+      "*"
+    );
+  }
+
+  function applyPatch(elementId, patch) {
+    var el = document.querySelector('[data-em-id="' + elementId + '"]');
+    if (!el) return;
+
+    var tag = el.tagName.toLowerCase();
+
+    if (Object.prototype.hasOwnProperty.call(patch, "textContent")) {
+      if (tag !== "img" && tag !== "video" && tag !== "input") {
+        el.textContent = String(patch.textContent || "");
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(patch, "href")) {
+      if (tag === "a") {
+        el.setAttribute("href", String(patch.href || ""));
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(patch, "src")) {
+      if (tag === "img" || tag === "video") {
+        el.setAttribute("src", String(patch.src || ""));
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(patch, "alt")) {
+      if (tag === "img") {
+        el.setAttribute("alt", String(patch.alt || ""));
+      }
+    }
+
+    if (patch.style && typeof patch.style === "object") {
+      Object.keys(patch.style).forEach(function (key) {
+        el.style[key] = patch.style[key];
+      });
+    }
+
+    selectElement(el, false);
+    serializeHtml(getElementInfo(el));
+  }
+
+  var style = document.createElement("style");
+  style.setAttribute("data-easy-manager-html-bridge-style", "true");
+  style.textContent = [
+    ".__em_selected {",
+    "  outline: 2px solid #8b5cf6 !important;",
+    "  outline-offset: 3px !important;",
+    "  box-shadow: 0 0 0 4px rgba(139,92,246,.25) !important;",
+    "}"
+  ].join("\n");
+  document.head.appendChild(style);
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+
+      var el = target.closest("[data-em-id]");
+      if (!el) {
+        el = target.closest(SELECTOR);
+      }
+
+      if (!el || !shouldUseElement(el)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      selectElement(el, false);
+    },
+    true
+  );
+
+  window.addEventListener("message", function (event) {
+    var data = event.data || {};
+
+    if (!data || data.blockId !== BLOCK_ID) return;
+
+    if (data.type === "EASY_MANAGER_HTML_PATCH") {
+      applyPatch(data.elementId, data.patch || {});
+    }
+
+    if (data.type === "EASY_MANAGER_HTML_SELECT") {
+      var el = document.querySelector('[data-em-id="' + data.elementId + '"]');
+      selectElement(el, true);
+    }
+  });
+
+  ensureIds();
+
+  window.parent.postMessage(
+    {
+      type: "EASY_MANAGER_HTML_OUTLINE",
+      blockId: BLOCK_ID,
+      outline: buildOutline()
+    },
+    "*"
+  );
+})();
+</script>`;
+
+  if (/<\/body>/i.test(html)) {
+    return html.replace(/<\/body>/i, bridgeScript + "\n</body>");
+  }
+
+  if (/<\/html>/i.test(html)) {
+    return html.replace(/<\/html>/i, bridgeScript + "\n</html>");
+  }
+
+  return html + bridgeScript;
+}
+
 // ── HTML Code Block ───────────────────────────────────────────
 export const HtmlCodeBlock: React.FC<{
+  blockId?: string;
   props: HtmlCodeProps;
   isSelected: boolean;
   onSelect: () => void;
+  onUpdate?: (nextProps: Record<string, unknown>) => void;
+  onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
+  parentId?: string;
   globalCss?: string;
-  onHeightChange?: (height: number) => void;
-}> = ({ props, isSelected, onSelect, globalCss, onHeightChange }) => {
+}> = ({
+  blockId = "html-code-block",
+  props,
+  isSelected,
+  onSelect,
+  onUpdate,
+  onUpdateNodeFrame,
+  parentId,
+  globalCss,
+}) => {
   const { code, height, preserveHtml, mode } = props;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
 
-  // Prepend resets to prevent iframe default margins/scrollbars from causing layout issues
   const isPreserved = preserveHtml || mode === "iframe" || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
-  const iframeContent = isPreserved
-    ? code
-    : `
-    <!DOCTYPE html>
+
+  const iframeContent = React.useMemo(() => {
+    if (isPreserved) {
+      return injectEasyManagerHtmlBridge(code, blockId);
+    }
+
+    const wrappedHtml = `<!DOCTYPE html>
     <html>
       <head>
         <style>
@@ -721,8 +1091,10 @@ export const HtmlCodeBlock: React.FC<{
       <body>
         ${code}
       </body>
-    </html>
-  `;
+    </html>`;
+
+    return injectEasyManagerHtmlBridge(wrappedHtml, blockId);
+  }, [code, globalCss, isPreserved, blockId]);
 
   const measureHeight = useCallback(() => {
     const iframe = iframeRef.current;
@@ -741,9 +1113,18 @@ export const HtmlCodeBlock: React.FC<{
 
     if (nextHeight && Math.abs(nextHeight - frameHeight) > 20) {
       setFrameHeight(nextHeight);
-      onHeightChange?.(nextHeight);
+      onUpdate?.({
+        ...props,
+        height: nextHeight
+      });
+      if (onUpdateNodeFrame) {
+        onUpdateNodeFrame(blockId, { height: nextHeight });
+      }
+      if (parentId && onUpdateNodeFrame) {
+        onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
+      }
     }
-  }, [height, frameHeight, onHeightChange]);
+  }, [height, frameHeight, onUpdate, onUpdateNodeFrame, blockId, parentId, props]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -777,6 +1158,141 @@ export const HtmlCodeBlock: React.FC<{
     window.addEventListener("resize", measureHeight);
     return () => window.removeEventListener("resize", measureHeight);
   }, [measureHeight]);
+
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data;
+
+      if (!data || data.blockId !== blockId) return;
+
+      if (data.type === "EASY_MANAGER_IMPORTED_HTML_HEIGHT") {
+        const nextHeight = Number(data.height);
+
+        if (Number.isFinite(nextHeight) && nextHeight > 0) {
+          setFrameHeight((current) => {
+            if (Math.abs(current - nextHeight) > 20) {
+              onUpdate?.({
+                ...props,
+                height: nextHeight,
+              });
+              if (onUpdateNodeFrame) {
+                onUpdateNodeFrame(blockId, { height: nextHeight });
+              }
+              if (parentId && onUpdateNodeFrame) {
+                onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
+              }
+              return nextHeight;
+            }
+
+            return current;
+          });
+        }
+
+        return;
+      }
+
+      if (data.type === "EASY_MANAGER_HTML_ELEMENT_SELECTED") {
+        onSelect?.();
+
+        onUpdate?.({
+          ...props,
+          selectedHtmlElement: data.element,
+        });
+
+        return;
+      }
+
+      if (data.type === "EASY_MANAGER_HTML_OUTLINE") {
+        onUpdate?.({
+          ...props,
+          htmlOutline: data.outline,
+        });
+
+        return;
+      }
+
+      if (data.type === "EASY_MANAGER_HTML_SERIALIZED") {
+        onUpdate?.({
+          ...props,
+          code: data.html,
+          selectedHtmlElement: data.element,
+          htmlOutline: data.outline,
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [blockId, onSelect, onUpdate, onUpdateNodeFrame, parentId, props]);
+
+  React.useEffect(() => {
+    const handlePatchRequest = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        blockId?: string;
+        elementId?: string;
+        patch?: Record<string, unknown>;
+      }>;
+
+      const detail = customEvent.detail;
+
+      if (!detail || detail.blockId !== blockId) return;
+
+      iframeRef.current?.contentWindow?.postMessage(
+        {
+          type: "EASY_MANAGER_HTML_PATCH",
+          blockId,
+          elementId: detail.elementId,
+          patch: detail.patch || {},
+        },
+        "*",
+      );
+    };
+
+    const handleSelectRequest = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        blockId?: string;
+        elementId?: string;
+      }>;
+
+      const detail = customEvent.detail;
+
+      if (!detail || detail.blockId !== blockId) return;
+
+      iframeRef.current?.contentWindow?.postMessage(
+        {
+          type: "EASY_MANAGER_HTML_SELECT",
+          blockId,
+          elementId: detail.elementId,
+        },
+        "*",
+      );
+    };
+
+    window.addEventListener(
+      "EASY_MANAGER_HTML_PATCH_REQUEST",
+      handlePatchRequest as EventListener,
+    );
+
+    window.addEventListener(
+      "EASY_MANAGER_HTML_SELECT_REQUEST",
+      handleSelectRequest as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "EASY_MANAGER_HTML_PATCH_REQUEST",
+        handlePatchRequest as EventListener,
+      );
+
+      window.removeEventListener(
+        "EASY_MANAGER_HTML_SELECT_REQUEST",
+        handleSelectRequest as EventListener,
+      );
+    };
+  }, [blockId]);
 
   return (
     <div

@@ -620,13 +620,164 @@ const ProductCardInspector: React.FC<{ props: Record<string, unknown>; update: U
   );
 };
 
-const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn }> = ({ props: p, update }) => (
-  <>
-    <SectionHeader title="Mã HTML nhúng" />
-    <TextField label="Mã HTML/CSS/JS" value={(p.code as string) ?? ""} onChange={(v) => update("code", v)} multiline rows={12} />
-    <NumberField label="Chiều cao tối thiểu" value={(p.height as number) ?? 200} onChange={(v) => update("height", v)} min={50} max={1500} unit="px" />
-  </>
-);
+const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn; block?: EditorBlock }> = ({ props: p, update, block }) => {
+  const htmlSelectedElement = (p.selectedHtmlElement ?? null) as {
+    id?: string;
+    tag?: string;
+    label?: string;
+    text?: string;
+    href?: string;
+    src?: string;
+    alt?: string;
+    color?: string;
+    backgroundColor?: string;
+    fontSize?: string;
+  } | null;
+
+  const patchHtmlElement = (patch: Record<string, unknown>) => {
+    if (!htmlSelectedElement?.id || !block) return;
+
+    window.dispatchEvent(
+      new CustomEvent("EASY_MANAGER_HTML_PATCH_REQUEST", {
+        detail: {
+          blockId: block.id,
+          elementId: htmlSelectedElement.id,
+          patch,
+        },
+      }),
+    );
+  };
+
+  return (
+    <>
+      <SectionHeader title="Mã HTML nhúng" />
+      <TextField label="Mã HTML/CSS/JS" value={(p.code as string) ?? ""} onChange={(v) => update("code", v)} multiline rows={12} />
+      <NumberField label="Chiều cao tối thiểu" value={(p.height as number) ?? 200} onChange={(v) => update("height", v)} min={50} max={1500} unit="px" />
+
+      {htmlSelectedElement && (
+        <div className="mt-4 rounded-xl border border-purple-200 bg-purple-50 p-3">
+          <div className="mb-3">
+            <div className="text-xs font-black uppercase text-purple-700">
+              Element đang chọn
+            </div>
+            <div className="mt-1 text-sm font-bold text-gray-900">
+              {htmlSelectedElement.label || htmlSelectedElement.tag}
+            </div>
+            <div className="text-xs text-gray-500">
+              ID: {htmlSelectedElement.id}
+            </div>
+          </div>
+
+          {htmlSelectedElement.tag !== "img" && htmlSelectedElement.tag !== "video" && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-bold text-gray-600">
+                Nội dung chữ
+              </label>
+              <textarea
+                className="min-h-[90px] w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                defaultValue={htmlSelectedElement.text || ""}
+                onBlur={(event) => {
+                  patchHtmlElement({
+                    textContent: event.target.value,
+                  });
+                }}
+              />
+            </div>
+          )}
+
+          {htmlSelectedElement.tag === "a" && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-bold text-gray-600">
+                Link href
+              </label>
+              <input
+                className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                defaultValue={htmlSelectedElement.href || ""}
+                onBlur={(event) => {
+                  patchHtmlElement({
+                    href: event.target.value,
+                  });
+                }}
+              />
+            </div>
+          )}
+
+          {(htmlSelectedElement.tag === "img" || htmlSelectedElement.tag === "video") && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-bold text-gray-600">
+                Source URL
+              </label>
+              <input
+                className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                defaultValue={htmlSelectedElement.src || ""}
+                onBlur={(event) => {
+                  patchHtmlElement({
+                    src: event.target.value,
+                  });
+                }}
+              />
+            </div>
+          )}
+
+          {htmlSelectedElement.tag === "img" && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-bold text-gray-600">
+                Alt text
+              </label>
+              <input
+                className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                defaultValue={htmlSelectedElement.alt || ""}
+                onBlur={(event) => {
+                  patchHtmlElement({
+                    alt: event.target.value,
+                  });
+                }}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="mb-1 block text-xs font-bold text-gray-600">
+                Màu chữ
+              </label>
+              <input
+                className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                defaultValue={htmlSelectedElement.color || ""}
+                placeholder="#ffffff"
+                onBlur={(event) => {
+                  patchHtmlElement({
+                    style: {
+                      color: event.target.value,
+                    },
+                  });
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-bold text-gray-600">
+                Font size
+              </label>
+              <input
+                className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                defaultValue={htmlSelectedElement.fontSize || ""}
+                placeholder="48px"
+                onBlur={(event) => {
+                  patchHtmlElement({
+                    style: {
+                      fontSize: event.target.value,
+                    },
+                  });
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 // ── Page settings (Light Theme) ─────────────────────────────────────────────
 export const PageSettingsPanel: React.FC<{
@@ -688,7 +839,7 @@ export const PageSettingsPanel: React.FC<{
 
 // ── Main Inspector Panel (Light Theme) ──────────────────────────────────────
 
-const INSPECTOR_MAP: Partial<Record<BlockType, React.FC<{ props: Record<string, unknown>; update: UpdateFn }>>> = {
+const INSPECTOR_MAP: Partial<Record<BlockType, React.FC<{ props: Record<string, unknown>; update: UpdateFn; block?: EditorBlock }>>> = {
   hero: HeroInspector,
   text: TextInspector,
   image: ImageInspector,
@@ -893,7 +1044,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           />
         )}
         {selectedBlock && InspectorComponent ? (
-          <InspectorComponent props={selectedBlock.props} update={update} />
+          <InspectorComponent props={selectedBlock.props} update={update} block={selectedBlock} />
         ) : !selectedBlock ? (
           <PageSettingsPanel settings={pageSettings} onUpdateSettings={onUpdatePageSettings} />
         ) : null}
