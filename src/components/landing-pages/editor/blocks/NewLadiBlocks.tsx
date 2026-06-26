@@ -774,6 +774,7 @@ export const HtmlCodeBlock: React.FC<{
   isSelected: boolean;
   onSelect: () => void;
   onUpdate?: (nextProps: Record<string, unknown>) => void;
+  onUpdateSilent?: (nextProps: Record<string, unknown>) => void;
   onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
   parentId?: string;
   globalCss?: string;
@@ -783,6 +784,7 @@ export const HtmlCodeBlock: React.FC<{
   isSelected,
   onSelect,
   onUpdate,
+  onUpdateSilent,
   onUpdateNodeFrame,
   parentId,
   globalCss,
@@ -790,6 +792,7 @@ export const HtmlCodeBlock: React.FC<{
   const { code, height, preserveHtml, mode } = props;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
+  const lastLoadedCodeRef = useRef<string>("");
 
   const isPreserved = preserveHtml || mode === "iframe" || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
 
@@ -817,6 +820,14 @@ export const HtmlCodeBlock: React.FC<{
     </html>`;
   }, [code, globalCss, isPreserved]);
 
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (iframe && lastLoadedCodeRef.current !== code) {
+      lastLoadedCodeRef.current = code;
+      iframe.srcdoc = iframeContent;
+    }
+  }, [code, iframeContent]);
+
   const measureHeight = useCallback(() => {
     const iframe = iframeRef.current;
     if (!iframe?.contentDocument) return;
@@ -830,12 +841,10 @@ export const HtmlCodeBlock: React.FC<{
       height || 1200
     );
 
-    console.log(`[HtmlCodeBlock] Measured height: ${nextHeight}px (current frameHeight: ${frameHeight}px)`);
-
     if (nextHeight && Math.abs(nextHeight - frameHeight) > 20) {
       setFrameHeight(nextHeight);
-      onUpdate?.({
-        ...props,
+      const updateFn = onUpdateSilent || onUpdate;
+      updateFn?.({
         height: nextHeight
       });
       if (onUpdateNodeFrame) {
@@ -845,54 +854,317 @@ export const HtmlCodeBlock: React.FC<{
         onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
       }
     }
-  }, [height, frameHeight, onUpdate, onUpdateNodeFrame, blockId, parentId, props]);
+  }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId]);
 
   const scanIframeDom = React.useCallback(() => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
+    const win = iframe?.contentWindow;
 
-    if (!doc || !iframe) return;
+    if (!doc || !win) return;
 
-    const outline = buildOutlineFromDoc(doc, iframe);
+    const sectionSelector = [
+      "header",
+      "nav",
+      "main",
+      "section",
+      "article",
+      "aside",
+      "footer",
+      "[role='banner']",
+      "[role='navigation']",
+      "[role='main']",
+      "[role='contentinfo']",
+      "[id*='header' i]",
+      "[id*='navbar' i]",
+      "[id*='nav' i]",
+      "[id*='hero' i]",
+      "[id*='section' i]",
+      "[id*='about' i]",
+      "[id*='story' i]",
+      "[id*='benefit' i]",
+      "[id*='feature' i]",
+      "[id*='service' i]",
+      "[id*='work' i]",
+      "[id*='gallery' i]",
+      "[id*='pricing' i]",
+      "[id*='rate' i]",
+      "[id*='faq' i]",
+      "[id*='contact' i]",
+      "[id*='footer' i]",
+      "[class*='header' i]",
+      "[class*='navbar' i]",
+      "[class*='nav' i]",
+      "[class*='hero' i]",
+      "[class*='section' i]",
+      "[class*='about' i]",
+      "[class*='story' i]",
+      "[class*='benefit' i]",
+      "[class*='feature' i]",
+      "[class*='service' i]",
+      "[class*='work' i]",
+      "[class*='gallery' i]",
+      "[class*='pricing' i]",
+      "[class*='rate' i]",
+      "[class*='faq' i]",
+      "[class*='contact' i]",
+      "[class*='footer' i]",
+      "body > div",
+      "body > main > div",
+      "main > div",
+    ].join(",");
 
-    onUpdate?.({
-      ...props,
-      htmlOutline: outline,
+    const elementSelector = [
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "p",
+      "a",
+      "button",
+      "img",
+      "video",
+      "form",
+      "input",
+      "textarea",
+      "select",
+      "li",
+    ].join(",");
+
+    const isVisible = (el: HTMLElement) => {
+      const rect = el.getBoundingClientRect();
+      const style = win.getComputedStyle(el);
+
+      if (style.display === "none") return false;
+      if (style.visibility === "hidden") return false;
+      if (Number(style.opacity || 1) === 0) return false;
+      if (rect.width < 4 || rect.height < 4) return false;
+
+      return true;
+    };
+
+    const shortText = (value: string, max = 70) => {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      return text.length > max ? `${text.slice(0, max)}...` : text;
+    };
+
+    const getKind = (el: HTMLElement) => {
+      const tag = el.tagName.toLowerCase();
+      const id = el.id.toLowerCase();
+      const cls = String(el.className || "").toLowerCase();
+      const role = String(el.getAttribute("role") || "").toLowerCase();
+      const combined = `${tag} ${id} ${cls} ${role}`;
+
+      if (tag === "header" || role === "banner" || /header|navbar|nav-bar/.test(combined)) {
+        return "HEADER";
+      }
+
+      if (tag === "nav" || role === "navigation" || /\bnav\b|navbar|menu/.test(combined)) {
+        return "NAV";
+      }
+
+      if (/hero|banner|intro|masthead/.test(combined)) {
+        return "HERO";
+      }
+
+      if (/feature|benefit|service|about|story|work|gallery|pricing|rate|faq|contact|cta/.test(combined)) {
+        return "SECTION";
+      }
+
+      if (tag === "footer" || role === "contentinfo" || /footer/.test(combined)) {
+        return "FOOTER";
+      }
+
+      if (tag === "main" || role === "main") {
+        return "MAIN";
+      }
+
+      if (tag === "section" || tag === "article" || tag === "aside") {
+        return "SECTION";
+      }
+
+      return "";
+    };
+
+    const makeInfo = (el: HTMLElement, forcedKind?: string) => {
+      if (!el.dataset.emId) {
+        el.dataset.emId = `em-${Math.random().toString(36).slice(2, 10)}`;
+      }
+
+      const tag = el.tagName.toLowerCase();
+      const rect = el.getBoundingClientRect();
+      const text = shortText(el.innerText || el.textContent || "", 90);
+      const kind = forcedKind || getKind(el);
+
+      let label = kind || tag.toUpperCase();
+
+      if (kind) {
+        if (text) label = `${kind} · ${text}`;
+      } else if (tag === "img") {
+        label = `IMG · ${el.getAttribute("alt") || el.getAttribute("src") || "Image"}`;
+      } else if (tag === "a") {
+        label = `A · ${text || el.getAttribute("href") || "Link"}`;
+      } else if (tag === "button") {
+        label = `BUTTON · ${text || "Button"}`;
+      } else if (/^h[1-6]$/.test(tag)) {
+        label = `${tag.toUpperCase()} · ${text}`;
+      } else if (text) {
+        label = `${tag.toUpperCase()} · ${text}`;
+      }
+
+      return {
+        id: el.dataset.emId,
+        tag,
+        kind: kind || tag.toUpperCase(),
+        label,
+        text: String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim(),
+        href: tag === "a" ? el.getAttribute("href") || "" : "",
+        src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
+        alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+        x: Math.round(rect.left + win.scrollX),
+        y: Math.round(rect.top + win.scrollY),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+    };
+
+    const sectionNodes = Array.from(
+      doc.querySelectorAll(sectionSelector),
+    ) as HTMLElement[];
+
+    const elementNodes = Array.from(
+      doc.querySelectorAll(elementSelector),
+    ) as HTMLElement[];
+
+    const picked = new Set<HTMLElement>();
+    const outline: Array<Record<string, unknown>> = [];
+
+    sectionNodes.forEach((el) => {
+      if (!isVisible(el)) return;
+
+      const rect = el.getBoundingClientRect();
+      const kind = getKind(el);
+
+      const looksLikeLargeSection =
+        rect.width >= 320 &&
+        rect.height >= 120 &&
+        el.children.length > 0;
+
+      if (!kind && !looksLikeLargeSection) return;
+
+      if (picked.has(el)) return;
+      picked.add(el);
+
+      outline.push(makeInfo(el, kind || "SECTION"));
     });
-  }, [onUpdate, props]);
+
+    elementNodes.forEach((el) => {
+      if (!isVisible(el)) return;
+      if (picked.has(el)) return;
+
+      const tag = el.tagName.toLowerCase();
+      const text = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+
+      if (
+        !text &&
+        tag !== "img" &&
+        tag !== "video" &&
+        tag !== "input" &&
+        tag !== "textarea"
+      ) {
+        return;
+      }
+
+      picked.add(el);
+      outline.push(makeInfo(el));
+    });
+
+    outline.sort((a, b) => {
+      const ay = Number(a.y || 0);
+      const by = Number(b.y || 0);
+
+      if (Math.abs(ay - by) > 20) return ay - by;
+
+      const ax = Number(a.x || 0);
+      const bx = Number(b.x || 0);
+
+      return ax - bx;
+    });
+
+    const updateFn = onUpdateSilent || onUpdate;
+    updateFn?.({
+      ...props,
+      htmlOutline: outline.slice(0, 350),
+    });
+  }, [onUpdate, onUpdateSilent, props]);
 
   const selectIframeElement = React.useCallback((elementId: string) => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
 
-    if (!doc) return;
+    if (!doc || !iframe) return;
 
-    const oldSelected = Array.from(doc.querySelectorAll("[data-em-selected='true']")) as HTMLElement[];
+    const oldSelected = Array.from(
+      doc.querySelectorAll("[data-em-selected='true']"),
+    ) as HTMLElement[];
 
-    oldSelected.forEach((el) => {
-      el.removeAttribute("data-em-selected");
-      el.style.outline = "";
-      el.style.outlineOffset = "";
-      el.style.boxShadow = "";
+    oldSelected.forEach((node) => {
+      node.removeAttribute("data-em-selected");
     });
 
-    const el = doc.querySelector(`[data-em-id="${elementId}"]`) as HTMLElement | null;
+    const oldOverlay = doc.getElementById("__easy_manager_html_selection_overlay");
+    oldOverlay?.remove();
 
+    const el = doc.querySelector(`[data-em-id="${elementId}"]`) as HTMLElement | null;
     if (!el) return;
 
     el.dataset.emSelected = "true";
-    el.style.outline = "2px solid #8b5cf6";
-    el.style.outlineOffset = "3px";
-    el.style.boxShadow = "0 0 0 4px rgba(139,92,246,.25)";
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    const rect = el.getBoundingClientRect();
+    const win = iframe.contentWindow;
+
+    const overlay = doc.createElement("div");
+    overlay.id = "__easy_manager_html_selection_overlay";
+    overlay.style.position = "absolute";
+    overlay.style.left = `${rect.left + (win?.scrollX ?? 0)}px`;
+    overlay.style.top = `${rect.top + (win?.scrollY ?? 0)}px`;
+    overlay.style.width = `${rect.width}px`;
+    overlay.style.height = `${rect.height}px`;
+    overlay.style.border = "2px solid #8b5cf6";
+    overlay.style.outline = "3px solid rgba(139,92,246,.25)";
+    overlay.style.boxShadow = "0 0 0 99999px rgba(139,92,246,.03)";
+    overlay.style.borderRadius = "4px";
+    overlay.style.zIndex = "2147483647";
+    overlay.style.pointerEvents = "none";
+    overlay.style.boxSizing = "border-box";
+
+    doc.body.appendChild(overlay);
+
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "center",
+    });
+
+    window.setTimeout(() => {
+      const nextRect = el.getBoundingClientRect();
+      if (win) {
+        overlay.style.left = `${nextRect.left + win.scrollX}px`;
+        overlay.style.top = `${nextRect.top + win.scrollY}px`;
+        overlay.style.width = `${nextRect.width}px`;
+        overlay.style.height = `${nextRect.height}px`;
+      }
+    }, 450);
 
     const tag = el.tagName.toLowerCase();
     const text = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
 
     onSelect?.();
 
-    onUpdate?.({
-      ...props,
+    const updateFn = onUpdateSilent || onUpdate;
+    updateFn?.({
       selectedHtmlElement: {
         id: elementId,
         tag,
@@ -903,92 +1175,127 @@ export const HtmlCodeBlock: React.FC<{
         alt: tag === "img" ? el.getAttribute("alt") || "" : "",
       },
     });
-  }, [onSelect, onUpdate, props]);
+  }, [onSelect, onUpdate, onUpdateSilent]);
 
-  const patchIframeElement = React.useCallback((elementId: string, patch: Record<string, unknown>) => {
+  const serializeIframeHtml = React.useCallback(() => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
-    if (!doc || !iframe) return;
 
-    const el = doc.querySelector(`[data-em-id="${elementId}"]`) as HTMLElement | null;
-    if (!el) return;
+    if (!doc) return code;
 
-    const tag = el.tagName.toLowerCase();
+    const cloned = doc.documentElement.cloneNode(true) as HTMLElement;
 
-    if (Object.prototype.hasOwnProperty.call(patch, "textContent")) {
-      if (tag !== "img" && tag !== "video" && tag !== "input") {
-        el.textContent = String(patch.textContent || "");
-      }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(patch, "href")) {
-      if (tag === "a") {
-        el.setAttribute("href", String(patch.href || ""));
-      }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(patch, "src")) {
-      if (tag === "img" || tag === "video") {
-        el.setAttribute("src", String(patch.src || ""));
-      }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(patch, "alt")) {
-      if (tag === "img") {
-        el.setAttribute("alt", String(patch.alt || ""));
-      }
-    }
-
-    if (patch.style && typeof patch.style === "object") {
-      Object.keys(patch.style).forEach((key) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (el.style as any)[key] = (patch.style as any)[key];
-      });
-    }
-
-    // Draw select highlight again
-    const oldSelected = Array.from(doc.querySelectorAll("[data-em-selected='true']")) as HTMLElement[];
-    oldSelected.forEach((selectedEl) => {
-      selectedEl.removeAttribute("data-em-selected");
-      selectedEl.style.outline = "";
-      selectedEl.style.outlineOffset = "";
-      selectedEl.style.boxShadow = "";
+    cloned.querySelectorAll("[data-em-selected='true']").forEach((el) => {
+      el.removeAttribute("data-em-selected");
+      (el as HTMLElement).style.outline = "";
+      (el as HTMLElement).style.outlineOffset = "";
+      (el as HTMLElement).style.boxShadow = "";
     });
 
-    el.dataset.emSelected = "true";
-    el.style.outline = "2px solid #8b5cf6";
-    el.style.outlineOffset = "3px";
-    el.style.boxShadow = "0 0 0 4px rgba(139,92,246,.25)";
+    const overlay = cloned.querySelector("#__easy_manager_html_selection_overlay");
+    overlay?.remove();
 
-    // Clone and strip temporary attributes before serialization
-    const clonedDoc = doc.documentElement.cloneNode(true) as HTMLElement;
-    const clonedSelected = Array.from(clonedDoc.querySelectorAll("[data-em-selected='true']")) as HTMLElement[];
-    clonedSelected.forEach((selectedEl) => {
-      selectedEl.removeAttribute("data-em-selected");
-      selectedEl.style.outline = "";
-      selectedEl.style.outlineOffset = "";
-      selectedEl.style.boxShadow = "";
+    cloned.querySelectorAll("[data-em-id]").forEach((el) => {
+      el.removeAttribute("data-em-id");
     });
 
-    const serializedHtml = "<!DOCTYPE html>\n" + clonedDoc.outerHTML;
-    const text = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
-    const outline = buildOutlineFromDoc(doc, iframe);
+    return "<!DOCTYPE html>\n" + cloned.outerHTML;
+  }, [code]);
 
-    onUpdate?.({
-      ...props,
-      code: serializedHtml,
-      selectedHtmlElement: {
+  const patchIframeElement = React.useCallback(
+    (elementId: string, patch: Record<string, unknown>) => {
+      const iframe = iframeRef.current;
+      const doc = iframe?.contentDocument;
+
+      if (!doc) return;
+
+      const el = doc.querySelector(
+        `[data-em-id="${elementId}"]`,
+      ) as HTMLElement | null;
+
+      if (!el) return;
+
+      const tag = el.tagName.toLowerCase();
+
+      if (Object.prototype.hasOwnProperty.call(patch, "textContent")) {
+        if (
+          tag !== "img" &&
+          tag !== "video" &&
+          tag !== "input" &&
+          tag !== "textarea" &&
+          tag !== "select"
+        ) {
+          el.textContent = String(patch.textContent ?? "");
+        }
+
+        if (tag === "input" || tag === "textarea") {
+          (el as HTMLInputElement).value = String(patch.textContent ?? "");
+          el.setAttribute("value", String(patch.textContent ?? ""));
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "href")) {
+        if (tag === "a") {
+          el.setAttribute("href", String(patch.href ?? ""));
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "src")) {
+        if (tag === "img" || tag === "video") {
+          el.setAttribute("src", String(patch.src ?? ""));
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "alt")) {
+        if (tag === "img") {
+          el.setAttribute("alt", String(patch.alt ?? ""));
+        }
+      }
+
+      if (patch.style && typeof patch.style === "object") {
+        Object.entries(patch.style as Record<string, string>).forEach(
+          ([key, value]) => {
+            if (!key) return;
+            el.style.setProperty(
+              key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`),
+              String(value ?? ""),
+            );
+          },
+        );
+      }
+
+      const text = String(el.innerText || el.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const nextSelectedElement = {
         id: elementId,
         tag,
         label: `${tag.toUpperCase()} · ${text.slice(0, 80)}`,
         text,
         href: tag === "a" ? el.getAttribute("href") || "" : "",
-        src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
+        src:
+          tag === "img" || tag === "video"
+            ? el.getAttribute("src") || ""
+            : "",
         alt: tag === "img" ? el.getAttribute("alt") || "" : "",
-      },
-      htmlOutline: outline,
-    });
-  }, [onUpdate, props]);
+      };
+
+      const nextHtml = serializeIframeHtml();
+
+      // Update the ref so the useEffect doesn't trigger iframe reload
+      lastLoadedCodeRef.current = nextHtml;
+
+      onUpdate?.({
+        ...props,
+        code: nextHtml,
+        selectedHtmlElement: nextSelectedElement,
+      });
+
+      window.setTimeout(scanIframeDom, 100);
+    },
+    [onUpdate, props, scanIframeDom, serializeIframeHtml],
+  );
 
   const handleIframeClick = useCallback((event: MouseEvent) => {
     const target = event.target as HTMLElement;
@@ -1014,51 +1321,25 @@ export const HtmlCodeBlock: React.FC<{
     event.preventDefault();
     event.stopPropagation();
 
-    if (el.dataset.emId) {
-      selectIframeElement(el.dataset.emId);
+    if (!el.dataset.emId) {
+      el.dataset.emId = `em-clicked-${Date.now()}`;
     }
+
+    selectIframeElement(el.dataset.emId);
   }, [selectIframeElement]);
 
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const handleLoad = () => {
-      console.log(`[HtmlCodeBlock] iframe loaded, starting measurements`);
-      measureHeight();
-
-      const doc = iframe.contentDocument;
-      if (doc) {
-        doc.removeEventListener("click", handleIframeClick, true);
-        doc.addEventListener("click", handleIframeClick, true);
-      }
-
-      window.setTimeout(scanIframeDom, 300);
-      window.setTimeout(scanIframeDom, 1200);
-
-      // Đợi ảnh/font load xong rồi đo lại
-      const t1 = setTimeout(measureHeight, 300);
-      const t2 = setTimeout(measureHeight, 1000);
-      const t3 = setTimeout(measureHeight, 2500);
-
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    };
-
-    if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
-      handleLoad();
-    }
-
-    iframe.addEventListener("load", handleLoad);
-    return () => iframe.removeEventListener("load", handleLoad);
-  }, [iframeContent, measureHeight, handleIframeClick, scanIframeDom]);
-
-  useEffect(() => {
     window.addEventListener("resize", measureHeight);
-    return () => window.removeEventListener("resize", measureHeight);
+    return () => {
+      window.removeEventListener("resize", measureHeight);
+      if (iframeRef.current && (iframeRef.current as any).__heightObserver) {
+        try {
+          (iframeRef.current as any).__heightObserver.disconnect();
+        } catch (e) {
+          console.warn("Failed to disconnect height observer", e);
+        }
+      }
+    };
   }, [measureHeight]);
 
   React.useEffect(() => {
@@ -1121,6 +1402,15 @@ export const HtmlCodeBlock: React.FC<{
       className={`relative w-full cursor-pointer transition-all ${
         isSelected ? "ring-2 ring-purple-500" : "hover:ring-1 hover:ring-purple-400/40"
       }`}
+      style={{
+        width: "100%",
+        height: frameHeight,
+        minHeight: frameHeight,
+        position: "relative",
+        border: isSelected ? "1.5px solid #8b5cf6" : "none",
+        background: "#ffffff",
+        overflow: "visible",
+      }}
     >
       {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
       <div className="absolute inset-0 z-10 bg-transparent pointer-events-none" />
@@ -1128,23 +1418,44 @@ export const HtmlCodeBlock: React.FC<{
       <iframe
         ref={iframeRef}
         title="Imported HTML"
-        srcDoc={iframeContent}
         className="w-full border-none"
         onLoad={() => {
+          measureHeight();
           const doc = iframeRef.current?.contentDocument;
+          const win = iframeRef.current?.contentWindow;
           if (doc) {
             doc.removeEventListener("click", handleIframeClick, true);
             doc.addEventListener("click", handleIframeClick, true);
+
+            // Disconnect old observer if exists
+            if ((iframeRef.current as any).__heightObserver) {
+              try {
+                (iframeRef.current as any).__heightObserver.disconnect();
+              } catch (e) {}
+            }
+
+            // Create new observer using the iframe window's ResizeObserver if available
+            const ResizeObserverClass = (win as any)?.ResizeObserver || (window as any).ResizeObserver;
+            if (ResizeObserverClass && doc.body) {
+              const observer = new ResizeObserverClass(() => {
+                measureHeight();
+              });
+              observer.observe(doc.body);
+              (iframeRef.current as any).__heightObserver = observer;
+            }
           }
           window.setTimeout(scanIframeDom, 300);
           window.setTimeout(scanIframeDom, 1200);
+          window.setTimeout(measureHeight, 500);
+          window.setTimeout(measureHeight, 1500);
         }}
         style={{
           width: "100%",
-          height: `${frameHeight}px`,
+          height: frameHeight,
+          minHeight: frameHeight,
           border: 0,
           display: "block",
-          background: "white",
+          background: "#ffffff",
           overflow: "hidden",
           pointerEvents: isSelected ? "auto" : "none",
         }}

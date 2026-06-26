@@ -302,12 +302,19 @@ const LayerItem: React.FC<{
             {(block.props.htmlOutline as Array<{
               id: string;
               tag: string;
+              kind?: string;
               label: string;
             }>).slice(0, 120).map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className="block w-full truncate rounded px-2 py-1 text-left text-xs text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition"
+                className={`block w-full truncate rounded px-2 py-1 text-left text-xs transition ${
+                  ["HEADER", "NAV", "HERO", "SECTION", "MAIN", "FOOTER"].includes(
+                    String(item.kind || "").toUpperCase(),
+                  )
+                    ? "bg-gray-50 font-bold text-gray-900 hover:bg-purple-100 hover:text-purple-700"
+                    : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+                }`}
                 onClick={(event) => {
                   event.stopPropagation();
                   onSelectBlock(block.id);
@@ -322,7 +329,11 @@ const LayerItem: React.FC<{
                 }}
                 title={item.label}
               >
-                {item.label}
+                {["HEADER", "NAV", "HERO", "SECTION", "MAIN", "FOOTER"].includes(
+                  String(item.kind || "").toUpperCase(),
+                )
+                  ? `▣ ${item.label}`
+                  : `• ${item.label}`}
               </button>
             ))}
           </div>

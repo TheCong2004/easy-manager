@@ -621,7 +621,7 @@ const ProductCardInspector: React.FC<{ props: Record<string, unknown>; update: U
 };
 
 const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: UpdateFn; block?: EditorBlock }> = ({ props: p, update, block }) => {
-  const htmlSelectedElement = (p.selectedHtmlElement ?? null) as {
+  const htmlSelectedElement = (block?.props?.selectedHtmlElement ?? null) as {
     id?: string;
     tag?: string;
     label?: string;
@@ -629,9 +629,6 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
     href?: string;
     src?: string;
     alt?: string;
-    color?: string;
-    backgroundColor?: string;
-    fontSize?: string;
   } | null;
 
   const patchHtmlElement = (patch: Record<string, unknown>) => {
@@ -651,46 +648,51 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
   return (
     <>
       <SectionHeader title="Mã HTML nhúng" />
-      <TextField label="Mã HTML/CSS/JS" value={(p.code as string) ?? ""} onChange={(v) => update("code", v)} multiline rows={12} />
-      <NumberField label="Chiều cao tối thiểu" value={(p.height as number) ?? 200} onChange={(v) => update("height", v)} min={50} max={1500} unit="px" />
 
       {htmlSelectedElement && (
-        <div className="mt-4 rounded-xl border border-purple-200 bg-purple-50 p-3">
+        <div className="mb-4 rounded-xl border border-purple-200 bg-purple-50 p-3">
           <div className="mb-3">
             <div className="text-xs font-black uppercase text-purple-700">
               Element đang chọn
             </div>
+
             <div className="mt-1 text-sm font-bold text-gray-900">
               {htmlSelectedElement.label || htmlSelectedElement.tag}
             </div>
+
             <div className="text-xs text-gray-500">
               ID: {htmlSelectedElement.id}
             </div>
           </div>
 
-          {htmlSelectedElement.tag !== "img" && htmlSelectedElement.tag !== "video" && (
-            <div className="mb-3">
-              <label className="mb-1 block text-xs font-bold text-gray-600">
-                Nội dung chữ
-              </label>
-              <textarea
-                className="min-h-[90px] w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
-                defaultValue={htmlSelectedElement.text || ""}
-                onBlur={(event) => {
-                  patchHtmlElement({
-                    textContent: event.target.value,
-                  });
-                }}
-              />
-            </div>
-          )}
+          {htmlSelectedElement.tag !== "img" &&
+            htmlSelectedElement.tag !== "video" && (
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-bold text-gray-600">
+                  Sửa nội dung chữ
+                </label>
+
+                <textarea
+                  key={`${htmlSelectedElement.id}-text`}
+                  className="min-h-[90px] w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
+                  defaultValue={htmlSelectedElement.text || ""}
+                  onBlur={(event) => {
+                    patchHtmlElement({
+                      textContent: event.target.value,
+                    });
+                  }}
+                />
+              </div>
+            )}
 
           {htmlSelectedElement.tag === "a" && (
             <div className="mb-3">
               <label className="mb-1 block text-xs font-bold text-gray-600">
-                Link href
+                Sửa link href
               </label>
+
               <input
+                key={`${htmlSelectedElement.id}-href`}
                 className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
                 defaultValue={htmlSelectedElement.href || ""}
                 onBlur={(event) => {
@@ -702,12 +704,15 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
             </div>
           )}
 
-          {(htmlSelectedElement.tag === "img" || htmlSelectedElement.tag === "video") && (
+          {(htmlSelectedElement.tag === "img" ||
+            htmlSelectedElement.tag === "video") && (
             <div className="mb-3">
               <label className="mb-1 block text-xs font-bold text-gray-600">
-                Source URL
+                Sửa source URL
               </label>
+
               <input
+                key={`${htmlSelectedElement.id}-src`}
                 className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
                 defaultValue={htmlSelectedElement.src || ""}
                 onBlur={(event) => {
@@ -722,9 +727,11 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
           {htmlSelectedElement.tag === "img" && (
             <div className="mb-3">
               <label className="mb-1 block text-xs font-bold text-gray-600">
-                Alt text
+                Sửa alt text
               </label>
+
               <input
+                key={`${htmlSelectedElement.id}-alt`}
                 className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
                 defaultValue={htmlSelectedElement.alt || ""}
                 onBlur={(event) => {
@@ -741,11 +748,13 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
               <label className="mb-1 block text-xs font-bold text-gray-600">
                 Màu chữ
               </label>
+
               <input
                 className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
-                defaultValue={htmlSelectedElement.color || ""}
                 placeholder="#ffffff"
                 onBlur={(event) => {
+                  if (!event.target.value.trim()) return;
+
                   patchHtmlElement({
                     style: {
                       color: event.target.value,
@@ -759,11 +768,13 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
               <label className="mb-1 block text-xs font-bold text-gray-600">
                 Font size
               </label>
+
               <input
                 className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm outline-none focus:border-purple-500"
-                defaultValue={htmlSelectedElement.fontSize || ""}
                 placeholder="48px"
                 onBlur={(event) => {
+                  if (!event.target.value.trim()) return;
+
                   patchHtmlElement({
                     style: {
                       fontSize: event.target.value,
@@ -775,6 +786,9 @@ const HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upda
           </div>
         </div>
       )}
+
+      <TextField label="Mã HTML/CSS/JS" value={(p.code as string) ?? ""} onChange={(v) => update("code", v)} multiline rows={12} />
+      <NumberField label="Chiều cao tối thiểu" value={(p.height as number) ?? 200} onChange={(v) => update("height", v)} min={50} max={1500} unit="px" />
     </>
   );
 };

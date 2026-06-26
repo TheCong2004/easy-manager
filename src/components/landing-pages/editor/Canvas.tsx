@@ -79,6 +79,7 @@ const BlockRenderer: React.FC<{
   isSelected: boolean;
   onSelect: () => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  onUpdateBlockSilent: (id: string, nextProps: Record<string, unknown>) => void;
   onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
   globalCss?: string;
   parentId?: string;
@@ -87,11 +88,13 @@ const BlockRenderer: React.FC<{
   isSelected,
   onSelect,
   onUpdateBlock,
+  onUpdateBlockSilent,
   onUpdateNodeFrame,
   globalCss,
   parentId,
 }) => {
   const update = (nextProps: Record<string, unknown>) => onUpdateBlock(block.id, nextProps);
+  const updateSilent = (nextProps: Record<string, unknown>) => onUpdateBlockSilent(block.id, nextProps);
 
   switch (block.type) {
     case "hero": return <HeroBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
@@ -132,6 +135,7 @@ const BlockRenderer: React.FC<{
           isSelected={isSelected}
           onSelect={onSelect}
           onUpdate={update}
+          onUpdateSilent={updateSilent}
           onUpdateNodeFrame={onUpdateNodeFrame}
           parentId={parentId || undefined}
           globalCss={globalCss}
@@ -330,6 +334,7 @@ const AbsoluteElementWrapper: React.FC<{
   onPointerDownResize: (e: React.PointerEvent, block: EditorBlock, direction: string) => void;
   onPointerDownRotate: (e: React.PointerEvent, block: EditorBlock) => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  onUpdateBlockSilent: (id: string, nextProps: Record<string, unknown>) => void;
   onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
@@ -346,6 +351,7 @@ const AbsoluteElementWrapper: React.FC<{
   onPointerDownResize,
   onPointerDownRotate,
   onUpdateBlock,
+  onUpdateBlockSilent,
   onUpdateNodeFrame,
   onDeleteBlock,
   onDuplicateBlock,
@@ -413,6 +419,7 @@ const AbsoluteElementWrapper: React.FC<{
           isSelected={isSelected}
           onSelect={() => {}}
           onUpdateBlock={onUpdateBlock}
+          onUpdateBlockSilent={onUpdateBlockSilent}
           onUpdateNodeFrame={onUpdateNodeFrame}
           globalCss={globalCss}
           parentId={block.parentId || undefined}
@@ -605,6 +612,7 @@ interface CanvasProps {
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
+  onUpdateBlockSilent: (id: string, nextProps: Record<string, unknown>) => void;
   onUpdateNodeFrame: (id: string, frame: Partial<ElementFrame>) => void;
   onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
   onAddSection: (blockType: BlockType, index?: number) => void;
@@ -624,6 +632,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onDeleteBlock,
   onDuplicateBlock,
   onUpdateBlock,
+  onUpdateBlockSilent,
   onUpdateNodeFrame,
   onUpdateResponsiveFrame,
   onMoveNodeZIndex,
@@ -1022,6 +1031,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       isSelected={false}
                       onSelect={() => {}}
                       onUpdateBlock={onUpdateBlock}
+                      onUpdateBlockSilent={onUpdateBlockSilent}
                       globalCss={globalCss}
                     />
                   </div>
@@ -1056,6 +1066,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       onPointerDownResize={handlePointerDownResize}
                       onPointerDownRotate={handlePointerDownRotate}
                       onUpdateBlock={onUpdateBlock}
+                      onUpdateBlockSilent={onUpdateBlockSilent}
                       onUpdateNodeFrame={onUpdateNodeFrame}
                       onDeleteBlock={onDeleteBlock}
                       onDuplicateBlock={onDuplicateBlock}

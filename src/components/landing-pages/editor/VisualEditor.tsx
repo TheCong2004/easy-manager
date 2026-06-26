@@ -81,6 +81,10 @@ function useHistory<T>(initial: T) {
     setFuture([]);
   }, []);
 
+  const silentUpdate = useCallback((next: T) => {
+    setPresent(next);
+  }, []);
+
   return {
     state: present,
     push,
@@ -89,6 +93,7 @@ function useHistory<T>(initial: T) {
     redo,
     canUndo: past.length > 0,
     canRedo: future.length > 0,
+    silentUpdate,
   };
 }
 
@@ -159,7 +164,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onCreatePage,
   onDeletePage,
 }) => {
-  const { state: data, push, replace, undo, redo, canUndo, canRedo } = useHistory<EditorData>(
+  const { state: data, push, replace, undo, redo, canUndo, canRedo, silentUpdate } = useHistory<EditorData>(
     {
       pageId: page.id,
       pageName: page.name,
@@ -447,6 +452,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     handleMoveDown,
     handleMoveUp,
     handleUpdateBlock,
+    handleUpdateBlockSilent,
     handleUpdatePageSettings,
     handleUseAsset,
     handleUpdateNodeFrame,
@@ -460,6 +466,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     data,
     handleSelectBlock,
     push,
+    silentUpdate,
     recordAction,
     selectedId,
     setSelectedId,
@@ -1093,6 +1100,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               onMoveUp={handleMoveUp}
               onMoveDown={handleMoveDown}
               onUpdateBlock={handleUpdateBlock}
+              onUpdateBlockSilent={handleUpdateBlockSilent}
               onUpdateNodeFrame={handleUpdateNodeFrame}
               onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
               onAddSection={handleAddSection}
