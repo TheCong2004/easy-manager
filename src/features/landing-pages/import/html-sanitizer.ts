@@ -106,12 +106,13 @@ export function sanitizeElement(
       const name = attr.name.toLowerCase();
       const value = attr.value || "";
 
-      if (name.startsWith("on")) {
+      if (!preserveScripts && name.startsWith("on")) {
         attrsToRemove.push(attr.name);
         continue;
       }
 
       if (
+        !preserveScripts &&
         ["href", "src", "xlink:href", "formaction", "action"].includes(name) &&
         isDangerousUrl(value)
       ) {
@@ -119,7 +120,7 @@ export function sanitizeElement(
         continue;
       }
 
-      if (name === "style" && /url\(\s*['"]?\s*(javascript:|vbscript:)/i.test(value)) {
+      if (!preserveScripts && name === "style" && /url\(\s*['"]?\s*(javascript:|vbscript:)/i.test(value)) {
         attrsToRemove.push(attr.name);
       }
     }

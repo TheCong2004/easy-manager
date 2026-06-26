@@ -334,14 +334,14 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
 
     sanitizeElement(doc.body, {
       preserveScripts: true,
-      removeOpenDesignScripts: true,
+      removeOpenDesignScripts: false,
       allowIframes: true,
     });
 
     if (doc.head) {
       sanitizeElement(doc.head, {
         preserveScripts: true,
-        removeOpenDesignScripts: true,
+        removeOpenDesignScripts: false,
         allowIframes: true,
       });
     }

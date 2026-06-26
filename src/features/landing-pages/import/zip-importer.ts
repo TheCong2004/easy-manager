@@ -290,14 +290,14 @@ export async function importZipLandingPage(
 
   sanitizeElement(doc.body, {
     preserveScripts: shouldPreserveScripts,
-    removeOpenDesignScripts: true,
+    removeOpenDesignScripts: !shouldPreserveScripts,
     allowIframes: shouldPreserveScripts,
   });
 
   if (doc.head) {
     sanitizeElement(doc.head, {
       preserveScripts: shouldPreserveScripts,
-      removeOpenDesignScripts: true,
+      removeOpenDesignScripts: !shouldPreserveScripts,
       allowIframes: shouldPreserveScripts,
     });
   }
