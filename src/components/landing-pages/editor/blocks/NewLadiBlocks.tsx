@@ -1100,6 +1100,34 @@ export const HtmlCodeBlock: React.FC<{
     });
   }, [onUpdate, onUpdateSilent, props]);
 
+  const getIframeElementInfo = React.useCallback((el: HTMLElement) => {
+    const tag = el.tagName.toLowerCase();
+    const text = String(el.innerText || el.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const rect = el.getBoundingClientRect();
+    const iframe = iframeRef.current;
+    const win = iframe?.contentWindow;
+
+    return {
+      id: el.dataset.emId || "",
+      tag,
+      label: `${tag.toUpperCase()} · ${text.slice(0, 80)}`,
+      text,
+      href: tag === "a" ? el.getAttribute("href") || "" : "",
+      src:
+        tag === "img" || tag === "video"
+          ? el.getAttribute("src") || ""
+          : "",
+      alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+      x: Math.round(rect.left + (win?.scrollX ?? 0)),
+      y: Math.round(rect.top + (win?.scrollY ?? 0)),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    };
+  }, []);
+
   const selectIframeElement = React.useCallback((elementId: string) => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
@@ -1185,22 +1213,184 @@ export const HtmlCodeBlock: React.FC<{
 
     const cloned = doc.documentElement.cloneNode(true) as HTMLElement;
 
-    cloned.querySelectorAll("[data-em-selected='true']").forEach((el) => {
+    cloned.querySelector("#__easy_manager_html_selection_overlay")?.remove();
+
+    cloned.querySelectorAll("[data-em-selected]").forEach((el) => {
       el.removeAttribute("data-em-selected");
       (el as HTMLElement).style.outline = "";
       (el as HTMLElement).style.outlineOffset = "";
       (el as HTMLElement).style.boxShadow = "";
     });
 
-    const overlay = cloned.querySelector("#__easy_manager_html_selection_overlay");
-    overlay?.remove();
-
     cloned.querySelectorAll("[data-em-id]").forEach((el) => {
       el.removeAttribute("data-em-id");
     });
 
+    cloned.querySelectorAll("[data-em-base-transform]").forEach((el) => {
+      el.removeAttribute("data-em-base-transform");
+    });
+
+    cloned.querySelectorAll("[data-em-move-x]").forEach((el) => {
+      el.removeAttribute("data-em-move-x");
+    });
+
+    cloned.querySelectorAll("[data-em-move-y]").forEach((el) => {
+      el.removeAttribute("data-em-move-y");
+    });
+
     return "<!DOCTYPE html>\n" + cloned.outerHTML;
   }, [code]);
+
+  const enableIframeElementDrag = React.useCallback(() => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+
+    if (!iframe || !doc) return;
+
+    const anyDoc = doc as Document & {
+      __EASY_MANAGER_DRAG_BOUND__?: boolean;
+    };
+
+    if (anyDoc.__EASY_MANAGER_DRAG_BOUND__) return;
+    anyDoc.__EASY_MANAGER_DRAG_BOUND__ = true;
+
+    let dragState: {
+      el: HTMLElement;
+      elementId: string;
+      startX: number;
+      startY: number;
+      baseMoveX: number;
+      baseMoveY: number;
+      baseTransform: string;
+    } | null = null;
+
+    const updateOverlay = (el: HTMLElement) => {
+      const overlay = doc.getElementById("__easy_manager_html_selection_overlay");
+      const win = iframe.contentWindow;
+
+      if (!overlay || !win) return;
+
+      const rect = el.getBoundingClientRect();
+
+      overlay.style.left = `${rect.left + win.scrollX}px`;
+      overlay.style.top = `${rect.top + win.scrollY}px`;
+      overlay.style.width = `${rect.width}px`;
+      overlay.style.height = `${rect.height}px`;
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const directTag = target.tagName.toLowerCase();
+
+      if (
+        directTag === "input" ||
+        directTag === "textarea" ||
+        directTag === "select"
+      ) {
+        return;
+      }
+
+      const el = target.closest("[data-em-id]") as HTMLElement | null;
+      if (!el) return;
+
+      const elementId = el.dataset.emId;
+      if (!elementId) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      selectIframeElement(elementId);
+
+      const computed = iframe.contentWindow?.getComputedStyle(el);
+      const currentPosition = computed?.position || "";
+
+      if (currentPosition === "static" || !currentPosition) {
+        el.style.position = "relative";
+      }
+
+      el.style.zIndex = "9999";
+      el.style.cursor = "move";
+
+      if (!el.dataset.emBaseTransform) {
+        el.dataset.emBaseTransform = el.style.transform || "";
+      }
+
+      const baseMoveX = Number(el.dataset.emMoveX || 0);
+      const baseMoveY = Number(el.dataset.emMoveY || 0);
+
+      dragState = {
+        el,
+        elementId,
+        startX: event.clientX,
+        startY: event.clientY,
+        baseMoveX,
+        baseMoveY,
+        baseTransform: el.dataset.emBaseTransform || "",
+      };
+
+      doc.body.style.userSelect = "none";
+      doc.body.style.cursor = "move";
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!dragState) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const dx = Math.round(event.clientX - dragState.startX);
+      const dy = Math.round(event.clientY - dragState.startY);
+
+      const nextX = dragState.baseMoveX + dx;
+      const nextY = dragState.baseMoveY + dy;
+
+      dragState.el.dataset.emMoveX = String(nextX);
+      dragState.el.dataset.emMoveY = String(nextY);
+
+      dragState.el.style.transform = `${dragState.baseTransform} translate(${nextX}px, ${nextY}px)`.trim();
+      dragState.el.style.willChange = "transform";
+
+      updateOverlay(dragState.el);
+    };
+
+    const handlePointerUp = () => {
+      if (!dragState) return;
+
+      // Reset temporary drag indicators (zIndex and cursor) on the element
+      dragState.el.style.zIndex = "";
+      dragState.el.style.cursor = "";
+
+      const info = getIframeElementInfo(dragState.el);
+      const nextHtml = serializeIframeHtml();
+
+      onUpdate?.({
+        ...props,
+        code: nextHtml,
+        selectedHtmlElement: info,
+      });
+
+      window.setTimeout(scanIframeDom, 120);
+
+      dragState = null;
+
+      doc.body.style.userSelect = "";
+      doc.body.style.cursor = "";
+    };
+
+    doc.addEventListener("pointerdown", handlePointerDown, true);
+    doc.addEventListener("pointermove", handlePointerMove, true);
+    doc.addEventListener("pointerup", handlePointerUp, true);
+    doc.addEventListener("pointercancel", handlePointerUp, true);
+  }, [
+    getIframeElementInfo,
+    onUpdate,
+    props,
+    scanIframeDom,
+    selectIframeElement,
+    serializeIframeHtml,
+  ]);
 
   const patchIframeElement = React.useCallback(
     (elementId: string, patch: Record<string, unknown>) => {
@@ -1444,8 +1634,15 @@ export const HtmlCodeBlock: React.FC<{
               (iframeRef.current as any).__heightObserver = observer;
             }
           }
-          window.setTimeout(scanIframeDom, 300);
-          window.setTimeout(scanIframeDom, 1200);
+          window.setTimeout(() => {
+            scanIframeDom();
+            enableIframeElementDrag();
+          }, 300);
+
+          window.setTimeout(() => {
+            scanIframeDom();
+            enableIframeElementDrag();
+          }, 1200);
           window.setTimeout(measureHeight, 500);
           window.setTimeout(measureHeight, 1500);
         }}
