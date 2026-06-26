@@ -303,7 +303,7 @@ const LayerItem: React.FC<{
               id: string;
               tag: string;
               label: string;
-            }>).slice(0, 80).map((item) => (
+            }>).slice(0, 120).map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -322,7 +322,7 @@ const LayerItem: React.FC<{
                 }}
                 title={item.label}
               >
-                {item.tag.toUpperCase()} · {item.label}
+                {item.label}
               </button>
             ))}
           </div>
