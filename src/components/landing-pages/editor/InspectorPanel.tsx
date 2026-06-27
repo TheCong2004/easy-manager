@@ -1517,6 +1517,7 @@ type InspectorTab = "design" | "events" | "effects" | "advanced";
 
 interface InspectorPanelProps {
   selectedBlock: EditorBlock | null;
+  inspectorMode?: "page" | "section" | "element";
   pageSettings: EditorData["pageSettings"];
   onUpdateBlock: (id: string, newProps: Record<string, unknown>) => void;
   onUpdateBlockSilent?: (id: string, newProps: Record<string, unknown>) => void;
@@ -1594,6 +1595,7 @@ const EventFields: React.FC<{
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   selectedBlock,
+  inspectorMode = "page",
   pageSettings,
   onUpdateBlock,
   onUpdateBlockSilent,
@@ -1646,10 +1648,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     [selectedBlock, onUpdateBlockSilent]
   );
 
+  const showPageSettings = inspectorMode === "page" || !selectedBlock;
   const InspectorComponent = selectedBlock ? INSPECTOR_MAP[selectedBlock.type] : null;
   const nodeKind = selectedBlock ? getNodeKind(selectedBlock.type, selectedBlock.kind) : null;
-  const isSection = nodeKind === "section";
-  const isElement = Boolean(selectedBlock && !isSection);
+  const isSection = !showPageSettings && nodeKind === "section";
+  const isElement = Boolean(selectedBlock && !showPageSettings && !isSection);
   const sectionIndex = selectedBlock && isSection
     ? sections.findIndex((s) => s.id === selectedBlock.id)
     : -1;
@@ -1719,11 +1722,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
   const renderTabContent = () => {
     if (activeTab === "design") {
-      if (!selectedBlock) {
+      if (showPageSettings) {
         return <PageSettingsPanel settings={pageSettings} onUpdateSettings={onUpdatePageSettings} />;
       }
 
-      if (isSection) {
+      if (isSection && selectedBlock) {
         return (
           <>
             {layerPanel}
@@ -1928,7 +1931,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           ) : (
             <div className="flex items-center gap-1.5 min-w-0">
               <p className="truncate text-xs font-extrabold uppercase tracking-wide text-[#111827] select-none">
-                {getInspectorTitle(selectedBlock)}
+                {showPageSettings ? "PAGE SETTINGS" : getInspectorTitle(selectedBlock)}
               </p>
               {selectedBlock && onUpdateBlockLabel && (
                 <button

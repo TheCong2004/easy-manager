@@ -18,6 +18,7 @@ import { InspectorPanel } from "./InspectorPanel";
 import { EditorShellLayout } from "./components/EditorShellLayout";
 import { EditorLeftRail, LeftRailClickAction } from "./components/EditorLeftRail";
 import { EditorLeftDrawer, DrawerCategoryId } from "./components/EditorLeftDrawer";
+import { EditorLeftSidebar } from "./components/EditorLeftSidebar";
 import { LandingPageItem } from "../dung-chung/types";
 import { FUNNELX_FLAGS } from "@onlook/funnel";
 import { useEditorBlockActions } from "./hooks/useEditorBlockActions";
@@ -245,6 +246,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (id) {
       setIsInspectorOpen(true);
     }
+  }, []);
+
+  const handleOpenPageSettings = useCallback(() => {
+    setSelectedId(null);
+    setIsInspectorOpen(true);
   }, []);
 
   const saveDraft = useCallback(async (nextData: EditorData = data, nextActions: LandingEditorAction[] = actionLog) => {
@@ -974,15 +980,27 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               pageStatus={pageStatus}
               pageVisibility={pageVisibility}
               pageSlug={pageSlug}
-              onOpenElements={() => openLeftDrawer("elements", "text")}
-              onOpenLayers={() => toggleLeftDrawer("layers")}
-              onOpenAssets={() => toggleLeftDrawer("assets")}
               onOpenAI={() => setIsAiPanelOpen((open) => !open)}
               isAiOpen={isAiPanelOpen}
             />
             <input ref={importInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportJson} />
             <input ref={importHtmlInputRef} type="file" accept=".html,.zip" className="hidden" onChange={handleImportHtml} />
           </>
+        }
+        leftSidebar={
+          <EditorLeftSidebar
+            activeAction={
+              leftDrawerCategory === "products" ||
+              leftDrawerCategory === "media" ||
+              leftDrawerCategory === "documents"
+                ? null
+                : leftDrawerCategory
+            }
+            onOpenElements={() => toggleLeftDrawer("elements")}
+            onOpenLayers={() => toggleLeftDrawer("layers")}
+            onOpenAssets={() => toggleLeftDrawer("assets")}
+            onOpenPageSettings={handleOpenPageSettings}
+          />
         }
         leftRail={
           <EditorLeftRail
@@ -1086,7 +1104,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
               onUpdateResponsiveFrameSilent={handleUpdateResponsiveFrameSilent}
               onAddSection={handleAddSection}
-              onOpenInspector={() => setIsInspectorOpen(true)}
+              onOpenElementInspector={(blockId) => { setSelectedId(blockId); setIsInspectorOpen(true); }}
+              onOpenSectionInspector={(sectionId) => { setSelectedId(sectionId); setIsInspectorOpen(true); }}
               onAddElementToSection={handleAddElementToSection}
               onMoveNodeZIndex={handleMoveNodeZIndex}
               onSetBlockHidden={handleSetBlockHidden}

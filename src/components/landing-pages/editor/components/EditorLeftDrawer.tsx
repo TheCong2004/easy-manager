@@ -322,7 +322,7 @@ export const EditorLeftDrawer: React.FC<EditorLeftDrawerProps> = ({
       />
       <div
         className="fixed z-50 flex overflow-hidden rounded-r-2xl border border-gray-200 bg-white shadow-2xl"
-        style={{ top: "64px", bottom: 0, left: "72px", maxWidth: "calc(100vw - 88px)" }}
+        style={{ top: "64px", bottom: 0, left: "52px", maxWidth: "calc(100vw - 68px)" }}
       >
         {/* Column 1: main categories */}
         <div className="flex w-[200px] flex-shrink-0 flex-col border-r border-gray-100 bg-gray-50">

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { CountdownProps, FormCaptureProps, VideoProps } from "../types";
+import { InlineEditableText } from "../components/InlineEditableText";
 
 // ── Countdown Block ───────────────────────────────────────────
 interface CountdownBlockProps {
@@ -174,9 +175,20 @@ interface FormCaptureBlockProps {
   isSelected: boolean;
   onSelect: () => void;
   onUpdate?: (props: Record<string, unknown>) => void;
+  isInlineEditing?: boolean;
+  onBeginInlineEdit?: () => void;
+  onEndInlineEdit?: () => void;
 }
 
-export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
+export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({
+  props,
+  isSelected,
+  onSelect,
+  onUpdate,
+  isInlineEditing = false,
+  onBeginInlineEdit,
+  onEndInlineEdit,
+}) => {
   const { title, subtitle, fields, submitLabel, submitColor, bgColor, borderRadius } = props;
 
   return (
@@ -190,30 +202,27 @@ export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSel
         className="w-full max-w-lg mx-auto p-8 shadow-sm"
         style={{ backgroundColor: bgColor, borderRadius, border: "1px solid #e5e7eb" }}
       >
-        <h3
-          contentEditable={isSelected}
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdate?.({ ...props, title: e.currentTarget.textContent || "" })}
-          onClick={(e) => {
-            if (isSelected) e.stopPropagation();
-          }}
+        <InlineEditableText
+          tag="h3"
+          value={title}
+          isSelected={isSelected}
+          isInlineEditing={isInlineEditing}
+          onRequestEdit={() => onBeginInlineEdit?.()}
+          onCommit={(nextValue) => onUpdate?.({ ...props, title: nextValue })}
+          onCancelEdit={() => onEndInlineEdit?.()}
           className="text-xl font-bold text-gray-800 mb-1 text-center"
-          style={{ outline: "none" }}
-        >
-          {title}
-        </h3>
-        <p
-          contentEditable={isSelected}
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdate?.({ ...props, subtitle: e.currentTarget.textContent || "" })}
-          onClick={(e) => {
-            if (isSelected) e.stopPropagation();
-          }}
+        />
+        <InlineEditableText
+          tag="p"
+          value={subtitle}
+          isSelected={isSelected}
+          isInlineEditing={isInlineEditing}
+          onRequestEdit={() => onBeginInlineEdit?.()}
+          onCommit={(nextValue) => onUpdate?.({ ...props, subtitle: nextValue })}
+          onCancelEdit={() => onEndInlineEdit?.()}
+          multiline
           className="text-sm text-gray-500 text-center mb-6"
-          style={{ outline: "none" }}
-        >
-          {subtitle}
-        </p>
+        />
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           {fields.map((field) => (
             <div key={field.id}>
@@ -233,17 +242,15 @@ export const FormCaptureBlock: React.FC<FormCaptureBlockProps> = ({ props, isSel
             className="w-full py-3 rounded-lg text-white font-bold text-sm shadow-sm hover:opacity-90 transition"
             style={{ backgroundColor: submitColor }}
           >
-          <span
-            contentEditable={isSelected}
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdate?.({ ...props, submitLabel: e.currentTarget.textContent || "" })}
-            onClick={(e) => {
-              if (isSelected) e.stopPropagation();
-            }}
-            style={{ outline: "none" }}
-          >
-            {submitLabel}
-          </span>
+          <InlineEditableText
+            tag="span"
+            value={submitLabel}
+            isSelected={isSelected}
+            isInlineEditing={isInlineEditing}
+            onRequestEdit={() => onBeginInlineEdit?.()}
+            onCommit={(nextValue) => onUpdate?.({ ...props, submitLabel: nextValue })}
+            onCancelEdit={() => onEndInlineEdit?.()}
+          />
         </button>
         </form>
       </div>

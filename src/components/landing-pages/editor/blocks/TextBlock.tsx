@@ -1,15 +1,27 @@
 "use client";
 import React from "react";
 import { TextProps } from "../types";
+import { InlineEditableText } from "../components/InlineEditableText";
 
 interface TextBlockProps {
   props: TextProps;
   isSelected: boolean;
   onSelect: () => void;
   onUpdate?: (props: Record<string, unknown>) => void;
+  isInlineEditing?: boolean;
+  onBeginInlineEdit?: () => void;
+  onEndInlineEdit?: () => void;
 }
 
-export const TextBlock: React.FC<TextBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
+export const TextBlock: React.FC<TextBlockProps> = ({
+  props,
+  isSelected,
+  onSelect,
+  onUpdate,
+  isInlineEditing = false,
+  onBeginInlineEdit,
+  onEndInlineEdit,
+}) => {
   const { content, fontSize, color, textAlign, lineHeight, paddingX, paddingY } = props;
 
   return (
@@ -22,18 +34,18 @@ export const TextBlock: React.FC<TextBlockProps> = ({ props, isSelected, onSelec
       }`}
       style={{ paddingLeft: paddingX, paddingRight: paddingX, paddingTop: paddingY, paddingBottom: paddingY }}
     >
-      <p
-        contentEditable={isSelected}
-        suppressContentEditableWarning
-        onBlur={(e) => onUpdate?.({ ...props, content: e.currentTarget.textContent || "" })}
-        onClick={(e) => {
-          if (isSelected) e.stopPropagation();
-        }}
-        style={{ fontSize, color, textAlign, lineHeight, margin: 0, outline: "none" }}
-      >
-        {content}
-      </p>
-      {isSelected && (
+      <InlineEditableText
+        tag="p"
+        value={content}
+        isSelected={isSelected}
+        isInlineEditing={isInlineEditing}
+        onRequestEdit={() => onBeginInlineEdit?.()}
+        onCommit={(nextValue) => onUpdate?.({ ...props, content: nextValue })}
+        onCancelEdit={() => onEndInlineEdit?.()}
+        multiline
+        style={{ fontSize, color, textAlign, lineHeight, margin: 0 }}
+      />
+      {isSelected && !isInlineEditing && (
         <div className="absolute top-1 left-1 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide z-20 select-none">
           TEXT
         </div>

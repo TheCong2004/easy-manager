@@ -1,12 +1,16 @@
 "use client";
 import React from "react";
 import { ButtonProps } from "../types";
+import { InlineEditableText } from "../components/InlineEditableText";
 
 interface ButtonBlockProps {
   props: ButtonProps;
   isSelected: boolean;
   onSelect: () => void;
   onUpdate?: (props: Record<string, unknown>) => void;
+  isInlineEditing?: boolean;
+  onBeginInlineEdit?: () => void;
+  onEndInlineEdit?: () => void;
 }
 
 const sizeStyles: Record<string, string> = {
@@ -15,14 +19,16 @@ const sizeStyles: Record<string, string> = {
   lg: "px-6 py-3 text-[13px]",
 };
 
-export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onSelect, onUpdate }) => {
+export const ButtonBlock: React.FC<ButtonBlockProps> = ({
+  props,
+  isSelected,
+  onSelect,
+  onUpdate,
+  isInlineEditing = false,
+  onBeginInlineEdit,
+  onEndInlineEdit,
+}) => {
   const { label, style, color, textColor, size, fullWidth, borderRadius, align } = props;
-
-  const alignStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
-    padding: "16px 32px",
-  };
 
   const buttonStyle: React.CSSProperties = {
     borderRadius,
@@ -67,16 +73,17 @@ export const ButtonBlock: React.FC<ButtonBlockProps> = ({ props, isSelected, onS
             if (isSelected) e.stopPropagation();
           }}
         >
-          <span
-            contentEditable={isSelected}
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdate?.({ ...props, label: e.currentTarget.textContent || "" })}
-            style={{ outline: "none" }}
-          >
-            {label}
-          </span>
+          <InlineEditableText
+            tag="span"
+            value={label}
+            isSelected={isSelected}
+            isInlineEditing={isInlineEditing}
+            onRequestEdit={() => onBeginInlineEdit?.()}
+            onCommit={(nextValue) => onUpdate?.({ ...props, label: nextValue })}
+            onCancelEdit={() => onEndInlineEdit?.()}
+          />
         </button>
-        {isSelected && (
+        {isSelected && !isInlineEditing && (
           <div className="absolute -top-7 left-0 bg-purple-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md tracking-wide z-20 select-none whitespace-nowrap">
             BUTTON
           </div>
