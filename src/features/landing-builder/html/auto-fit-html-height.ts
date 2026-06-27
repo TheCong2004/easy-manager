@@ -22,7 +22,16 @@ export function measureElementContentHeight(root: HTMLElement) {
   );
 
   const children = Array.from(root.querySelectorAll("*")) as HTMLElement[];
+  const win = root.ownerDocument?.defaultView || window;
+
   for (const element of children) {
+    try {
+      const style = win.getComputedStyle(element);
+      if (style.position === "fixed") {
+        continue;
+      }
+    } catch {}
+
     const rect = element.getBoundingClientRect();
     const height = dimensionOf(element);
     const bottom = rect.top - rootRect.top + height;
@@ -52,10 +61,21 @@ export function measureDocumentContentHeight(doc: Document) {
   );
 }
 
-export function withHtmlResizeMessenger(html: string) {
+export function withHtmlResizeMessenger(html: string, blockId?: string) {
+  const scriptBlockId = blockId || "";
+
   const script = `
 <script>
 (function () {
+  var blockId = "${scriptBlockId}";
+
+  // Inject safe CSS override first
+  var styleEl = document.createElement("style");
+  styleEl.innerHTML = "html, body { min-height: 0 !important; overflow-x: hidden !important; }";
+  document.head.appendChild(styleEl);
+
+  var fallbackApplied = false;
+
   function measureElement(root) {
     if (!root || !root.getBoundingClientRect) return 0;
     var rootRect = root.getBoundingClientRect();
@@ -64,21 +84,63 @@ export function withHtmlResizeMessenger(html: string) {
     for (var i = 0; i < children.length; i += 1) {
       var el = children[i];
       if (!el || !el.getBoundingClientRect) continue;
+
+      // Exclude position: fixed elements
+      try {
+        var style = window.getComputedStyle(el);
+        if (style.position === "fixed") {
+          continue;
+        }
+      } catch (e) {}
+
       var rect = el.getBoundingClientRect();
       var h = Math.max(rect.height || 0, el.scrollHeight || 0, el.offsetHeight || 0, el.clientHeight || 0);
       maxBottom = Math.max(maxBottom, rect.top - rootRect.top + h);
     }
     return Math.ceil(maxBottom);
   }
+
   function postHeight() {
-    var height = Math.max(
+    var rawHeight = Math.max(
       measureElement(document.body),
       measureElement(document.documentElement),
       document.body ? document.body.scrollHeight : 0,
       document.documentElement ? document.documentElement.scrollHeight : 0
     );
-    parent.postMessage({ type: "${RESIZE_MESSAGE_TYPE}", height: height }, "*");
+
+    // Dynamic height fallback checking
+    // If the calculated height is exactly at viewport height, but we see multiple stacked child blocks/sections
+    // or elements stretching further, apply height: auto and overflow-y: visible
+    if (!fallbackApplied && rawHeight > 0) {
+      var viewportHeight = window.innerHeight || 900;
+      var documentHeight = document.documentElement.clientHeight || 900;
+      // If rawHeight is close to viewport height
+      if (Math.abs(rawHeight - viewportHeight) <= 15 || Math.abs(rawHeight - documentHeight) <= 15) {
+        var bodySections = document.body.querySelectorAll("section, header, footer, main, [role='main']");
+        if (bodySections.length > 1) {
+          // Fallback applied to break viewport height constraints
+          var fallbackStyle = document.createElement("style");
+          fallbackStyle.innerHTML = "html, body { height: auto !important; overflow-y: visible !important; }";
+          document.head.appendChild(fallbackStyle);
+          fallbackApplied = true;
+          // Re-measure after fallback
+          rawHeight = Math.max(
+            measureElement(document.body),
+            measureElement(document.documentElement),
+            document.body ? document.body.scrollHeight : 0,
+            document.documentElement ? document.documentElement.scrollHeight : 0
+          );
+        }
+      }
+    }
+
+    if (window.top) {
+      // Send both message types to ensure compatibility
+      window.top.postMessage({ type: "EM_HTML_EMBED_RESIZE", blockId: blockId, height: rawHeight }, "*");
+      window.top.postMessage({ type: "EASY_MANAGER_HTML_EMBED_RESIZE", blockId: blockId, height: rawHeight }, "*");
+    }
   }
+
   var queued = false;
   function schedule() {
     if (queued) return;
@@ -88,6 +150,7 @@ export function withHtmlResizeMessenger(html: string) {
       postHeight();
     });
   }
+
   window.addEventListener("load", schedule);
   window.addEventListener("resize", schedule);
   if ("ResizeObserver" in window && document.documentElement) {
@@ -102,9 +165,11 @@ export function withHtmlResizeMessenger(html: string) {
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(schedule).catch(function () {});
   }
-  setTimeout(schedule, 60);
+  setTimeout(schedule, 100);
   setTimeout(schedule, 300);
-  setTimeout(schedule, 1200);
+  setTimeout(schedule, 800);
+  setTimeout(schedule, 1500);
+  setTimeout(schedule, 3000);
 })();
 </script>`;
 
@@ -146,7 +211,7 @@ export function useAutoFitHtmlHeight(options: {
     const nextHeight = Math.max(minHeight, measured);
     if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
 
-    if (Math.abs(latestHeightRef.current - nextHeight) >= 2) {
+    if (Math.abs(latestHeightRef.current - nextHeight) >= 4) {
       latestHeightRef.current = nextHeight;
       onHeightChange(nextHeight);
     }
@@ -228,9 +293,10 @@ export function useAutoFitHtmlHeight(options: {
     const handleMessage = (event: MessageEvent) => {
       if (event.source !== iframeRef.current?.contentWindow) return;
       const data = event.data || {};
-      if (data.type !== RESIZE_MESSAGE_TYPE || typeof data.height !== "number") return;
+      const isCorrectType = data.type === "EM_HTML_EMBED_RESIZE" || data.type === RESIZE_MESSAGE_TYPE;
+      if (!isCorrectType || typeof data.height !== "number") return;
       const nextHeight = Math.max(minHeight, Math.ceil(data.height));
-      if (Math.abs(latestHeightRef.current - nextHeight) >= 2) {
+      if (Math.abs(latestHeightRef.current - nextHeight) >= 4) {
         latestHeightRef.current = nextHeight;
         onHeightChange(nextHeight);
       }

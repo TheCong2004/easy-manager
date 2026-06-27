@@ -35,6 +35,10 @@ import { findBlockRecursive } from "./core/editor-reducer";
 import { findMatchingCommand } from "./core/ai-command-registry";
 import { parseHtmlToImportedPageSchema } from "../../../features/landing-pages/import/html-to-landing-schema";
 import { importZipLandingPage } from "../../../features/landing-pages/import/zip-importer";
+import {
+  getBuilderSessionTokenFromSearch,
+  saveBuilderDraft,
+} from "@/features/landing-builder/store/manual-save";
 
 // Import modular split sub-panels
 import { PageListingPanel } from "./panels/PageListingPanel";
@@ -185,11 +189,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" } | null>(null);
   const [activeViewMode, setActiveViewMode] = useState<EditorViewMode>("design");
   const [actionLog, setActionLog] = useState<LandingEditorAction[]>([]);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const importHtmlInputRef = useRef<HTMLInputElement | null>(null);
   const isHydratedRef = useRef(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [builderSessionToken, setBuilderSessionToken] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<EditorRevision[]>([]);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   // Security state — đồng bộ với Supabase sau mỗi lần publish/unpublish
@@ -198,6 +202,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [pageSlug, setPageSlug] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<"layers" | "brand" | "pages" | "images" | "funnel" | "sandbox" | "history" | "branches">("layers");
+
+  useEffect(() => {
+    setBuilderSessionToken(getBuilderSessionTokenFromSearch(window.location.search));
+  }, []);
 
   const sidebarTabs = [
     {
@@ -294,9 +302,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   }, []);
 
-  const saveSnapshot = useCallback(async (nextData: EditorData = data, nextActions: LandingEditorAction[] = actionLog) => {
+  const saveDraft = useCallback(async (nextData: EditorData = data, nextActions: LandingEditorAction[] = actionLog) => {
     setSaveStatus("saving");
-    setIsSaved(false);
     try {
       const snapshot = createEditorSnapshot({ ...nextData, pageName }, nextActions);
       console.info("[LandingEditor Snapshot:save]", {
@@ -304,17 +311,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         localStorageKey: getLocalBackupKey(page.id),
         fingerprint: getEditorDataFingerprint(snapshot.data),
       });
-      await saveLandingPage(page.id, snapshot.data);
-      setLastSavedAt(snapshot.updatedAt);
+      let savedAt = snapshot.updatedAt;
+      if (builderSessionToken) {
+        const result = await saveBuilderDraft({
+          pageId: page.id,
+          editorData: snapshot.data,
+          name: snapshot.data.pageName || pageName,
+          slug: snapshot.data.pageSettings?.slug,
+          sessionToken: builderSessionToken,
+        });
+        savedAt = result.savedAt || new Date().toISOString();
+      } else {
+        await saveLandingPage(page.id, snapshot.data);
+      }
+      setLastSavedAt(savedAt);
       setIsSaved(true);
       setSaveStatus("saved");
       return snapshot;
     } catch (err) {
-      console.error("Autosave failed, falling back to local storage:", err);
+      console.error("Draft save failed:", err);
       setSaveStatus("error");
-      setLastSavedAt(new Date().toISOString());
+      setIsSaved(false);
+      throw err;
     }
-  }, [actionLog, data, pageName, page.id]);
+  }, [actionLog, builderSessionToken, data, pageName, page.id]);
 
   const applySnapshot = useCallback((snapshot: LandingEditorSnapshot) => {
     const normalized = normalizeEditorData(snapshot.data);
@@ -324,7 +344,49 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     setLastSavedAt(snapshot.updatedAt ?? null);
     setSelectedId(null);
     setIsSaved(true);
+    setSaveStatus("saved");
   }, [replace]);
+
+  const markDirty = useCallback(() => {
+    if (!isHydratedRef.current) return;
+    setIsSaved(false);
+    setSaveStatus((current) => (current === "saving" ? current : "saved"));
+  }, []);
+
+  const pushLocal = useCallback((nextData: EditorData) => {
+    markDirty();
+    push(nextData);
+  }, [markDirty, push]);
+
+  const silentUpdateLocal = useCallback((nextData: EditorData) => {
+    markDirty();
+    silentUpdate(nextData);
+  }, [markDirty, silentUpdate]);
+
+  const handleSetPageName = useCallback((name: string) => {
+    markDirty();
+    setPageName(name);
+  }, [markDirty]);
+
+  const handleUndo = useCallback(() => {
+    if (!canUndo) return;
+    markDirty();
+    undo();
+  }, [canUndo, markDirty, undo]);
+
+  const handleRedo = useCallback(() => {
+    if (!canRedo) return;
+    markDirty();
+    redo();
+  }, [canRedo, markDirty, redo]);
+
+  const handleCloseSafe = useCallback(() => {
+    if (!isSaved) {
+      const confirmClose = window.confirm("Trang hiện có thay đổi chưa lưu. Bạn có muốn quay lại và bỏ các thay đổi này không?");
+      if (!confirmClose) return;
+    }
+    onClose();
+  }, [isSaved, onClose]);
 
   // Load page on mount
   useEffect(() => {
@@ -414,19 +476,20 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
 
 
-  // Autosave triggers on committed data/present state changes
+  // Manual-save mode: warn only when the local builder state has unsaved edits.
   useEffect(() => {
-    if (!isHydratedRef.current) return;
-    setIsSaved(false);
-    setSaveStatus("saving");
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      void saveSnapshot();
-    }, 1000);
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (isSaved) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
     };
-  }, [data, pageName, actionLog, saveSnapshot]);
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isSaved]);
 
   const showToast = useCallback((message: string, type: "success" | "info" = "success") => {
     setToast({ message, type });
@@ -465,8 +528,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   } = useEditorBlockActions({
     data,
     handleSelectBlock,
-    push,
-    silentUpdate,
+    push: pushLocal,
+    silentUpdate: silentUpdateLocal,
     recordAction,
     selectedId,
     setSelectedId,
@@ -596,8 +659,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const isMac = navigator.platform.toLowerCase().includes("mac");
       const ctrlMeta = isMac ? e.metaKey : e.ctrlKey;
 
-      if (ctrlMeta && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
-      if (ctrlMeta && (e.key === "y" || (e.shiftKey && e.key === "z"))) { e.preventDefault(); redo(); }
+      if (ctrlMeta && e.key === "z" && !e.shiftKey) { e.preventDefault(); handleUndo(); }
+      if (ctrlMeta && (e.key === "y" || (e.shiftKey && e.key === "z"))) { e.preventDefault(); handleRedo(); }
       if (e.key === "Escape") setSelectedId(null);
       if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
         const tag = (e.target as HTMLElement)?.tagName;
@@ -617,11 +680,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [undo, redo, selectedId, handleDeleteBlock, handleDuplicateBlock]);
+  }, [handleUndo, handleRedo, selectedId, handleDeleteBlock, handleDuplicateBlock]);
 
   const handlePublish = async () => {
     try {
-      await saveSnapshot();
+      await saveDraft();
       const html = renderLandingPageHtml({ ...data, pageName });
       await publishLandingPage(page.id, html);
       // Đồng bộ state bảo mật
@@ -659,13 +722,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   const handleManualSave = useCallback(async () => {
     try {
-      await saveSnapshot();
+      await saveDraft();
       showToast("Đã lưu bản thiết kế thiết kế", "success");
     } catch (err) {
       console.error("Save failed:", err);
       showToast("Lưu thiết kế thất bại", "info");
     }
-  }, [saveSnapshot]);
+  }, [saveDraft, showToast]);
 
   const handleExportJson = useCallback(() => {
     const snapshot = createEditorSnapshot({ ...data, pageName }, actionLog);
@@ -700,6 +763,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           }
         };
         applySnapshot(migratedSnapshot);
+        markDirty();
         showToast("Đã import bản thiết kế thành công", "success");
       } catch (err) {
         console.error("Import JSON failed:", err);
@@ -707,7 +771,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       }
     };
     reader.readAsText(file);
-  }, [applySnapshot, page.id, pageName]);
+  }, [applySnapshot, markDirty, page.id, pageName]);
 
   const handleImportHtml = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -742,7 +806,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             nextGlobalCss = (nextGlobalCss + "\n" + imported.globalCss).trim();
           }
 
-          push({
+          pushLocal({
             ...data,
             sections: nextSections,
             pageSettings: {
@@ -819,7 +883,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             nextGlobalCss = (nextGlobalCss + "\n" + parsedGlobalCss).trim();
           }
 
-          push({
+          pushLocal({
             ...data,
             sections: nextSections,
             pageSettings: {
@@ -837,7 +901,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       };
       reader.readAsText(file);
     }
-  }, [page.id, data, push, setSelectedId, showToast]);
+  }, [page.id, data, pushLocal, setSelectedId, showToast]);
 
   const handleSwitchPageSafe = useCallback((targetPage: LandingPageItem) => {
     if (!isSaved) {
@@ -868,7 +932,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const restoredData = await restoreLandingPageVersion(page.id, revision.id, data);
       const snapshot = createEditorSnapshot(restoredData, []);
       applySnapshot(snapshot);
-      await saveSnapshot(restoredData, []);
+      markDirty();
       void loadRevisions();
       showToast("Đã khôi phục thiết kế", "success");
     } catch (err) {
@@ -876,7 +940,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       showToast("Khôi phục thiết kế thất bại", "info");
       setSaveStatus("error");
     }
-  }, [data, page.id, applySnapshot, saveSnapshot, loadRevisions]);
+  }, [data, page.id, applySnapshot, markDirty, loadRevisions, showToast]);
 
   // Removed duplicate block actions (now handled by useEditorBlockActions hook)
 
@@ -928,16 +992,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         {/* Top bar (Light Theme already) */}
         <EditorTopBar
           pageName={pageName}
-          setPageName={setPageName}
+          setPageName={handleSetPageName}
           deviceMode={deviceMode}
           setDeviceMode={setDeviceMode}
           zoom={zoom}
           setZoom={setZoom}
           canUndo={canUndo}
           canRedo={canRedo}
-          onUndo={undo}
-          onRedo={redo}
-          onClose={onClose}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onClose={handleCloseSafe}
           onSave={handleManualSave}
           onCreateRevision={() => handleCreateRevision()}
           onOpenCommand={() => setIsCommandOpen(true)}
@@ -948,6 +1012,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           onPublish={handlePublish}
           onUnpublish={handleUnpublish}
           isSaved={isSaved}
+          isSaving={saveStatus === "saving"}
           lastSavedAt={lastSavedAt}
           activeViewMode={activeViewMode}
           setActiveViewMode={setActiveViewMode}

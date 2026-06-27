@@ -379,8 +379,7 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
 
     const globalCss = extractGlobalCss(doc);
     const fullHtml = buildFullHtmlDocument(doc, globalCss);
-    const estimatedHeight = estimatePreservedHeight(doc);
-
+    const viewportHeight = 900;
     const sectionId = createImportId("section_preserved");
     const htmlBlockId = createImportId("html_preserved");
 
@@ -389,9 +388,10 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
     htmlBlock.parentId = sectionId;
     htmlBlock.label = "Mã HTML Bảo toàn Bố cục";
     htmlBlock.props = {
+      ...(htmlBlock.props ?? {}),
       code: fullHtml,
-      height: estimatedHeight,
-      editorViewportHeight: estimatedHeight,
+      height: viewportHeight,
+      editorViewportHeight: viewportHeight,
       preserveHtml: true,
       mode: "iframe",
       autoResize: false,
@@ -401,7 +401,7 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
       x: 0,
       y: 0,
       width: CANVAS_WIDTH,
-      height: estimatedHeight,
+      height: viewportHeight,
       zIndex: 10,
     };
 
@@ -413,16 +413,18 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
       ...section.props,
       title: "Preserved Section",
       description: "Khối chứa toàn bộ trang HTML gốc",
-      minHeight: estimatedHeight,
+      minHeight: viewportHeight,
       bgColor: "#ffffff",
     };
 
-    if (section.frame) {
-      section.frame.x = 0;
-      section.frame.y = 0;
-      section.frame.width = CANVAS_WIDTH;
-      section.frame.height = estimatedHeight;
-    }
+    section.frame = {
+      ...(section.frame ?? {}),
+      x: 0,
+      y: 0,
+      width: CANVAS_WIDTH,
+      height: viewportHeight,
+      zIndex: 1,
+    };
 
     return {
       globalCss,

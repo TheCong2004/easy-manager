@@ -860,20 +860,8 @@ export const HtmlCodeBlock: React.FC<{
   const isPreserved = preserveHtml || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
 
   const iframeContent = React.useMemo(() => {
-    const resizeCss = `
-        <style>
-          html, body {
-            min-height: 0 !important;
-            overflow: visible !important;
-          }
-        </style>`;
-
     if (isPreserved) {
-      return withHtmlResizeMessenger(
-        code.includes("</head>")
-          ? code.replace("</head>", `${resizeCss}</head>`)
-          : `${resizeCss}${code}`
-      );
+      return withHtmlResizeMessenger(code, blockId);
     }
 
     return withHtmlResizeMessenger(`<!DOCTYPE html>
@@ -892,8 +880,8 @@ export const HtmlCodeBlock: React.FC<{
       <body style="margin:0;">
         ${code}
       </body>
-    </html>`);
-  }, [code, globalCss, isPreserved]);
+    </html>`, blockId);
+  }, [code, globalCss, isPreserved, blockId]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -911,18 +899,15 @@ export const HtmlCodeBlock: React.FC<{
 
     try {
       const measuredHeight = measureDocumentContentHeight(doc);
-
       if (!measuredHeight) return;
 
       const nextHeight = preserveHtml
-        ? Math.max(measuredHeight, 480)
-        : Math.max(measuredHeight, 240);
+        ? Math.min(Math.max(measuredHeight, 900), 100000)
+        : Math.min(Math.max(measuredHeight, 240), 100000);
 
       setFrameHeight((current) => {
-        if (Math.abs(current - nextHeight) > 2) {
-          emitPropsUpdate({
-            height: nextHeight,
-          });
+        if (Math.abs(current - nextHeight) >= 4) {
+          emitPropsUpdate({ height: nextHeight }, true);
 
           if (onUpdateNodeFrame) {
             onUpdateNodeFrame(blockId, { height: nextHeight });
@@ -939,13 +924,13 @@ export const HtmlCodeBlock: React.FC<{
     } catch {
       // Giữ height hiện tại nếu browser không cho đo.
     }
-  }, [blockFrame?.y, emitPropsUpdate, preserveHtml, onUpdateNodeFrame, blockId, parentId]);
+  }, [emitPropsUpdate, preserveHtml, onUpdateNodeFrame, blockId, parentId, blockFrame?.y]);
 
   const applyAutoMeasuredHeight = React.useCallback((nextHeight: number) => {
     if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
 
     setFrameHeight((current) => {
-      if (Math.abs(current - nextHeight) > 2) {
+      if (Math.abs(current - nextHeight) >= 4) {
         emitPropsUpdate({ height: nextHeight }, true);
         onUpdateNodeFrame?.(blockId, { height: nextHeight });
 
@@ -966,7 +951,7 @@ export const HtmlCodeBlock: React.FC<{
   } = useAutoFitHtmlHeight({
     iframeRef,
     enabled: true,
-    minHeight: preserveHtml ? 480 : 240,
+    minHeight: preserveHtml ? 900 : 240,
     onHeightChange: applyAutoMeasuredHeight,
   });
 
@@ -1786,7 +1771,7 @@ export const HtmlCodeBlock: React.FC<{
       }`}
       style={{
         width: "100%",
-        height: "auto",
+        height: frameHeight,
         minHeight: frameHeight,
         position: "relative",
         border: isSelected ? "1.5px solid #8b5cf6" : "none",
@@ -1801,7 +1786,7 @@ export const HtmlCodeBlock: React.FC<{
         ref={iframeRef}
         title="Imported HTML"
         className="w-full border-none"
-        scrolling="yes"
+        scrolling="no"
         onLoad={() => {
           measureHeight();
           bindAutoFitHeight();
@@ -1824,25 +1809,32 @@ export const HtmlCodeBlock: React.FC<{
             const ResizeObserverClass = iframeWindow?.ResizeObserver || window.ResizeObserver;
             if (ResizeObserverClass && doc.body) {
               const observer = new ResizeObserverClass(() => {
-                scheduleAutoFitHeight();
+                if (preserveHtml) {
+                  measureHeight();
+                } else {
+                  scheduleAutoFitHeight();
+                }
               });
               observer.observe(doc.body);
               if (iframe) iframe.__heightObserver = observer;
             }
           }
           window.setTimeout(() => {
+            measureHeight();
             scheduleAutoFitHeight();
             scanIframeDom();
             enableIframeElementDrag();
           }, 300);
 
           window.setTimeout(() => {
+            measureHeight();
             scheduleAutoFitHeight();
             scanIframeDom();
             enableIframeElementDrag();
           }, 1200);
 
           window.setTimeout(() => {
+            measureHeight();
             scheduleAutoFitHeight();
             scanIframeDom();
           }, 2500);
@@ -1854,7 +1846,7 @@ export const HtmlCodeBlock: React.FC<{
           border: 0,
           display: "block",
           background: "#ffffff",
-          overflow: "auto",
+          overflow: "hidden",
           pointerEvents: isSelected ? "auto" : "none",
         }}
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
