@@ -416,6 +416,7 @@ const AbsoluteElementWrapper: React.FC<{
             onToggleHidden={onToggleHidden}
             isHidden={Boolean(block.hidden)}
             onOpenSettings={onOpenInspector}
+            onUpdateBlock={onUpdateBlock}
             onAddFormField={
               block.type === "form_capture"
                 ? () => {
