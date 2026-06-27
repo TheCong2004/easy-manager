@@ -137,6 +137,7 @@ const BlockRenderer: React.FC<{
           onUpdate={update}
           onUpdateSilent={updateSilent}
           onUpdateNodeFrame={onUpdateNodeFrame}
+          blockFrame={block.frame}
           parentId={parentId || undefined}
           globalCss={globalCss}
         />

@@ -6,6 +6,19 @@ import {
   SurveyProps, MenuProps, HtmlCodeProps, ElementFrame
 } from "../types";
 import { useCart, parsePriceNum } from "../../cart/CartContext";
+import {
+  measureDocumentContentHeight,
+  useAutoFitHtmlHeight,
+  withHtmlResizeMessenger,
+} from "@/features/landing-builder/html/auto-fit-html-height";
+
+type HtmlCodePropsWithViewport = HtmlCodeProps & {
+  editorViewportHeight?: number | string;
+};
+
+type HtmlIframeElement = HTMLIFrameElement & {
+  __heightObserver?: ResizeObserver;
+};
 
 // ── Gallery Block ─────────────────────────────────────────────
 export const GalleryBlock: React.FC<{ props: GalleryProps; isSelected: boolean; onSelect: () => void }> = ({ props, isSelected, onSelect }) => {
@@ -776,6 +789,7 @@ export const HtmlCodeBlock: React.FC<{
   onUpdate?: (nextProps: Record<string, unknown>) => void;
   onUpdateSilent?: (nextProps: Record<string, unknown>) => void;
   onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
+  blockFrame?: ElementFrame;
   parentId?: string;
   globalCss?: string;
 }> = ({
@@ -786,34 +800,18 @@ export const HtmlCodeBlock: React.FC<{
   onUpdate,
   onUpdateSilent,
   onUpdateNodeFrame,
+  blockFrame,
   parentId,
   globalCss,
 }) => {
   const { code, height } = props;
-  const rawCode = String(code || "");
   const preserveHtml = props?.preserveHtml === true || props?.mode === "iframe";
-
-  const isViewportSensitiveHtml = React.useMemo(() => {
-    const lower = rawCode.toLowerCase();
-
-    return (
-      lower.includes("100vh") ||
-      lower.includes("100svh") ||
-      lower.includes("position: sticky") ||
-      lower.includes("position:sticky") ||
-      lower.includes("position: fixed") ||
-      lower.includes("position:fixed") ||
-      lower.includes("parallax") ||
-      lower.includes("requestanimationframe") ||
-      lower.includes("window.scrolly") ||
-      lower.includes("scrolltrigger")
-    );
-  }, [rawCode]);
+  const propsWithViewport = props as HtmlCodePropsWithViewport;
 
   const editorViewportHeight =
-    typeof (props as any)?.editorViewportHeight === "number"
-      ? (props as any).editorViewportHeight
-      : Number((props as any)?.editorViewportHeight || 900);
+    typeof propsWithViewport.editorViewportHeight === "number"
+      ? propsWithViewport.editorViewportHeight
+      : Number(propsWithViewport.editorViewportHeight || 900);
 
   const normalHeight =
     typeof height === "number"
@@ -832,10 +830,16 @@ export const HtmlCodeBlock: React.FC<{
   const isDraggingHtmlElementRef = React.useRef(false);
   const dragRafRef = React.useRef<number | null>(null);
   const latestPropsRef = React.useRef(props);
+  const latestFrameHeightRef = React.useRef(frameHeight);
+  const dragBoundDocumentsRef = React.useRef(new WeakSet<Document>());
 
   React.useEffect(() => {
     latestPropsRef.current = props;
   }, [props]);
+
+  React.useEffect(() => {
+    latestFrameHeightRef.current = frameHeight;
+  }, [frameHeight]);
 
   const emitPropsUpdate = React.useCallback(
     (patch: Record<string, unknown>, silent = false) => {
@@ -856,11 +860,23 @@ export const HtmlCodeBlock: React.FC<{
   const isPreserved = preserveHtml || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
 
   const iframeContent = React.useMemo(() => {
+    const resizeCss = `
+        <style>
+          html, body {
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+        </style>`;
+
     if (isPreserved) {
-      return code;
+      return withHtmlResizeMessenger(
+        code.includes("</head>")
+          ? code.replace("</head>", `${resizeCss}</head>`)
+          : `${resizeCss}${code}`
+      );
     }
 
-    return `<!DOCTYPE html>
+    return withHtmlResizeMessenger(`<!DOCTYPE html>
     <html>
       <head>
         <style>
@@ -876,7 +892,7 @@ export const HtmlCodeBlock: React.FC<{
       <body style="margin:0;">
         ${code}
       </body>
-    </html>`;
+    </html>`);
   }, [code, globalCss, isPreserved]);
 
   useEffect(() => {
@@ -894,52 +910,16 @@ export const HtmlCodeBlock: React.FC<{
     if (!iframe || !doc) return;
 
     try {
-      const body = doc.body;
-      const html = doc.documentElement;
-
-      const measuredHeight = Math.max(
-        body?.scrollHeight || 0,
-        html?.scrollHeight || 0,
-        body?.offsetHeight || 0,
-        html?.offsetHeight || 0,
-        body?.clientHeight || 0,
-        html?.clientHeight || 0,
-      );
+      const measuredHeight = measureDocumentContentHeight(doc);
 
       if (!measuredHeight) return;
 
-      /**
-       * Nếu HTML dùng 100vh/sticky/parallax:
-       * - Không bung iframe lên 12000/24000px
-       * - Vì sẽ làm 100vh bị tính sai và layout vỡ
-       */
-      if (preserveHtml && isViewportSensitiveHtml) {
-        const safeHeight = Math.min(
-          Math.max(measuredHeight, 640),
-          editorViewportHeight || 900,
-        );
-
-        setFrameHeight(safeHeight);
-        if (onUpdateNodeFrame) {
-          onUpdateNodeFrame(blockId, { height: safeHeight });
-        }
-        if (parentId && onUpdateNodeFrame) {
-          onUpdateNodeFrame(parentId, { height: safeHeight + 80 });
-        }
-        return;
-      }
-
-      /**
-       * HTML thường:
-       * - Co theo nội dung thật
-       * - Nhưng không cho vượt quá 5000 để tránh phá canvas
-       */
       const nextHeight = preserveHtml
-        ? Math.min(Math.max(measuredHeight, 480), 5000)
-        : Math.min(Math.max(measuredHeight, 240), 5000);
+        ? Math.max(measuredHeight, 480)
+        : Math.max(measuredHeight, 240);
 
       setFrameHeight((current) => {
-        if (Math.abs(current - nextHeight) > 20) {
+        if (Math.abs(current - nextHeight) > 2) {
           emitPropsUpdate({
             height: nextHeight,
           });
@@ -948,7 +928,7 @@ export const HtmlCodeBlock: React.FC<{
             onUpdateNodeFrame(blockId, { height: nextHeight });
           }
           if (parentId && onUpdateNodeFrame) {
-            onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
+            onUpdateNodeFrame(parentId, { height: (blockFrame?.y ?? 0) + nextHeight + 80 });
           }
 
           return nextHeight;
@@ -959,7 +939,36 @@ export const HtmlCodeBlock: React.FC<{
     } catch {
       // Giữ height hiện tại nếu browser không cho đo.
     }
-  }, [editorViewportHeight, emitPropsUpdate, isViewportSensitiveHtml, preserveHtml, onUpdateNodeFrame, blockId, parentId]);
+  }, [blockFrame?.y, emitPropsUpdate, preserveHtml, onUpdateNodeFrame, blockId, parentId]);
+
+  const applyAutoMeasuredHeight = React.useCallback((nextHeight: number) => {
+    if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
+
+    setFrameHeight((current) => {
+      if (Math.abs(current - nextHeight) > 2) {
+        emitPropsUpdate({ height: nextHeight }, true);
+        onUpdateNodeFrame?.(blockId, { height: nextHeight });
+
+        if (parentId) {
+          onUpdateNodeFrame?.(parentId, { height: (blockFrame?.y ?? 0) + nextHeight + 80 });
+        }
+
+        return nextHeight;
+      }
+
+      return current;
+    });
+  }, [blockFrame?.y, blockId, emitPropsUpdate, onUpdateNodeFrame, parentId]);
+
+  const {
+    bind: bindAutoFitHeight,
+    scheduleMeasure: scheduleAutoFitHeight,
+  } = useAutoFitHtmlHeight({
+    iframeRef,
+    enabled: true,
+    minHeight: preserveHtml ? 480 : 240,
+    onHeightChange: applyAutoMeasuredHeight,
+  });
 
   const scanIframeDom = React.useCallback(() => {
     if (isDraggingHtmlElementRef.current) return;
@@ -1354,12 +1363,8 @@ export const HtmlCodeBlock: React.FC<{
 
     if (!iframe || !doc || !win) return;
 
-    const anyDoc = doc as Document & {
-      __EASY_MANAGER_DRAG_BOUND__?: boolean;
-    };
-
-    if (anyDoc.__EASY_MANAGER_DRAG_BOUND__) return;
-    anyDoc.__EASY_MANAGER_DRAG_BOUND__ = true;
+    if (dragBoundDocumentsRef.current.has(doc)) return;
+    dragBoundDocumentsRef.current.add(doc);
 
     let dragState: {
       el: HTMLElement;
@@ -1708,9 +1713,10 @@ export const HtmlCodeBlock: React.FC<{
     window.addEventListener("resize", measureHeight);
     return () => {
       window.removeEventListener("resize", measureHeight);
-      if (iframeRef.current && (iframeRef.current as any).__heightObserver) {
+      const iframe = iframeRef.current as HtmlIframeElement | null;
+      if (iframe?.__heightObserver) {
         try {
-          (iframeRef.current as any).__heightObserver.disconnect();
+          iframe.__heightObserver.disconnect();
         } catch (e) {
           console.warn("Failed to disconnect height observer", e);
         }
@@ -1780,12 +1786,12 @@ export const HtmlCodeBlock: React.FC<{
       }`}
       style={{
         width: "100%",
-        height: frameHeight,
+        height: "auto",
         minHeight: frameHeight,
         position: "relative",
         border: isSelected ? "1.5px solid #8b5cf6" : "none",
         background: "#ffffff",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
@@ -1798,6 +1804,7 @@ export const HtmlCodeBlock: React.FC<{
         scrolling="yes"
         onLoad={() => {
           measureHeight();
+          bindAutoFitHeight();
           const doc = iframeRef.current?.contentDocument;
           const win = iframeRef.current?.contentWindow;
           if (doc) {
@@ -1805,36 +1812,38 @@ export const HtmlCodeBlock: React.FC<{
             doc.addEventListener("click", handleIframeClick, true);
 
             // Disconnect old observer if exists
-            if ((iframeRef.current as any).__heightObserver) {
+            const iframe = iframeRef.current as HtmlIframeElement | null;
+            if (iframe?.__heightObserver) {
               try {
-                (iframeRef.current as any).__heightObserver.disconnect();
-              } catch (e) {}
+                iframe.__heightObserver.disconnect();
+              } catch {}
             }
 
             // Create new observer using the iframe window's ResizeObserver if available
-            const ResizeObserverClass = (win as any)?.ResizeObserver || (window as any).ResizeObserver;
+            const iframeWindow = win as unknown as { ResizeObserver?: typeof ResizeObserver } | null;
+            const ResizeObserverClass = iframeWindow?.ResizeObserver || window.ResizeObserver;
             if (ResizeObserverClass && doc.body) {
               const observer = new ResizeObserverClass(() => {
-                measureHeight();
+                scheduleAutoFitHeight();
               });
               observer.observe(doc.body);
-              (iframeRef.current as any).__heightObserver = observer;
+              if (iframe) iframe.__heightObserver = observer;
             }
           }
           window.setTimeout(() => {
-            measureHeight();
+            scheduleAutoFitHeight();
             scanIframeDom();
             enableIframeElementDrag();
           }, 300);
 
           window.setTimeout(() => {
-            measureHeight();
+            scheduleAutoFitHeight();
             scanIframeDom();
             enableIframeElementDrag();
           }, 1200);
 
           window.setTimeout(() => {
-            measureHeight();
+            scheduleAutoFitHeight();
             scanIframeDom();
           }, 2500);
         }}
