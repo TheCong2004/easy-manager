@@ -62,3 +62,5 @@ Khi nhận được một yêu cầu phát triển lớn, hãy thực hiện the
 - Với Landing Page Editor, luôn giữ ranh giới Editor và Public Runtime: code public `/p/[slug]` không được import dependency nặng hoặc editor-only.
 - Với task lớn, dùng multi-agent Codex: `explorer` để đọc code trước, `docs_researcher` để kiểm chứng tài liệu khi cần, và `reviewer` để kiểm tra sau khi implement.
 - MCP project-local trong `.codex/config.toml` gồm `context7` cho tài liệu framework và `playwright` cho kiểm thử UI/browser.
+- **Quy tắc Git/Branch**: TUYỆT ĐỐI KHÔNG tạo thêm bất kỳ nhánh (branch) mới nào cho các tác vụ tiếp theo. Mọi commit và chỉnh sửa phải được thực hiện trực tiếp trên nhánh `main` và push lên remote main.
+
