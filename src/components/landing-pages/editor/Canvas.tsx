@@ -296,6 +296,7 @@ const AbsoluteElementWrapper: React.FC<{
   onOpenInspector?: () => void;
   draftFrame: Partial<ElementFrame> | null;
   globalCss?: string;
+  parentLabel?: string;
 }> = ({
   block,
   isSelected,
@@ -317,6 +318,7 @@ const AbsoluteElementWrapper: React.FC<{
   onOpenInspector,
   draftFrame,
   globalCss,
+  parentLabel,
 }) => {
   const frame = getEffectiveFrame(block, deviceMode);
   const preservedHtmlBlock = isPreservedHtmlBlock(block);
@@ -417,6 +419,7 @@ const AbsoluteElementWrapper: React.FC<{
             isHidden={Boolean(block.hidden)}
             onOpenSettings={onOpenInspector}
             onUpdateBlock={onUpdateBlock}
+            parentLabel={parentLabel}
             onAddFormField={
               block.type === "form_capture"
                 ? () => {
@@ -1275,6 +1278,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       onOpenInspector={onOpenInspector}
                       draftFrame={dragState?.blockId === element.id ? draftFrame : null}
                       globalCss={globalCss}
+                      parentLabel={section.label || getBlockDisplayLabel(section)}
                     />
                   ))}
                 </div>
