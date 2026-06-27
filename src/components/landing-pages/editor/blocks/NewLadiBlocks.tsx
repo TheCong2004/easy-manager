@@ -926,8 +926,13 @@ export const HtmlCodeBlock: React.FC<{
     }
   }, [emitPropsUpdate, preserveHtml, onUpdateNodeFrame, blockId, parentId, blockFrame?.y]);
 
-  const applyAutoMeasuredHeight = React.useCallback((nextHeight: number) => {
+  const applyAutoMeasuredHeight = React.useCallback((nextHeight: number, nextWidth?: number) => {
     if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
+
+    const pageWidth = blockFrame?.width ?? 1280;
+    if (nextWidth !== undefined && nextWidth > pageWidth + 8) {
+      console.warn(`[LandingBuilder:PreservedHTML] Content overflow detected: measured width is ${nextWidth}px, which exceeds page width of ${pageWidth}px.`);
+    }
 
     setFrameHeight((current) => {
       if (Math.abs(current - nextHeight) >= 4) {
@@ -943,7 +948,7 @@ export const HtmlCodeBlock: React.FC<{
 
       return current;
     });
-  }, [blockFrame?.y, blockId, emitPropsUpdate, onUpdateNodeFrame, parentId]);
+  }, [blockFrame?.y, blockFrame?.width, blockId, emitPropsUpdate, onUpdateNodeFrame, parentId]);
 
   const {
     bind: bindAutoFitHeight,
