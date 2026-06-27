@@ -545,7 +545,7 @@ export function LandingPagesManagement({ initialSubTab = "pages" }: LandingPages
           };
           setPages((prev) => [newPg, ...prev]);
           setPendingTemplate(null);
-          void openLandingBuilder({ pageId: created.id, mode: "new-tab" });
+          void openLandingBuilder({ pageId: created.id, mode: "same-tab" });
         }
       } catch (err) {
         console.error("Failed to create landing page:", err);
@@ -719,7 +719,7 @@ export function LandingPagesManagement({ initialSubTab = "pages" }: LandingPages
               };
               setPages((prev) => [newPg, ...prev]);
               setActiveJob(null);
-              void openLandingBuilder({ pageId: created.id, mode: "new-tab" });
+              void openLandingBuilder({ pageId: created.id, mode: "same-tab" });
             }
           } catch (err) {
             console.error("Failed to complete page generation:", err);
@@ -768,7 +768,7 @@ export function LandingPagesManagement({ initialSubTab = "pages" }: LandingPages
   // Handler for editing a page — navigate to the editor route
   const handleEditPage = useCallback(async (page: LandingPageItem) => {
     try {
-      await openLandingBuilder({ pageId: page.id, mode: "new-tab" });
+      await openLandingBuilder({ pageId: page.id, mode: "same-tab" });
     } catch (err) {
       console.error("Failed to open builder:", err);
       alert(err instanceof Error ? err.message : "Không thể mở builder.");

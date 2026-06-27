@@ -5,7 +5,7 @@ import type { BuilderMessage } from "./builder-message-protocol";
 
 export async function openLandingBuilder(options: {
   pageId: string;
-  mode?: "new-tab" | "iframe-modal";
+  mode?: "new-tab" | "iframe-modal" | "same-tab";
   container?: string;
 }): Promise<void> {
   const mode = options.mode ?? "new-tab";
@@ -36,6 +36,11 @@ export async function openLandingBuilder(options: {
 
   if (mode === "new-tab") {
     window.open(builderUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  if (mode === "same-tab") {
+    window.location.href = builderUrl;
     return;
   }
 
