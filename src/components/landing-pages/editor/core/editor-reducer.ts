@@ -197,6 +197,14 @@ export function editorReducer(state: EditorData, action: EditorAction): EditorDa
         }),
       });
     }
+    case "UPDATE_BLOCK_LABEL":
+      return normalizeEditorState({
+        ...state,
+        sections: updateBlockRecursive(state.sections, action.blockId, (block) => ({
+          ...block,
+          label: action.label,
+        })),
+      });
     default:
       return state;
   }
