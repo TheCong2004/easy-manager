@@ -5,30 +5,75 @@ import { useRouter } from "next/navigation";
 import { LandingPageItem, TemplateItem, FormConfigItem, TagItem, DomainItem } from "@/components/landing-pages/dung-chung/types";
 import { SubSidebar } from "@/components/landing-pages/sidebar/SubSidebar";
 import { PagesList } from "@/components/landing-pages/pages/PagesList";
-import { TemplatesLibrary } from "@/components/landing-pages/templates/TemplatesLibrary";
 import { FormConfig } from "@/components/landing-pages/form-config/FormConfig";
 import { TagManagement } from "@/components/landing-pages/tags/TagManagement";
 import { DomainsConfig } from "@/components/landing-pages/domains/DomainsConfig";
 import { DataLeads } from "@/components/landing-pages/leads/DataLeads";
 import { CreatePageModal } from "@/components/landing-pages/pages/CreatePageModal";
-import { TemplatePreviewModal } from "@/components/landing-pages/templates/TemplatePreviewModal";
 import { createLandingPage, deleteLandingPage, deleteLandingPages, isValidPageId } from "@/components/landing-pages/editor/core/editor-supabase-storage";
 import { LANDING_TEMPLATE_PRESETS, resolveTemplatePresetId, instantiateTemplateBlocks } from "@/components/landing-pages/editor/template-library";
 import { migrateTemplateFlatBlocks, migrateEditorData, recalculateSectionHeights } from "@/components/landing-pages/editor/core/editor-migration";
-import { createDefaultPageSettings, ensureOnlookBlockMeta, EditorBlock } from "@/components/landing-pages/editor/types";
+import { createDefaultPageSettings, ensureOnlookBlockMeta, EditorBlock, EditorData } from "@/components/landing-pages/editor/types";
 import { parseHtmlToImportedPageSchema, parseHtmlToPreservedHtmlSchema } from "@/features/landing-pages/import/html-to-landing-schema";
 import { importZipLandingPage } from "@/features/landing-pages/import/zip-importer";
+import { openLandingBuilder } from "@/features/landing-builder/sdk/open-builder";
 import { CURRENT_EDITOR_SCHEMA_VERSION } from "@/components/landing-pages/editor/core/editor-migration";
 import { supabase } from "@/lib/supabase";
-import { listTemplates, incrementTemplateDownloads } from "@/components/landing-pages/templates/template-service";
+import {
+  incrementTemplateDownloads,
+  listTemplates,
+  TemplatePreviewModal,
+  TemplatesLibrary,
+} from "@/features/landing-templates/admin";
 
 
 
 const initialPages: LandingPageItem[] = [];
 
+type GeneratorParams = {
+  businessName?: string;
+  category?: string;
+  cta?: string;
+  file?: File;
+  goal?: string;
+  importMode?: "preserve" | "convert";
+  industry?: string;
+  keyword?: string;
+  location?: string;
+  offer?: string;
+  source?: string;
+  style?: string;
+  url?: string;
+};
 
+type LandingEditorDraft = EditorData & {
+  assets?: unknown[];
+  globalCss?: string;
+  templateId?: string | null;
+};
 
-function formatLandingPageRow(item: any): LandingPageItem {
+interface LandingPageRow {
+  id: string;
+  name?: string | null;
+  editor_data?: { templateId?: string | null } | null;
+  status?: string | null;
+  updated_at?: string | null;
+}
+
+interface LandingTemplateRow {
+  id: string;
+  template_key?: string | null;
+  name?: string | null;
+  thumbnail_url?: string | null;
+  preview_image_url?: string | null;
+  category?: string | null;
+  price_type?: string | null;
+  views_count?: number | null;
+  downloads_count?: number | null;
+  editor_data?: TemplateItem["editor_data"];
+}
+
+function formatLandingPageRow(item: LandingPageRow): LandingPageItem {
   return {
     id: item.id,
     name: item.name || "Untitled Page",
@@ -52,7 +97,7 @@ function collectLocalLandingBackups() {
   const localPages: Array<{
     key: string;
     pageId: string;
-    editorData: any;
+    editorData: Partial<EditorData>;
     savedAt?: string;
   }> = [];
 
@@ -143,10 +188,14 @@ const initialTags: TagItem[] = [
 
 
 
-export default function LandingPagesManagement() {
+interface LandingPagesManagementProps {
+  initialSubTab?: string;
+}
+
+export function LandingPagesManagement({ initialSubTab = "pages" }: LandingPagesManagementProps) {
   const router = useRouter();
   const [pages, setPages] = useState<LandingPageItem[]>([]);
-  const [activeSubTab, setActiveSubTab] = useState("pages");
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -261,10 +310,10 @@ export default function LandingPagesManagement() {
         const data = await listTemplates();
         if (cancelled) return;
 
-        const mapped: TemplateItem[] = data.map((t: any) => ({
+        const mapped: TemplateItem[] = (data as LandingTemplateRow[]).map((t) => ({
           id: t.id,
-          templateId: t.template_key,
-          name: t.name,
+          templateId: t.template_key || undefined,
+          name: t.name || "Untitled Template",
           image: t.thumbnail_url || t.preview_image_url || "/images/grid-image/image-01.png",
           category: t.category === "ecommerce" || t.category === "Bán hàng" ? "ecommerce" : t.category === "service" || t.category === "Dịch vụ" ? "service" : "others",
           isPro: t.price_type === "pro",
@@ -275,10 +324,10 @@ export default function LandingPagesManagement() {
         }));
 
         setTemplates(mapped);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Failed to load templates from Supabase:", err);
         if (!cancelled) {
-          setTemplatesError(err.message || "Không thể tải kho giao diện");
+          setTemplatesError(err instanceof Error ? err.message : "Không thể tải kho giao diện");
         }
       } finally {
         if (!cancelled) {
@@ -359,11 +408,11 @@ export default function LandingPagesManagement() {
 
   // Helper: Cá nhân hóa nội dung các block dựa trên form nhập liệu của người dùng
   const customizeGeneratedSections = (
-    sections: any[],
+    sections: EditorBlock[],
     type: "ai" | "clone" | "ppc",
     name: string,
-    params: Record<string, any>
-  ): any[] => {
+    params: GeneratorParams
+  ): EditorBlock[] => {
     return sections.map((section) => {
       const newSection = { ...section, props: { ...section.props } };
 
@@ -391,12 +440,13 @@ export default function LandingPagesManagement() {
         }
       } else if (type === "clone") {
         const { url, keyword } = params;
-        const domain = url.replace(/https?:\/\/(www\.)?/, "").split("/")[0];
+        const sourceUrl = url || "";
+        const domain = sourceUrl.replace(/https?:\/\/(www\.)?/, "").split("/")[0];
         if (newSection.type === "hero") {
           newSection.props.headline = `Bản sao giao diện từ ${domain}`;
           newSection.props.subheadline = keyword 
             ? `Giao diện tối ưu hóa SEO cho từ khóa: "${keyword}"`
-            : `Giao diện được cấu trúc lại từ trang nguồn: ${url}`;
+            : `Giao diện được cấu trúc lại từ trang nguồn: ${sourceUrl}`;
         }
       } else if (type === "ppc") {
         const { keyword, offer, cta } = params;
@@ -424,7 +474,7 @@ export default function LandingPagesManagement() {
   const handleGeneratePage = useCallback(async (payload: {
     type: "blank" | "ai" | "clone" | "import" | "ppc";
     name: string;
-    params: Record<string, any>;
+    params: GeneratorParams;
   }) => {
     const { type, name, params } = payload;
     setIsCreateModalOpen(false);
@@ -433,7 +483,7 @@ export default function LandingPagesManagement() {
       setIsCreating(true);
       try {
         const pageId = crypto.randomUUID();
-        let initialEditorData: any = {
+        let initialEditorData: LandingEditorDraft = {
           pageId,
           pageName: name,
           sections: [],
@@ -495,7 +545,7 @@ export default function LandingPagesManagement() {
           };
           setPages((prev) => [newPg, ...prev]);
           setPendingTemplate(null);
-          router.push(`/landing-pages/editor/${created.id}`);
+          void openLandingBuilder({ pageId: created.id, mode: "new-tab" });
         }
       } catch (err) {
         console.error("Failed to create landing page:", err);
@@ -525,7 +575,7 @@ export default function LandingPagesManagement() {
         void (async () => {
           try {
             const pageId = crypto.randomUUID();
-            let initialEditorData: any = {
+            let initialEditorData: LandingEditorDraft = {
               pageId,
               pageName: name,
               sections: [],
@@ -534,7 +584,7 @@ export default function LandingPagesManagement() {
             };
 
             if (type === "ai") {
-              const templateId = getTemplateIdByIndustryAndStyle(params.industry, params.style);
+              const templateId = getTemplateIdByIndustryAndStyle(params.industry || "", params.style || "");
               const flatBlocks = instantiateTemplateBlocks(templateId).map(ensureOnlookBlockMeta);
               const sections = migrateTemplateFlatBlocks(flatBlocks);
               const customized = customizeGeneratedSections(sections, "ai", name, params);
@@ -555,8 +605,8 @@ export default function LandingPagesManagement() {
                   ...createDefaultPageSettings(name),
                   bgColor: selectedStyle === "premium" ? "#09090b" : "#ffffff",
                   primaryColor: primaryBgColors[selectedStyle] || "#3B82F6",
-                  seoTitle: `${name} - ${params.industry}`,
-                  seoDescription: `Website giới thiệu về ${params.businessName} trong lĩnh vực ${params.industry}.`,
+                  seoTitle: `${name} - ${params.industry || "landing page"}`,
+                  seoDescription: `Website giới thiệu về ${params.businessName || name} trong lĩnh vực ${params.industry || "kinh doanh"}.`,
                 },
                 schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
               };
@@ -573,14 +623,14 @@ export default function LandingPagesManagement() {
                 pageSettings: {
                   ...createDefaultPageSettings(name),
                   primaryColor: "#8B5CF6",
-                  seoTitle: `Bản sao giao diện từ ${params.url.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}`,
+                  seoTitle: `Bản sao giao diện từ ${(params.url || "").replace(/https?:\/\/(www\.)?/, "").split("/")[0]}`,
                 },
                 schemaVersion: CURRENT_EDITOR_SCHEMA_VERSION,
               };
             } else if (type === "import") {
               let parsedSections: EditorBlock[] = [];
               let parsedGlobalCss = "";
-              let parsedAssets: any[] = [];
+              let parsedAssets: unknown[] = [];
 
               if (params.file) {
                 try {
@@ -669,7 +719,7 @@ export default function LandingPagesManagement() {
               };
               setPages((prev) => [newPg, ...prev]);
               setActiveJob(null);
-              router.push(`/landing-pages/editor/${created.id}`);
+              void openLandingBuilder({ pageId: created.id, mode: "new-tab" });
             }
           } catch (err) {
             console.error("Failed to complete page generation:", err);
@@ -716,9 +766,14 @@ export default function LandingPagesManagement() {
 
 
   // Handler for editing a page — navigate to the editor route
-  const handleEditPage = useCallback((page: LandingPageItem) => {
-    router.push(`/landing-pages/editor/${page.id}`);
-  }, [router]);
+  const handleEditPage = useCallback(async (page: LandingPageItem) => {
+    try {
+      await openLandingBuilder({ pageId: page.id, mode: "new-tab" });
+    } catch (err) {
+      console.error("Failed to open builder:", err);
+      alert(err instanceof Error ? err.message : "Không thể mở builder.");
+    }
+  }, []);
 
 
   // Handler for deleting a page
@@ -942,4 +997,8 @@ export default function LandingPagesManagement() {
     </div>
   </>
   );
+}
+
+export default function LandingPagesPage() {
+  return <LandingPagesManagement />;
 }
