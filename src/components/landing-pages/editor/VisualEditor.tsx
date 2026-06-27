@@ -13,9 +13,11 @@ import {
   renderLandingPageHtml,
 } from "./editor-actions";
 import { EditorTopBar } from "./EditorTopBar";
-import { LayersPanel } from "./LayersPanel";
 import { Canvas } from "./Canvas";
 import { InspectorPanel } from "./InspectorPanel";
+import { EditorShellLayout } from "./components/EditorShellLayout";
+import { EditorLeftRail, LeftRailClickAction } from "./components/EditorLeftRail";
+import { EditorLeftDrawer, DrawerCategoryId } from "./components/EditorLeftDrawer";
 import { LandingPageItem } from "../dung-chung/types";
 import { FUNNELX_FLAGS } from "@onlook/funnel";
 import { useEditorBlockActions } from "./hooks/useEditorBlockActions";
@@ -40,14 +42,6 @@ import {
   saveBuilderDraft,
 } from "@/features/landing-builder/store/manual-save";
 
-// Import modular split sub-panels
-import { PageListingPanel } from "./panels/PageListingPanel";
-import { BrandingPanel } from "./panels/BrandingPanel";
-import { TemplatesAssetsPanel } from "./panels/TemplatesAssetsPanel";
-import { FunnelPanel } from "./panels/FunnelPanel";
-import { SandboxPanel } from "./panels/SandboxPanel";
-import { HistoryPanel } from "./panels/HistoryPanel";
-import { BranchesPanel } from "./panels/BranchesPanel";
 import { AIChatPanel } from "./panels/AIChatPanel";
 
 const MAX_HISTORY = 60;
@@ -201,96 +195,47 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [pageVisibility, setPageVisibility] = useState<string>("private");
   const [pageSlug, setPageSlug] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"layers" | "brand" | "pages" | "images" | "funnel" | "sandbox" | "history" | "branches">("layers");
+  const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
+  const [leftDrawerCategory, setLeftDrawerCategory] = useState<DrawerCategoryId>("elements");
+  const [elementPaletteCategory, setElementPaletteCategory] = useState("text");
+  const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(true);
 
   useEffect(() => {
     setBuilderSessionToken(getBuilderSessionTokenFromSearch(window.location.search));
   }, []);
 
-  const sidebarTabs = [
-    {
-      id: "layers",
-      label: "Layers & Thêm phần tử",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
-        </svg>
-      ),
-    },
-    {
-      id: "brand",
-      label: "Branding",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-1.178-.256H5.25a2.25 2.25 0 00-2.25 2.25v1.875c0 .345.029.689.086 1.026a3.385 3.385 0 006.084 1.15l.982-1.656a3 3 0 00.57-1.56h.03c.105 0 .21-.005.312-.015" />
-          <circle cx="12" cy="7" r="1.5" />
-          <circle cx="17" cy="10" r="1.5" />
-          <circle cx="15" cy="15" r="1.5" />
-        </svg>
-      ),
-    },
-    {
-      id: "pages",
-      label: "Pages",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-        </svg>
-      ),
-    },
-    {
-      id: "images",
-      label: "Templates & Assets",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-        </svg>
-      ),
-    },
-    {
-      id: "funnel",
-      label: "Funnel & Logic",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h15l-6 7.125v4.875l-3 1.5v-6.375L4.5 5.25z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h3m-1.5-1.5v3" />
-        </svg>
-      ),
-    },
-    {
-      id: "history",
-      label: "Lịch sử & Bản lưu",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3.75 2.25M3.75 12a8.25 8.25 0 111.833 5.197M3.75 18v-4.5h4.5" />
-        </svg>
-      ),
-    },
-    {
-      id: "sandbox",
-      label: "Sandbox",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25M21 7.5v9l-9 5.25m0-9L3 7.5m9 5.25v9M3 7.5v9l9 5.25" />
-        </svg>
-      ),
-    },
-    {
-      id: "branches",
-      label: "Branches Git",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="18" cy="18" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
-          <circle cx="6" cy="6" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
-          <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
-          <path d="M18 15V9a4 4 0 0 0-4-4H9" />
-          <line x1="6" y1="9" x2="6" y2="15" />
-        </svg>
-      ),
-    },
-  ] as const;
+  const openLeftDrawer = useCallback((category: DrawerCategoryId, presetCategory?: string) => {
+    setLeftDrawerCategory(category);
+    if (presetCategory) {
+      setElementPaletteCategory(presetCategory);
+    }
+    setIsLeftDrawerOpen(true);
+  }, []);
 
-  const [rightTab, setRightTab] = useState<"inspector" | "chat">("chat");
+  const toggleLeftDrawer = useCallback((category: DrawerCategoryId, presetCategory?: string) => {
+    if (isLeftDrawerOpen && leftDrawerCategory === category) {
+      setIsLeftDrawerOpen(false);
+    } else {
+      openLeftDrawer(category, presetCategory);
+    }
+  }, [isLeftDrawerOpen, leftDrawerCategory, openLeftDrawer]);
+
+  const handleLeftRailAction = useCallback((action: LeftRailClickAction) => {
+    if (action === "add") {
+      openLeftDrawer("elements", "text");
+      return;
+    }
+    if (action === "video") {
+      openLeftDrawer("elements", "video");
+      return;
+    }
+    if (action === "select") {
+      setSelectedId(null);
+      return;
+    }
+    toggleLeftDrawer(action);
+  }, [openLeftDrawer, toggleLeftDrawer]);
   const [chatHistory, setChatHistory] = useState<{ sender: "user" | "ai"; text: string; timestamp: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
@@ -298,7 +243,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const handleSelectBlock = useCallback((id: string | null) => {
     setSelectedId(id);
     if (id) {
-      setRightTab("inspector");
+      setIsInspectorOpen(true);
     }
   }, []);
 
@@ -519,12 +464,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     handleUpdatePageSettings,
     handleUseAsset,
     handleUpdateNodeFrame,
+    handleUpdateNodeFrameSilent,
     handleUpdateResponsiveFrame,
+    handleUpdateResponsiveFrameSilent,
     handleAddSection,
     handleAddElementToSection,
     handleMoveNodeZIndex,
     handleSetBlockLocked,
     handleSetBlockHidden,
+    handleUpdateBlockLabel,
   } = useEditorBlockActions({
     data,
     handleSelectBlock,
@@ -661,7 +609,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
       if (ctrlMeta && e.key === "z" && !e.shiftKey) { e.preventDefault(); handleUndo(); }
       if (ctrlMeta && (e.key === "y" || (e.shiftKey && e.key === "z"))) { e.preventDefault(); handleRedo(); }
-      if (e.key === "Escape") setSelectedId(null);
+      if (e.key === "Escape") {
+        if (isLeftDrawerOpen) {
+          setIsLeftDrawerOpen(false);
+        } else if (isAiPanelOpen) {
+          setIsAiPanelOpen(false);
+        } else {
+          setSelectedId(null);
+        }
+      }
       if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
         const tag = (e.target as HTMLElement)?.tagName;
         if (!["INPUT", "TEXTAREA", "SELECT"].includes(tag)) {
@@ -680,7 +636,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleUndo, handleRedo, selectedId, handleDeleteBlock, handleDuplicateBlock]);
+  }, [handleUndo, handleRedo, selectedId, handleDeleteBlock, handleDuplicateBlock, isLeftDrawerOpen, isAiPanelOpen]);
 
   const handlePublish = async () => {
     try {
@@ -985,148 +941,107 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div
-        className="landing-editor-shell fixed inset-0 z-[999999] flex flex-col bg-gray-50 text-gray-800"
-        style={{ fontFamily: "Inter, sans-serif", fontSize: 13 }}
-      >
-        {/* Top bar (Light Theme already) */}
-        <EditorTopBar
-          pageName={pageName}
-          setPageName={handleSetPageName}
-          deviceMode={deviceMode}
-          setDeviceMode={setDeviceMode}
-          zoom={zoom}
-          setZoom={setZoom}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onClose={handleCloseSafe}
-          onSave={handleManualSave}
-          onCreateRevision={() => handleCreateRevision()}
-          onOpenCommand={() => setIsCommandOpen(true)}
-          onImportJson={() => importInputRef.current?.click()}
-          onImportHtml={() => importHtmlInputRef.current?.click()}
-          onExportJson={handleExportJson}
-          onExportHtml={handleExportHtml}
-          onPublish={handlePublish}
-          onUnpublish={handleUnpublish}
-          isSaved={isSaved}
-          isSaving={saveStatus === "saving"}
-          lastSavedAt={lastSavedAt}
-          activeViewMode={activeViewMode}
-          setActiveViewMode={setActiveViewMode}
-          blockCount={data.sections.length}
-          pageStatus={pageStatus}
-          pageVisibility={pageVisibility}
-          pageSlug={pageSlug}
-        />
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={handleImportJson}
-        />
-        <input
-          ref={importHtmlInputRef}
-          type="file"
-          accept=".html,.zip"
-          className="hidden"
-          onChange={handleImportHtml}
-        />
-
-        {/* 3-column editor body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* LEFT SIDEBAR STRIP + WIDE PANEL */}
-          <div className="flex flex-shrink-0 bg-white border-r border-gray-200 h-full overflow-hidden select-none">
-            {/* Narrow sidebar strip */}
-            <div className="w-14 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4 gap-4 flex-shrink-0 select-none">
-              {sidebarTabs.map((tabItem) => {
-                const isActive = activeTab === tabItem.id;
-                return (
-                  <button
-                    key={tabItem.id}
-                    onClick={() => setActiveTab(tabItem.id)}
-                    title={tabItem.label}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                        : "text-gray-400 hover:text-gray-800 hover:bg-gray-200/50"
-                    }`}
-                  >
-                    {tabItem.icon}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Wide Panel Content */}
-            <div className={`${activeTab === "layers" ? "w-[420px]" : "w-64"} flex flex-shrink-0 flex-col h-full bg-white border-r border-gray-200 overflow-hidden transition-all duration-200`}>
-              {activeTab === "layers" && (
-                <LayersPanel
-                  sections={data.sections}
-                  selectedId={selectedId}
-                  onSelectBlock={handleSelectBlock}
-                  onDeleteBlock={handleDeleteBlock}
-                  onAddBlock={handleAddBlock}
-                  onDuplicateBlock={handleDuplicateBlock}
-                  onSetBlockLocked={handleSetBlockLocked}
-                  onSetBlockHidden={handleSetBlockHidden}
-                  onMoveNodeZIndex={handleMoveNodeZIndex}
-                />
-              )}
-              {activeTab === "brand" && (
-                <BrandingPanel settings={data.pageSettings} onUpdateSettings={handleUpdatePageSettings} />
-              )}
-              {activeTab === "pages" && (
-                <PageListingPanel
-                  page={page}
-                  pages={pages}
-                  onSwitchPage={handleSwitchPageSafe}
-                  onCreatePage={onCreatePage}
-                  onDeletePage={onDeletePage}
-                />
-              )}
-              {activeTab === "images" && (
-                <TemplatesAssetsPanel onApplyTemplate={handleApplyTemplate} onUseAsset={handleUseAsset} />
-              )}
-              {activeTab === "funnel" && (
-                <FunnelPanel settings={data.pageSettings} onUpdateSettings={handleUpdatePageSettings} />
-              )}
-              {activeTab === "sandbox" && (
-                <SandboxPanel
-                  settings={data.pageSettings}
-                  onUpdateSettings={handleUpdatePageSettings}
-                  sandboxPreviewUrl={sandboxPreviewUrl}
-                  showToast={showToast}
-                />
-              )}
-              {activeTab === "history" && (
-                <HistoryPanel
-                  actionLog={actionLog}
-                  revisions={revisions}
-                  onCreateRevision={() => handleCreateRevision()}
-                  onRestoreRevision={handleRestoreRevision}
-                  formatActionLabel={formatActionLabel}
-                />
-              )}
-              {activeTab === "branches" && (
-                <BranchesPanel />
-              )}
-            </div>
-          </div>
-
-          {/* CENTER — Canvas */}
-          {activeViewMode === "code" ? (
-            <div className="flex-1 overflow-auto bg-gray-100 p-6">
-              <pre className="min-h-full rounded-lg border border-gray-200 bg-white p-4 text-xs leading-relaxed text-gray-800 whitespace-pre-wrap font-mono shadow-sm">
+      <EditorShellLayout
+        topBar={
+          <>
+            <EditorTopBar
+              pageName={pageName}
+              setPageName={handleSetPageName}
+              deviceMode={deviceMode}
+              setDeviceMode={setDeviceMode}
+              zoom={zoom}
+              setZoom={setZoom}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              onClose={handleCloseSafe}
+              onSave={handleManualSave}
+              onCreateRevision={() => handleCreateRevision()}
+              onOpenCommand={() => setIsCommandOpen(true)}
+              onImportJson={() => importInputRef.current?.click()}
+              onImportHtml={() => importHtmlInputRef.current?.click()}
+              onExportJson={handleExportJson}
+              onExportHtml={handleExportHtml}
+              onPublish={handlePublish}
+              onUnpublish={handleUnpublish}
+              isSaved={isSaved}
+              isSaving={saveStatus === "saving"}
+              lastSavedAt={lastSavedAt}
+              activeViewMode={activeViewMode}
+              setActiveViewMode={setActiveViewMode}
+              blockCount={data.sections.length}
+              pageStatus={pageStatus}
+              pageVisibility={pageVisibility}
+              pageSlug={pageSlug}
+              onOpenElements={() => openLeftDrawer("elements", "text")}
+              onOpenLayers={() => toggleLeftDrawer("layers")}
+              onOpenAssets={() => toggleLeftDrawer("assets")}
+              onOpenAI={() => setIsAiPanelOpen((open) => !open)}
+              isAiOpen={isAiPanelOpen}
+            />
+            <input ref={importInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportJson} />
+            <input ref={importHtmlInputRef} type="file" accept=".html,.zip" className="hidden" onChange={handleImportHtml} />
+          </>
+        }
+        leftRail={
+          <EditorLeftRail
+            activeAction={
+              leftDrawerCategory === "products" ||
+              leftDrawerCategory === "media" ||
+              leftDrawerCategory === "documents"
+                ? null
+                : leftDrawerCategory
+            }
+            isDrawerOpen={isLeftDrawerOpen}
+            onAction={handleLeftRailAction}
+          />
+        }
+        leftDrawer={
+          <EditorLeftDrawer
+            isOpen={isLeftDrawerOpen}
+            category={leftDrawerCategory}
+            onClose={() => setIsLeftDrawerOpen(false)}
+            onCategoryChange={(cat) => setLeftDrawerCategory(cat)}
+            elementPresetCategory={elementPaletteCategory}
+            onElementPresetCategoryChange={setElementPaletteCategory}
+            sections={data.sections}
+            selectedId={selectedId}
+            pageSettings={data.pageSettings}
+            page={page}
+            pages={pages}
+            actionLog={actionLog}
+            revisions={revisions}
+            sandboxPreviewUrl={sandboxPreviewUrl}
+            onSelectBlock={handleSelectBlock}
+            onDeleteBlock={handleDeleteBlock}
+            onAddBlock={handleAddBlock}
+            onDuplicateBlock={handleDuplicateBlock}
+            onSetBlockLocked={handleSetBlockLocked}
+            onSetBlockHidden={handleSetBlockHidden}
+            onMoveNodeZIndex={handleMoveNodeZIndex}
+            onApplyTemplate={handleApplyTemplate}
+            onUseAsset={handleUseAsset}
+            onUpdatePageSettings={handleUpdatePageSettings}
+            onSwitchPage={handleSwitchPageSafe}
+            onCreatePage={onCreatePage}
+            onDeletePage={onDeletePage}
+            onCreateRevision={() => handleCreateRevision()}
+            onRestoreRevision={handleRestoreRevision}
+            formatActionLabel={formatActionLabel}
+            showToast={showToast}
+          />
+        }
+        canvas={
+          activeViewMode === "code" ? (
+            <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: "#f7f7f8" }}>
+              <pre className="min-h-full whitespace-pre-wrap rounded-2xl border border-gray-200 bg-white p-4 font-mono text-xs leading-relaxed text-gray-800 shadow-sm">
                 {codeView}
               </pre>
             </div>
           ) : activeViewMode === "preview" ? (
-            <div className="flex-1 overflow-auto bg-gray-150 p-8">
-              <div className="mx-auto mb-4 flex max-w-5xl items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm">
+            <div className="flex-1 overflow-auto p-8" style={{ backgroundColor: "#f7f7f8" }}>
+              <div className="mx-auto mb-4 flex max-w-5xl items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm">
                 <div className="min-w-0 truncate font-mono text-gray-500">{sandboxPreviewUrl}</div>
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${data.pageSettings.sandboxStatus === "ready" ? "bg-emerald-500" : "bg-amber-500"}`} />
@@ -1139,7 +1054,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   srcDoc={previewHtml}
                   sandbox="allow-modals allow-forms allow-same-origin allow-scripts allow-popups allow-downloads"
                   allow="geolocation; microphone; camera; midi; encrypted-media"
-                  className="bg-white shadow-2xl rounded-lg border border-gray-200"
+                  className="rounded-2xl border border-gray-200 bg-white shadow-xl"
                   style={{
                     width: DEVICE_WIDTHS[deviceMode],
                     minHeight: 720,
@@ -1167,58 +1082,70 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               onUpdateBlock={handleUpdateBlock}
               onUpdateBlockSilent={handleUpdateBlockSilent}
               onUpdateNodeFrame={handleUpdateNodeFrame}
+              onUpdateNodeFrameSilent={handleUpdateNodeFrameSilent}
               onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
+              onUpdateResponsiveFrameSilent={handleUpdateResponsiveFrameSilent}
               onAddSection={handleAddSection}
+              onOpenInspector={() => setIsInspectorOpen(true)}
               onAddElementToSection={handleAddElementToSection}
               onMoveNodeZIndex={handleMoveNodeZIndex}
+              onSetBlockHidden={handleSetBlockHidden}
             />
-          )}
-
-          {/* RIGHT — Inspector / AI Copilot */}
-          <div className="w-[344px] flex-shrink-0 flex flex-col bg-white border-l border-gray-200 h-full overflow-hidden">
-            {/* Tab selector header */}
-            <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-gray-50 select-none">
-              <div className="flex rounded-md border border-gray-200/50 bg-gray-100 p-0.5 w-[200px]">
-                {(["chat", "inspector"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setRightTab(tab)}
-                    className={`cursor-pointer flex-1 rounded py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition ${
-                      rightTab === tab
-                        ? "bg-white text-purple-700 shadow-sm"
-                        : "text-gray-500 hover:text-gray-800"
-                    }`}
-                  >
-                    {tab === "chat" ? "Chat AI" : "Inspect"}
-                  </button>
-                ))}
-              </div>
-
-              {rightTab === "chat" && (
-                <button
-                  onClick={() => setChatHistory([])}
-                  className="cursor-pointer rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-purple-700 hover:bg-purple-100 transition shadow-sm"
-                >
-                  New
+          )
+        }
+        inspector={
+          isInspectorOpen ? (
+            <InspectorPanel
+              selectedBlock={selectedBlock}
+              sections={data.sections}
+              pageSettings={data.pageSettings}
+              onUpdateBlock={handleUpdateBlock}
+              onUpdateBlockSilent={handleUpdateBlockSilent}
+              onUpdatePageSettings={handleUpdatePageSettings}
+              onMoveWithinParent={handleMoveWithinParent}
+              deviceMode={deviceMode}
+              onUpdateNodeFrame={handleUpdateNodeFrame}
+              onUpdateNodeFrameSilent={handleUpdateNodeFrameSilent}
+              onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
+              onUpdateResponsiveFrameSilent={handleUpdateResponsiveFrameSilent}
+              onDuplicateBlock={handleDuplicateBlock}
+              onDeleteBlock={handleDeleteBlock}
+              onMoveNodeZIndex={handleMoveNodeZIndex}
+              onMoveSectionUp={handleMoveUp}
+              onMoveSectionDown={handleMoveDown}
+              onMoveSection={handleMoveBlock}
+              onSetBlockHidden={handleSetBlockHidden}
+              onUpdateBlockLabel={handleUpdateBlockLabel}
+              handleSendChatMessage={handleSendChatMessage}
+              isAiTyping={isAiTyping}
+              variant="floating"
+              onClose={() => setIsInspectorOpen(false)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsInspectorOpen(true)}
+              className="pointer-events-auto fixed right-6 top-20 z-[45] flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-lg hover:text-[#5b21b6]"
+              title="Mở Inspector"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+              </svg>
+            </button>
+          )
+        }
+        aiPanel={
+          isAiPanelOpen ? (
+            <div className="pointer-events-auto absolute bottom-6 right-[400px] z-40 flex h-[min(520px,calc(100vh-120px))] w-[340px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                <p className="text-sm font-black text-gray-900">AI Copilot</p>
+                <button type="button" onClick={() => setIsAiPanelOpen(false)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
-              )}
-            </div>
-
-            {/* Content area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {rightTab === "inspector" ? (
-                <InspectorPanel
-                  selectedBlock={selectedBlock}
-                  pageSettings={data.pageSettings}
-                  onUpdateBlock={handleUpdateBlock}
-                  onUpdatePageSettings={handleUpdatePageSettings}
-                  deviceMode={deviceMode}
-                  onUpdateNodeFrame={handleUpdateNodeFrame}
-                  onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
-                  handleSendChatMessage={handleSendChatMessage}
-                  isAiTyping={isAiTyping}
-                />
-              ) : (
+              </div>
+              <div className="flex-1 overflow-hidden">
                 <AIChatPanel
                   chatHistory={chatHistory}
                   setChatHistory={setChatHistory}
@@ -1228,63 +1155,56 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   isAiTyping={isAiTyping}
                   handleSendChatMessage={handleSendChatMessage}
                 />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Command Palette */}
-        {isCommandOpen && (
-          <div className="absolute inset-0 z-[9998] flex items-start justify-center bg-black/30 pt-24" onClick={() => setIsCommandOpen(false)}>
-            <div
-              className="w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Command Palette</div>
-                <div className="mt-1 text-sm font-bold text-gray-850">{pageName}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 p-3 bg-white">
-                {[
-                  { label: "Add Hero Section", action: () => handleAddBlock("hero") },
-                  { label: "Add Form Capture", action: () => handleAddBlock("form_capture") },
-                  { label: "Save Design", action: handleManualSave },
-                  { label: "Create Revision Point", action: () => handleCreateRevision() },
-                  { label: "Preview Mode", action: () => setActiveViewMode("preview") },
-                  { label: "Code View Mode", action: () => setActiveViewMode("code") },
-                  { label: "Open Sandbox Config", action: () => setActiveTab("sandbox") },
-                  { label: "Connect Sandbox", action: () => handleUpdatePageSettings("sandboxStatus", "ready") },
-                  { label: "Export JSON Design", action: handleExportJson },
-                  { label: "Export HTML Bundle", action: handleExportHtml },
-                  { label: "Clear Canvas Blocks", action: handleClearCanvas },
-                ].map((command) => (
-                  <button
-                    key={command.label}
-                    onClick={() => {
-                      command.action();
-                      setIsCommandOpen(false);
-                    }}
-                    className="cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:border-purple-500/50 hover:bg-purple-50 hover:text-purple-700"
-                  >
-                    {command.label}
-                  </button>
-                ))}
-              </div>
-              <div className="border-t border-gray-200 bg-gray-50 px-4 py-2.5 text-[10px] text-gray-400 font-semibold">
-                Bấm Ctrl+K để mở nhanh
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Toast notifications */}
-        {toast && <Toast message={toast.message} type={toast.type} />}
-
-        {/* Keyboard shortcuts hint */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-gray-500 font-semibold pointer-events-none select-none bg-white/90 border border-gray-200 shadow px-3 py-1 rounded-full hidden lg:block">
-          Delete — xóa block &nbsp;·&nbsp; Ctrl+D — nhân đôi &nbsp;·&nbsp; Ctrl+Z — hoàn tác &nbsp;·&nbsp; Esc — bỏ chọn
-        </div>
-      </div>
+          ) : null
+        }
+        overlays={
+          <>
+            {isCommandOpen && (
+              <div className="absolute inset-0 z-[9998] flex items-start justify-center bg-black/30 pt-24" onClick={() => setIsCommandOpen(false)}>
+                <div className="w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                  <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Command Palette</div>
+                    <div className="mt-1 text-sm font-bold text-gray-850">{pageName}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 bg-white p-3">
+                    {[
+                      { label: "Add Hero Section", action: () => handleAddBlock("hero") },
+                      { label: "Add Form Capture", action: () => handleAddBlock("form_capture") },
+                      { label: "Save Design", action: handleManualSave },
+                      { label: "Create Revision Point", action: () => handleCreateRevision() },
+                      { label: "Preview Mode", action: () => setActiveViewMode("preview") },
+                      { label: "Code View Mode", action: () => setActiveViewMode("code") },
+                      { label: "Open Sandbox Config", action: () => openLeftDrawer("sandbox") },
+                      { label: "Connect Sandbox", action: () => handleUpdatePageSettings("sandboxStatus", "ready") },
+                      { label: "Export JSON Design", action: handleExportJson },
+                      { label: "Export HTML Bundle", action: handleExportHtml },
+                      { label: "Clear Canvas Blocks", action: handleClearCanvas },
+                    ].map((command) => (
+                      <button
+                        key={command.label}
+                        type="button"
+                        onClick={() => { command.action(); setIsCommandOpen(false); }}
+                        className="cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:border-purple-500/50 hover:bg-purple-50 hover:text-purple-700"
+                      >
+                        {command.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="border-t border-gray-200 bg-gray-50 px-4 py-2.5 text-[10px] font-semibold text-gray-400">
+                    Bấm Ctrl+K để mở nhanh
+                  </div>
+                </div>
+              </div>
+            )}
+            {toast && <Toast message={toast.message} type={toast.type} />}
+            <div className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 select-none rounded-full border border-gray-200 bg-white/90 px-3 py-1 text-[10px] font-semibold text-gray-500 shadow lg:block">
+              Delete — xóa block · Ctrl+D — nhân đôi · Ctrl+Z — hoàn tác · Esc — đóng panel / bỏ chọn
+            </div>
+          </>
+        }
+      />
     </DndProvider>
   );
 };

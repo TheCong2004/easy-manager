@@ -27,7 +27,8 @@ export type EditorAction =
   | { type: "UPDATE_RESPONSIVE_FRAME"; blockId: string; deviceMode: "desktop" | "tablet" | "mobile"; frame: Partial<ElementFrame> }
   | { type: "ADD_SECTION"; block: EditorBlock; index?: number }
   | { type: "ADD_ELEMENT_TO_SECTION"; sectionId: string; block: EditorBlock; x: number; y: number }
-  | { type: "MOVE_NODE_Z_INDEX"; blockId: string; direction: "forward" | "backward" };
+  | { type: "MOVE_NODE_Z_INDEX"; blockId: string; direction: "forward" | "backward" }
+  | { type: "UPDATE_BLOCK_LABEL"; blockId: string; label: string };
 
 export type LandingEditorAction =
   | {

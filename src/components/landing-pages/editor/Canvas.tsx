@@ -20,6 +20,7 @@ import {
   CarouselBlock, TabsBlock, FrameBlock, AccordionBlock, TableBlock,
   SurveyBlock, MenuBlock, HtmlCodeBlock
 } from "./blocks/NewLadiBlocks";
+import { EditorContextToolbar, getBlockDisplayLabel } from "./components/EditorContextToolbar";
 
 function isPreservedHtmlBlock(block: EditorBlock): boolean {
   if (block.type !== "html_code") return false;
@@ -147,58 +148,6 @@ const BlockRenderer: React.FC<{
   }
 };
 
-// ── Floating Toolbar ──────────────────────────────────────────
-const FloatingToolbar: React.FC<{
-  block: EditorBlock;
-  zoom: number;
-  onDelete: () => void;
-  onDuplicate: () => void;
-  onBringForward: () => void;
-  onSendBackward: () => void;
-}> = ({ block, zoom, onDelete, onDuplicate, onBringForward, onSendBackward }) => {
-  return (
-    <div
-      className="absolute bg-gray-900/95 text-white flex items-center gap-1 p-1 rounded-lg shadow-xl z-50 border border-gray-800 select-none whitespace-nowrap"
-      style={{
-        top: `-${40 / zoom}px`,
-        right: 0,
-        transformOrigin: "top right",
-        fontSize: `${11 / zoom}px`,
-      }}
-    >
-      <button
-        onClick={(e) => { e.stopPropagation(); onBringForward(); }}
-        title="Lên trên (zIndex + 1)"
-        className="px-2 py-1 rounded hover:bg-gray-800 flex items-center justify-center font-bold"
-      >
-        ▲
-      </button>
-      <button
-        onClick={(e) => { e.stopPropagation(); onSendBackward(); }}
-        title="Xuống dưới (zIndex - 1)"
-        className="px-2 py-1 rounded hover:bg-gray-800 flex items-center justify-center font-bold"
-      >
-        ▼
-      </button>
-      <div className="w-[1px] h-4 bg-gray-800 self-center mx-1" />
-      <button
-        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-        title="Nhân đôi"
-        className="px-2 py-1 rounded hover:bg-gray-800"
-      >
-        Nhân đôi
-      </button>
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        title="Xóa"
-        className="px-2 py-1 rounded bg-red-650/80 hover:bg-red-650"
-      >
-        Xóa
-      </button>
-    </div>
-  );
-};
-
 // ── Selection Overlay ─────────────────────────────────────────
 const SelectionOverlay: React.FC<{
   block: EditorBlock;
@@ -213,7 +162,7 @@ const SelectionOverlay: React.FC<{
   const overlayStyle: React.CSSProperties = {
     position: "absolute",
     inset: `-${offset}px`,
-    border: "1.5px dashed #8b5cf6", // violet-500
+    border: "2px dashed #3b82f6",
     pointerEvents: "none",
     borderRadius: "2px",
     zIndex: 1000,
@@ -224,7 +173,7 @@ const SelectionOverlay: React.FC<{
     width: `${handleSize}px`,
     height: `${handleSize}px`,
     backgroundColor: "#ffffff",
-    border: "1.5px solid #8b5cf6",
+    border: "2px solid #3b82f6",
     cursor,
     pointerEvents: "auto",
     zIndex: 1001,
@@ -239,7 +188,7 @@ const SelectionOverlay: React.FC<{
     height: `${14 / zoom}px`,
     borderRadius: "50%",
     backgroundColor: "#ffffff",
-    border: "1.5px solid #8b5cf6",
+    border: "2px solid #3b82f6",
     cursor: "alias",
     pointerEvents: "auto",
     display: "flex",
@@ -251,16 +200,17 @@ const SelectionOverlay: React.FC<{
   return (
     <div style={overlayStyle}>
       <div
-        className="absolute bg-purple-650 text-white font-extrabold rounded select-none tracking-wider uppercase"
+        className="absolute rounded bg-[#3b82f6] font-extrabold uppercase tracking-wider text-white select-none"
         style={{
           top: `-${18 / zoom}px`,
-          left: `-${offset}px`,
+          right: `-${offset}px`,
+          left: "auto",
           fontSize: `${9 / zoom}px`,
-          padding: `${1 / zoom}px ${4 / zoom}px`,
-          transformOrigin: "top left",
+          padding: `${1 / zoom}px ${5 / zoom}px`,
+          transformOrigin: "top right",
         }}
       >
-        {block.type}
+        {getBlockDisplayLabel(block)}
       </div>
 
       <div
@@ -340,6 +290,10 @@ const AbsoluteElementWrapper: React.FC<{
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
+  onBringToFront?: () => void;
+  onSendToBack?: () => void;
+  onToggleHidden?: () => void;
+  onOpenInspector?: () => void;
   draftFrame: Partial<ElementFrame> | null;
   globalCss?: string;
 }> = ({
@@ -357,6 +311,10 @@ const AbsoluteElementWrapper: React.FC<{
   onDeleteBlock,
   onDuplicateBlock,
   onMoveNodeZIndex,
+  onBringToFront,
+  onSendToBack,
+  onToggleHidden,
+  onOpenInspector,
   draftFrame,
   globalCss,
 }) => {
@@ -446,13 +404,34 @@ const AbsoluteElementWrapper: React.FC<{
             onPointerDownResize={(e, dir) => onPointerDownResize(e, block, dir)}
             onPointerDownRotate={(e) => onPointerDownRotate(e, block)}
           />
-          <FloatingToolbar
+          <EditorContextToolbar
             block={block}
             zoom={zoom}
             onDelete={() => onDeleteBlock(block.id)}
             onDuplicate={() => onDuplicateBlock(block.id)}
             onBringForward={() => onMoveNodeZIndex(block.id, "forward")}
             onSendBackward={() => onMoveNodeZIndex(block.id, "backward")}
+            onBringToFront={onBringToFront}
+            onSendToBack={onSendToBack}
+            onToggleHidden={onToggleHidden}
+            isHidden={Boolean(block.hidden)}
+            onOpenSettings={onOpenInspector}
+            onAddFormField={
+              block.type === "form_capture"
+                ? () => {
+                    const fields = (block.props.fields as { id: string; label: string; type: string; required: boolean }[]) ?? [];
+                    onUpdateBlock(block.id, {
+                      ...block.props,
+                      fields: [...fields, { id: `f_${Date.now()}`, label: "Trường mới", type: "text", required: false }],
+                    });
+                  }
+                : undefined
+            }
+            onSaveFormData={
+              block.type === "form_capture"
+                ? () => onOpenInspector?.()
+                : undefined
+            }
           />
         </>
       )}
@@ -600,6 +579,77 @@ const SELF_CONTAINED_SECTION_TYPES = new Set([
 ]);
 
 
+/** Visual preview factor — editor zoom UI stays separate from rendered preview size. */
+export const CANVAS_VISUAL_PREVIEW_FACTOR = 0.42;
+const WORKSPACE_PADDING_X = 48;
+const WORKSPACE_PADDING_Y = 48;
+const WORKSPACE_PADDING_BOTTOM = 160;
+const SNAP_THRESHOLD = 8;
+
+function getSectionBounds(section: EditorBlock, canvasWidth: number): { width: number; height: number } {
+  const baseNaturalHeight =
+    section.frame?.height ??
+    (typeof section.props?.minHeight === "number"
+      ? (section.props.minHeight as number)
+      : SECTION_NATURAL_TYPES.has(section.type)
+      ? 500
+      : 120);
+
+  return {
+    width: section.frame?.width ?? canvasWidth,
+    height: baseNaturalHeight,
+  };
+}
+
+function computeDragSnap(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  sectionW: number,
+  sectionH: number,
+): { x: number; y: number; guides: { vertical?: number; horizontal?: number } } {
+  let nextX = x;
+  let nextY = y;
+  const guides: { vertical?: number; horizontal?: number } = {};
+
+  if (Math.abs(nextX) <= SNAP_THRESHOLD) {
+    nextX = 0;
+    guides.vertical = 0;
+  } else if (Math.abs(nextX + width - sectionW) <= SNAP_THRESHOLD) {
+    nextX = sectionW - width;
+    guides.vertical = sectionW;
+  } else {
+    const elCenter = nextX + width / 2;
+    const sectionCenter = sectionW / 2;
+    if (Math.abs(elCenter - sectionCenter) <= SNAP_THRESHOLD) {
+      nextX = sectionCenter - width / 2;
+      guides.vertical = sectionCenter;
+    }
+  }
+
+  if (Math.abs(nextY) <= SNAP_THRESHOLD) {
+    nextY = 0;
+    guides.horizontal = 0;
+  } else if (Math.abs(nextY + height - sectionH) <= SNAP_THRESHOLD) {
+    nextY = sectionH - height;
+    guides.horizontal = sectionH;
+  } else {
+    const elMiddle = nextY + height / 2;
+    const sectionMiddle = sectionH / 2;
+    if (Math.abs(elMiddle - sectionMiddle) <= SNAP_THRESHOLD) {
+      nextY = sectionMiddle - height / 2;
+      guides.horizontal = sectionMiddle;
+    }
+  }
+
+  return {
+    x: Math.round(nextX),
+    y: Math.round(nextY),
+    guides,
+  };
+}
+
 // ── Main Canvas ───────────────────────────────────────────────
 interface CanvasProps {
   sections: EditorBlock[];
@@ -625,10 +675,14 @@ interface CanvasProps {
   onUpdateBlock: (id: string, nextProps: Record<string, unknown>) => void;
   onUpdateBlockSilent: (id: string, nextProps: Record<string, unknown>) => void;
   onUpdateNodeFrame: (id: string, frame: Partial<ElementFrame>) => void;
+  onUpdateNodeFrameSilent?: (id: string, frame: Partial<ElementFrame>) => void;
   onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
+  onUpdateResponsiveFrameSilent?: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
   onAddSection: (blockType: BlockType, index?: number) => void;
+  onOpenInspector?: () => void;
   onAddElementToSection: (sectionId: string, blockType: BlockType, x: number, y: number) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
+  onSetBlockHidden?: (id: string, hidden: boolean) => void;
   globalCss?: string;
 }
 
@@ -645,8 +699,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   onUpdateBlock,
   onUpdateBlockSilent,
   onUpdateNodeFrame,
+  onUpdateNodeFrameSilent,
   onUpdateResponsiveFrame,
+  onUpdateResponsiveFrameSilent,
+  onMoveBlock,
   onMoveNodeZIndex,
+  onMoveUp,
+  onMoveDown,
+  onSetBlockHidden,
+  onOpenInspector,
   globalCss,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -693,9 +754,16 @@ export const Canvas: React.FC<CanvasProps> = ({
   const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
   
   const fitZoom = viewportWidth
-    ? Math.min(1, Math.max(0.28, (viewportWidth - 48) / canvasWidth))
+    ? Math.min(
+        1,
+        Math.max(
+          0.25,
+          (viewportWidth - WORKSPACE_PADDING_X) / (canvasWidth * CANVAS_VISUAL_PREVIEW_FACTOR),
+        ),
+      )
     : 1;
   const effectiveZoom = Math.min(zoom, fitZoom);
+  const visualScale = Math.max(0.28, effectiveZoom * CANVAS_VISUAL_PREVIEW_FACTOR);
 
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [draftFrame, setDraftFrame] = useState<Partial<ElementFrame> | null>(null);
@@ -724,7 +792,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   const handlePointerDownDrag = useCallback((e: React.PointerEvent, block: EditorBlock) => {
     if (block.locked) return;
     e.stopPropagation();
+    e.preventDefault();
     const frame = getEffectiveFrame(block, deviceMode);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setDragState({
       type: "drag",
       blockId: block.id,
@@ -733,6 +803,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       startPointerY: e.clientY,
     });
     setDraftFrame(null);
+    setSnapGuides(null);
   }, [deviceMode]);
 
   const handlePointerDownResize = useCallback((e: React.PointerEvent, block: EditorBlock, direction: string) => {
@@ -768,54 +839,53 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!dragState) return;
     e.preventDefault();
 
-    const dx = (e.clientX - dragState.startPointerX) / effectiveZoom;
-    const dy = (e.clientY - dragState.startPointerY) / effectiveZoom;
+    const dx = (e.clientX - dragState.startPointerX) / visualScale;
+    const dy = (e.clientY - dragState.startPointerY) / visualScale;
 
     if (dragState.type === "drag") {
-      let nextX = Math.round(dragState.baseFrame.x + dx);
-      let nextY = Math.round(dragState.baseFrame.y + dy);
+      let nextX = dragState.baseFrame.x + dx;
+      let nextY = dragState.baseFrame.y + dy;
 
-      // Clamping bounds inside parent section
       const parentId = findParentId(dragState.blockId);
       const parentSection = parentId ? findBlockRecursive(sections, parentId) : null;
-      const sectionW = parentSection?.frame?.width ?? canvasWidth;
-      const sectionH = parentSection?.frame?.height ?? 800;
+      const sectionBounds = parentSection
+        ? getSectionBounds(parentSection, canvasWidth)
+        : { width: canvasWidth, height: 800 };
+      const { width: sectionW, height: sectionH } = sectionBounds;
 
       nextX = Math.max(0, Math.min(sectionW - dragState.baseFrame.width, nextX));
       nextY = Math.max(0, Math.min(sectionH - dragState.baseFrame.height, nextY));
 
-      // Snap guidelines
-      const snapInterval = 10;
-      nextX = Math.round(nextX / snapInterval) * snapInterval;
-      nextY = Math.round(nextY / snapInterval) * snapInterval;
+      const snapped = computeDragSnap(
+        nextX,
+        nextY,
+        dragState.baseFrame.width,
+        dragState.baseFrame.height,
+        sectionW,
+        sectionH,
+      );
+      nextX = snapped.x;
+      nextY = snapped.y;
+      setSnapGuides(
+        snapped.guides.vertical !== undefined || snapped.guides.horizontal !== undefined
+          ? snapped.guides
+          : null,
+      );
 
-      // Section center snapping
-      const sectionCenter = sectionW / 2;
-      const elCenter = nextX + dragState.baseFrame.width / 2;
-      if (Math.abs(elCenter - sectionCenter) < 15) {
-        nextX = sectionCenter - dragState.baseFrame.width / 2;
-        setSnapGuides({ vertical: sectionCenter });
-      } else {
-        setSnapGuides(null);
-      }
-
-      // Auto-grow section height
-      if (parentSection && parentSection.frame) {
+      if (parentSection) {
         const bottomEdge = nextY + dragState.baseFrame.height;
-        if (bottomEdge > parentSection.frame.height - 40) {
-          const newHeight = Math.max(parentSection.frame.height, bottomEdge + 80);
+        const currentHeight = sectionBounds.height;
+        if (bottomEdge > currentHeight - 40) {
+          const newHeight = Math.max(currentHeight, bottomEdge + 80);
           if (deviceMode === "desktop") {
-            onUpdateNodeFrame(parentSection.id, { height: newHeight });
+            onUpdateNodeFrameSilent?.(parentSection.id, { height: newHeight });
           } else {
-            onUpdateResponsiveFrame(parentSection.id, deviceMode, { height: newHeight });
+            onUpdateResponsiveFrameSilent?.(parentSection.id, deviceMode, { height: newHeight });
           }
         }
       }
 
-      // Request animation frame layout update
-      requestAnimationFrame(() => {
-        setDraftFrame({ x: nextX, y: nextY });
-      });
+      setDraftFrame({ x: nextX, y: nextY });
     } else if (dragState.type === "resize") {
       const direction = dragState.direction || "";
       let nextX = dragState.baseFrame.x;
@@ -850,9 +920,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       nextX = Math.round(nextX / 5) * 5;
       nextY = Math.round(nextY / 5) * 5;
 
-      requestAnimationFrame(() => {
-        setDraftFrame({ x: nextX, y: nextY, width: nextW, height: nextH });
-      });
+      setDraftFrame({ x: nextX, y: nextY, width: nextW, height: nextH });
     } else if (dragState.type === "rotate") {
       const el = document.getElementById(dragState.blockId);
       if (!el) return;
@@ -868,11 +936,9 @@ export const Canvas: React.FC<CanvasProps> = ({
         angleDeg = Math.round(angleDeg / 15) * 15;
       }
 
-      requestAnimationFrame(() => {
-        setDraftFrame({ rotate: angleDeg });
-      });
+      setDraftFrame({ rotate: angleDeg });
     }
-  }, [dragState, effectiveZoom, sections, canvasWidth, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame, findParentId]);
+  }, [dragState, visualScale, sections, canvasWidth, deviceMode, onUpdateNodeFrameSilent, onUpdateResponsiveFrameSilent, findParentId]);
 
   const handlePointerUp = useCallback(() => {
     if (!dragState) return;
@@ -978,29 +1044,69 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
   };
 
+  const previewFrameWidth = canvasWidth * visualScale;
+  const previewFrameHeight = minPageHeight * visualScale;
+  const workspaceMinHeight = previewFrameHeight + WORKSPACE_PADDING_Y + WORKSPACE_PADDING_BOTTOM;
+
+  const getSiblingZRange = useCallback((blockId: string) => {
+    const block = findBlockRecursive(sections, blockId);
+    if (!block) return { min: 1, max: 99 };
+    let parentId = block.parentId;
+    if (!parentId) {
+      const parentSection = sections.find((s) => s.children?.some((c) => c.id === blockId));
+      if (parentSection) parentId = parentSection.id;
+    }
+    if (!parentId) return { min: 1, max: 99 };
+    const parent = findBlockRecursive(sections, parentId);
+    const siblings = parent?.children ?? [];
+    const zValues = siblings.map((s) => s.frame?.zIndex ?? 1);
+    return {
+      min: Math.min(...zValues, 1),
+      max: Math.max(...zValues, 1),
+    };
+  }, [sections]);
+
   return (
     <div
       ref={viewportRef}
-      className="flex-1 overflow-auto bg-gray-50 flex items-start justify-center relative select-none"
+      className="relative h-full w-full overflow-auto select-none"
+      style={{ backgroundColor: "#f7f7f8" }}
       onClick={handleCanvasBgClick}
-      style={{ padding: "40px 20px" }}
     >
+      {/* Center layer — explicit height drives workspace scroll */}
       <div
-        className="relative bg-white border border-gray-200 shadow-2xl transition-all"
+        className="flex w-full justify-center"
         style={{
-          width: `${canvasWidth}px`,
-          minHeight: `${minPageHeight}px`,
-          transform: `scale(${effectiveZoom})`,
-          transformOrigin: "top center",
-          backgroundColor: pageBgColor,
-          overflow: "visible",
+          minHeight: `max(calc(100vh - 64px), ${workspaceMinHeight}px)`,
+          padding: `${WORKSPACE_PADDING_Y}px ${WORKSPACE_PADDING_X / 2}px ${WORKSPACE_PADDING_BOTTOM}px`,
+          minWidth: "100%",
+          boxSizing: "border-box",
         }}
         onClick={handleCanvasBgClick}
       >
+        <div
+          className="relative flex-shrink-0"
+          style={{
+            width: `${previewFrameWidth}px`,
+            minHeight: `${previewFrameHeight}px`,
+          }}
+        >
+          <div
+            className="absolute left-0 top-0 border border-gray-200 bg-white shadow-xl transition-all"
+            style={{
+              width: `${canvasWidth}px`,
+              minHeight: `${minPageHeight}px`,
+              transform: `translateZ(0) scale(${visualScale})`,
+              transformOrigin: "top left",
+              backgroundColor: pageBgColor,
+              overflow: "visible",
+            }}
+            onClick={handleCanvasBgClick}
+          >
         {/* Render Snap Lines */}
         {snapGuides?.vertical !== undefined && (
           <div
-            className="absolute border-l border-dashed border-pink-500 z-50 pointer-events-none"
+            className="absolute border-l border-dashed border-violet-500 z-50 pointer-events-none"
             style={{
               left: `${snapGuides.vertical}px`,
               top: 0,
@@ -1010,7 +1116,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         )}
         {snapGuides?.horizontal !== undefined && (
           <div
-            className="absolute border-t border-dashed border-pink-500 z-50 pointer-events-none"
+            className="absolute border-t border-dashed border-sky-500 z-50 pointer-events-none"
             style={{
               top: `${snapGuides.horizontal}px`,
               left: 0,
@@ -1064,7 +1170,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 height: hasPreservedHtmlChild ? `${naturalHeight}px` : undefined,
                 zIndex: section.frame?.zIndex ?? 1,
                 overflow: "visible",
-                border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
+                border: selectedId === section.id ? "2px dashed #3b82f6" : "1px dashed #e2e8f0",
               }
             : {
                 position: "relative",
@@ -1072,7 +1178,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 height: `${naturalHeight}px`,
                 zIndex: section.frame?.zIndex ?? 1,
                 overflow: "hidden",
-                border: selectedId === section.id ? "1.5px solid #a855f7" : "1px dashed #cbd5e1",
+                border: selectedId === section.id ? "2px dashed #3b82f6" : "1px dashed #e2e8f0",
               };
 
           return (
@@ -1080,7 +1186,7 @@ export const Canvas: React.FC<CanvasProps> = ({
               {/* Root Section Drop Zone */}
               <SectionDropZone index={index} onDropItem={onDropItem} />
 
-              <SectionDropZoneWrapper section={section} zoom={effectiveZoom} onDropItem={onDropItem}>
+              <SectionDropZoneWrapper section={section} zoom={visualScale} onDropItem={onDropItem}>
                 <div
                   style={sectionStyle}
                   onClick={(e) => {
@@ -1104,17 +1210,31 @@ export const Canvas: React.FC<CanvasProps> = ({
                   )}
 
                   {selectedId === section.id && (
-                    <div
-                      className="absolute bg-purple-650 text-white font-extrabold rounded select-none uppercase pointer-events-none z-50"
-                      style={{
-                        top: "4px",
-                        left: "4px",
-                        fontSize: "9px",
-                        padding: "1px 4px",
-                      }}
-                    >
-                      SECTION
-                    </div>
+                    <>
+                      <div
+                        className="pointer-events-none absolute right-1 top-1 z-50 select-none rounded bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white"
+                      >
+                        {getBlockDisplayLabel(section)}
+                      </div>
+                      <EditorContextToolbar
+                        block={section}
+                        zoom={visualScale}
+                        orientation="vertical"
+                        onDelete={() => onDeleteBlock(section.id)}
+                        onDuplicate={() => onDuplicateBlock(section.id)}
+                        onMoveUp={index > 0 ? () => onMoveUp(index) : undefined}
+                        onMoveDown={index < sections.length - 1 ? () => onMoveDown(index) : undefined}
+                        onMoveToFirst={index > 0 ? () => onMoveBlock(index, 0) : undefined}
+                        onMoveToLast={index < sections.length - 1 ? () => onMoveBlock(index, sections.length - 1) : undefined}
+                        onToggleHidden={
+                          onSetBlockHidden
+                            ? () => onSetBlockHidden(section.id, !section.hidden)
+                            : undefined
+                        }
+                        isHidden={Boolean(section.hidden)}
+                        onOpenSettings={onOpenInspector}
+                      />
+                    </>
                   )}
 
                   {/* Absolute Element Layers inside this Section */}
@@ -1124,7 +1244,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                       block={element}
                       isSelected={selectedId === element.id}
                       deviceMode={deviceMode}
-                      zoom={effectiveZoom}
+                      zoom={visualScale}
                       onSelect={(e) => {
                         e.stopPropagation();
                         onSelectBlock(element.id);
@@ -1138,6 +1258,20 @@ export const Canvas: React.FC<CanvasProps> = ({
                       onDeleteBlock={onDeleteBlock}
                       onDuplicateBlock={onDuplicateBlock}
                       onMoveNodeZIndex={onMoveNodeZIndex}
+                      onBringToFront={() => {
+                        const { max } = getSiblingZRange(element.id);
+                        onUpdateNodeFrame(element.id, { zIndex: max + 1 });
+                      }}
+                      onSendToBack={() => {
+                        const { min } = getSiblingZRange(element.id);
+                        onUpdateNodeFrame(element.id, { zIndex: Math.max(1, min - 1) });
+                      }}
+                      onToggleHidden={
+                        onSetBlockHidden
+                          ? () => onSetBlockHidden(element.id, !element.hidden)
+                          : undefined
+                      }
+                      onOpenInspector={onOpenInspector}
                       draftFrame={dragState?.blockId === element.id ? draftFrame : null}
                       globalCss={globalCss}
                     />
@@ -1150,12 +1284,14 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         {/* Ending Drop Zone */}
         <SectionDropZone index={sections.length} onDropItem={onDropItem} />
+          </div>
+        </div>
       </div>
 
       {/* Device Indicator Widget floating on bottom left */}
-      <div className="fixed bottom-4 left-4 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-lg text-xs font-black text-gray-800 z-50 select-none flex items-center gap-2">
+      <div className="fixed bottom-4 left-20 z-50 flex select-none items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-black text-gray-800 shadow-lg">
         <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-        {deviceLabel} ({canvasWidth}px) | Scale: {Math.round(effectiveZoom * 100)}%
+        {deviceLabel} ({canvasWidth}px) | Scale: {Math.round(zoom * 100)}%
       </div>
     </div>
   );

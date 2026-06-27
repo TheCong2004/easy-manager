@@ -378,9 +378,17 @@ export function useEditorBlockActions({
     push(editorReducer(data, { type: "UPDATE_NODE_FRAME", blockId: id, frame }));
   }, [data, push]);
 
+  const handleUpdateNodeFrameSilent = useCallback((id: string, frame: Partial<ElementFrame>) => {
+    silentUpdate(editorReducer(data, { type: "UPDATE_NODE_FRAME", blockId: id, frame }));
+  }, [data, silentUpdate]);
+
   const handleUpdateResponsiveFrame = useCallback((id: string, deviceMode: "desktop" | "tablet" | "mobile", frame: Partial<ElementFrame>) => {
     push(editorReducer(data, { type: "UPDATE_RESPONSIVE_FRAME", blockId: id, deviceMode, frame }));
   }, [data, push]);
+
+  const handleUpdateResponsiveFrameSilent = useCallback((id: string, deviceMode: "desktop" | "tablet" | "mobile", frame: Partial<ElementFrame>) => {
+    silentUpdate(editorReducer(data, { type: "UPDATE_RESPONSIVE_FRAME", blockId: id, deviceMode, frame }));
+  }, [data, silentUpdate]);
 
   const handleAddSection = useCallback((blockType: BlockType, index?: number) => {
     const newSection = ensureOnlookBlockMeta(createDefaultBlock(blockType));
@@ -408,6 +416,10 @@ export function useEditorBlockActions({
     push(editorReducer(data, { type: "SET_BLOCK_HIDDEN", blockId: id, hidden }));
   }, [data, push]);
 
+  const handleUpdateBlockLabel = useCallback((id: string, label: string) => {
+    push(editorReducer(data, { type: "UPDATE_BLOCK_LABEL", blockId: id, label }));
+  }, [data, push]);
+
   return {
     handleAddBlock,
     handleApplyTemplate,
@@ -426,11 +438,14 @@ export function useEditorBlockActions({
     handleUpdatePageSettings,
     handleUseAsset,
     handleUpdateNodeFrame,
+    handleUpdateNodeFrameSilent,
     handleUpdateResponsiveFrame,
+    handleUpdateResponsiveFrameSilent,
     handleAddSection,
     handleAddElementToSection,
     handleMoveNodeZIndex,
     handleSetBlockLocked,
     handleSetBlockHidden,
+    handleUpdateBlockLabel,
   };
 }
