@@ -24,6 +24,7 @@ interface EditorTopBarProps {
   onPublish: () => void;
   onUnpublish?: () => void;
   isSaved: boolean;
+  isSaving?: boolean;
   lastSavedAt?: string | null;
   activeViewMode: "design" | "code" | "preview";
   setActiveViewMode: (mode: "design" | "code" | "preview") => void;
@@ -60,6 +61,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onPublish,
   onUnpublish,
   isSaved,
+  isSaving = false,
   lastSavedAt,
   activeViewMode,
   setActiveViewMode,
@@ -290,7 +292,12 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
       {/* Save status */}
       <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-100 rounded-lg border border-gray-200 text-xs text-gray-600 flex-shrink-0 hidden md:flex">
-        {isSaved ? (
+        {isSaving ? (
+          <>
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+            <span className="font-semibold text-blue-600">Đang lưu...</span>
+          </>
+        ) : isSaved ? (
           <>
             <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -324,11 +331,13 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <div className="absolute right-0 mt-1.5 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-[9999] py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
             {/* Save */}
             <button
+              disabled={isSaved || isSaving}
               onClick={() => {
+                if (isSaved || isSaving) return;
                 setIsToolsOpen(false);
                 onSave();
               }}
-              className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[12px] font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer text-left"
+              className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[12px] font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer text-left disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-white disabled:hover:text-gray-700"
             >
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />

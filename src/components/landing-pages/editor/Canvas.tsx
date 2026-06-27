@@ -137,6 +137,7 @@ const BlockRenderer: React.FC<{
           onUpdate={update}
           onUpdateSilent={updateSilent}
           onUpdateNodeFrame={onUpdateNodeFrame}
+          blockFrame={block.frame}
           parentId={parentId || undefined}
           globalCss={globalCss}
         />
@@ -360,14 +361,24 @@ const AbsoluteElementWrapper: React.FC<{
   globalCss,
 }) => {
   const frame = getEffectiveFrame(block, deviceMode);
-  const finalX = draftFrame?.x !== undefined ? draftFrame.x : frame.x;
-  const finalY = draftFrame?.y !== undefined ? draftFrame.y : frame.y;
+  const preservedHtmlBlock = isPreservedHtmlBlock(block);
+
+  const finalX = preservedHtmlBlock
+    ? 0
+    : draftFrame?.x !== undefined
+    ? draftFrame.x
+    : frame.x;
+
+  const finalY = preservedHtmlBlock
+    ? 0
+    : draftFrame?.y !== undefined
+    ? draftFrame.y
+    : frame.y;
+
   const finalW = draftFrame?.width !== undefined ? draftFrame.width : frame.width;
   const finalH = draftFrame?.height !== undefined ? draftFrame.height : frame.height;
   const finalZ = draftFrame?.zIndex !== undefined ? draftFrame.zIndex : frame.zIndex;
   const finalR = draftFrame?.rotate !== undefined ? draftFrame.rotate : (frame.rotate || 0);
-
-  const preservedHtmlBlock = isPreservedHtmlBlock(block);
 
   const style: React.CSSProperties = {
     position: "absolute",
@@ -641,38 +652,44 @@ export const Canvas: React.FC<CanvasProps> = ({
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const canvasWidth = DEVICE_WIDTHS[deviceMode];
-  const hasPreservedHtmlPage = sections.some(
-    (section) =>
-      section.type === "custom_section" &&
-      (section.children ?? []).some((child) => isPreservedHtmlBlock(child)),
-  );
+  const sectionsHeight = sections.reduce((acc, section) => {
+    const isSelfContained =
+      SELF_CONTAINED_SECTION_TYPES.has(section.type) ||
+      (section.children ?? []).some((c) => isPreservedHtmlBlock(c));
 
-  const preservedHtmlPageHeight = sections.reduce((max, section) => {
-    const sectionHeight = Number(section.frame?.height || 0);
+    const baseNaturalHeight =
+      section.frame?.height ??
+      (typeof section.props?.minHeight === "number"
+        ? (section.props.minHeight as number)
+        : SECTION_NATURAL_TYPES.has(section.type)
+        ? 500
+        : 120);
 
-    const childMax = Math.max(
-      0,
-      ...((section.children ?? []).map((child) => {
-        const props = child.props as { preserveHtml?: boolean; mode?: string; height?: number | string };
-        const isHtml =
-          child.type === "html_code" &&
-          (props?.preserveHtml === true || props?.mode === "iframe");
+    if (isSelfContained) {
+      const preservedHtmlChildBottom = Math.max(
+        0,
+        ...((section.children ?? []).map((child) => {
+          if (!isPreservedHtmlBlock(child)) return 0;
 
-        if (!isHtml) return 0;
+          const childY = Number(child.frame?.y || 0);
+          const childFrameHeight = Number(child.frame?.height || 0);
+          const childPropsHeight = Number(
+            (child.props as { height?: number | string })?.height || 0,
+          );
 
-        const childY = Number(child.frame?.y || 0);
-        const childHeight = Number(props.height || child.frame?.height || 900);
+          const childHeight = Math.max(childFrameHeight, childPropsHeight, 900);
 
-        return childY + childHeight;
-      })),
-    );
+          return childY + childHeight;
+        })),
+      );
 
-    return Math.max(max, sectionHeight, childMax);
+      return acc + Math.max(baseNaturalHeight, preservedHtmlChildBottom, 900);
+    }
+
+    return acc + baseNaturalHeight;
   }, 0);
 
-  const minPageHeight = hasPreservedHtmlPage
-    ? Math.max(900, preservedHtmlPageHeight)
-    : 1600;
+  const minPageHeight = Math.max(sectionsHeight, 900);
   const deviceLabel = deviceMode.charAt(0).toUpperCase() + deviceMode.slice(1);
   
   const fitZoom = viewportWidth
@@ -976,6 +993,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           transform: `scale(${effectiveZoom})`,
           transformOrigin: "top center",
           backgroundColor: pageBgColor,
+          overflow: "visible",
         }}
         onClick={handleCanvasBgClick}
       >
@@ -1002,8 +1020,24 @@ export const Canvas: React.FC<CanvasProps> = ({
         )}
 
         {sections.map((section, index) => {
-          const preservedHtmlHeight = getPreservedHtmlSectionHeight(section);
-          const hasPreservedHtmlChild = preservedHtmlHeight !== null;
+          const hasPreservedHtmlChild = (section.children ?? []).some((child) => isPreservedHtmlBlock(child));
+
+          const preservedHtmlChildBottom = Math.max(
+            0,
+            ...((section.children ?? []).map((child) => {
+              if (!isPreservedHtmlBlock(child)) return 0;
+
+              const childY = Number(child.frame?.y || 0);
+              const childFrameHeight = Number(child.frame?.height || 0);
+              const childPropsHeight = Number(
+                (child.props as { height?: number | string })?.height || 0,
+              );
+
+              const childHeight = Math.max(childFrameHeight, childPropsHeight, 900);
+
+              return childY + childHeight;
+            })),
+          );
 
           const isSelfContained =
             SELF_CONTAINED_SECTION_TYPES.has(section.type) ||
@@ -1018,7 +1052,7 @@ export const Canvas: React.FC<CanvasProps> = ({
               : 120);
 
           const naturalHeight = hasPreservedHtmlChild
-            ? Math.max(baseNaturalHeight, preservedHtmlHeight ?? 0, 1200)
+            ? Math.max(baseNaturalHeight, preservedHtmlChildBottom, 900)
             : baseNaturalHeight;
 
           const sectionStyle: React.CSSProperties = isSelfContained
@@ -1056,16 +1090,18 @@ export const Canvas: React.FC<CanvasProps> = ({
                   }}
                 >
                   {/* Render Section Background/Title props using Box renderer */}
-                  <div style={{ width: "100%", height: isSelfContained ? "auto" : "100%", pointerEvents: "none" }}>
-                    <BlockRenderer
-                      block={section}
-                      isSelected={false}
-                      onSelect={() => {}}
-                      onUpdateBlock={onUpdateBlock}
-                      onUpdateBlockSilent={onUpdateBlockSilent}
-                      globalCss={globalCss}
-                    />
-                  </div>
+                  {!hasPreservedHtmlChild && (
+                    <div style={{ width: "100%", height: isSelfContained ? "auto" : "100%", pointerEvents: "none" }}>
+                      <BlockRenderer
+                        block={section}
+                        isSelected={false}
+                        onSelect={() => {}}
+                        onUpdateBlock={onUpdateBlock}
+                        onUpdateBlockSilent={onUpdateBlockSilent}
+                        globalCss={globalCss}
+                      />
+                    </div>
+                  )}
 
                   {selectedId === section.id && (
                     <div

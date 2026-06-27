@@ -15,3 +15,6 @@
 - Split Landing Page Templates into `src/features/landing-templates` with admin/public/shared/sdk entry points.
 - Added `/landing-pages/templates` admin entry, `/templates/[slug]` public template preview runtime, and public template SDK routes.
 - Added public template APIs for single SDK config and gallery lists without exposing `editor_data` or `template_data`.
+- Fixed imported/preserved HTML blocks in the landing builder to auto-fit their real rendered content height.
+- Added iframe resize measurement for preserved HTML using `ResizeObserver`, `MutationObserver`, image load events, font readiness, and postMessage.
+- Removed preserved HTML import height caps/default oversized canvas behavior so a single imported HTML block can drive the canvas height naturally.

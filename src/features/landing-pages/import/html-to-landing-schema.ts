@@ -8,8 +8,7 @@ import { unwrapProxyUrl } from "./asset-rewriter";
 import { sanitizeElement } from "./html-sanitizer";
 
 const CANVAS_WIDTH = 1280;
-const DEFAULT_PRESERVED_HEIGHT = 12000;
-const MAX_PRESERVED_HEIGHT = 50000;
+const DEFAULT_PRESERVED_HEIGHT = 900;
 
 function createImportId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -242,7 +241,7 @@ function estimatePreservedHeight(doc: Document): number {
     sectionEstimate
   );
 
-  return Math.min(height, MAX_PRESERVED_HEIGHT);
+  return height;
 }
 
 function replaceVhUnitsInDocument(doc: Document, globalCss: string): string {
@@ -380,8 +379,7 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
 
     const globalCss = extractGlobalCss(doc);
     const fullHtml = buildFullHtmlDocument(doc, globalCss);
-    const height = estimatePreservedHeight(doc);
-
+    const viewportHeight = 900;
     const sectionId = createImportId("section_preserved");
     const htmlBlockId = createImportId("html_preserved");
 
@@ -390,9 +388,10 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
     htmlBlock.parentId = sectionId;
     htmlBlock.label = "Mã HTML Bảo toàn Bố cục";
     htmlBlock.props = {
+      ...(htmlBlock.props ?? {}),
       code: fullHtml,
-      height: 900,
-      editorViewportHeight: 900,
+      height: viewportHeight,
+      editorViewportHeight: viewportHeight,
       preserveHtml: true,
       mode: "iframe",
       autoResize: false,
@@ -402,7 +401,7 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
       x: 0,
       y: 0,
       width: CANVAS_WIDTH,
-      height: 900,
+      height: viewportHeight,
       zIndex: 10,
     };
 
@@ -414,16 +413,18 @@ export function parseHtmlToPreservedHtmlSchema(html: string): ImportedLandingPag
       ...section.props,
       title: "Preserved Section",
       description: "Khối chứa toàn bộ trang HTML gốc",
-      minHeight: 900,
+      minHeight: viewportHeight,
       bgColor: "#ffffff",
     };
 
-    if (section.frame) {
-      section.frame.x = 0;
-      section.frame.y = 0;
-      section.frame.width = CANVAS_WIDTH;
-      section.frame.height = 900;
-    }
+    section.frame = {
+      ...(section.frame ?? {}),
+      x: 0,
+      y: 0,
+      width: CANVAS_WIDTH,
+      height: viewportHeight,
+      zIndex: 1,
+    };
 
     return {
       globalCss,
