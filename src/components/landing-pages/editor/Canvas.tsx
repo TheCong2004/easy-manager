@@ -74,12 +74,6 @@ function findBlockRecursive(nodes: EditorBlock[], id: string): EditorBlock | nul
   return null;
 }
 
-interface InlineEditContext {
-  inlineEditingBlockId: string | null;
-  onBeginInlineEdit: (blockId: string) => void;
-  onEndInlineEdit: () => void;
-}
-
 // ── Block Renderer ────────────────────────────────────────────
 const BlockRenderer: React.FC<{
   block: EditorBlock;
@@ -90,7 +84,6 @@ const BlockRenderer: React.FC<{
   onUpdateNodeFrame?: (id: string, frame: Partial<ElementFrame>) => void;
   globalCss?: string;
   parentId?: string;
-  inlineEdit?: InlineEditContext;
 }> = ({
   block,
   isSelected,
@@ -100,26 +93,22 @@ const BlockRenderer: React.FC<{
   onUpdateNodeFrame,
   globalCss,
   parentId,
-  inlineEdit,
 }) => {
   const update = (nextProps: Record<string, unknown>) => onUpdateBlock(block.id, nextProps);
   const updateSilent = (nextProps: Record<string, unknown>) => onUpdateBlockSilent(block.id, nextProps);
-  const isInlineEditing = inlineEdit?.inlineEditingBlockId === block.id;
-  const beginInlineEdit = () => inlineEdit?.onBeginInlineEdit(block.id);
-  const endInlineEdit = () => inlineEdit?.onEndInlineEdit();
 
   switch (block.type) {
-    case "hero": return <HeroBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} isInlineEditing={isInlineEditing} onBeginInlineEdit={beginInlineEdit} onEndInlineEdit={endInlineEdit} />;
-    case "text": return <TextBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} isInlineEditing={isInlineEditing} onBeginInlineEdit={beginInlineEdit} onEndInlineEdit={endInlineEdit} />;
+    case "hero": return <HeroBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
+    case "text": return <TextBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "image": return <ImageBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "button": return <ButtonBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} isInlineEditing={isInlineEditing} onBeginInlineEdit={beginInlineEdit} onEndInlineEdit={endInlineEdit} />;
+    case "button": return <ButtonBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "spacer": return <SpacerBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "divider": return <DividerBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
     case "feature_card": return <FeatureCardBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "testimonial": return <TestimonialBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "countdown": return <CountdownBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "video": return <VideoBlock props={block.props} isSelected={isSelected} onSelect={onSelect} />;
-    case "form_capture": return <FormCaptureBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} isInlineEditing={isInlineEditing} onBeginInlineEdit={beginInlineEdit} onEndInlineEdit={endInlineEdit} />;
+    case "form_capture": return <FormCaptureBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "chat_widget": return <ChatWidgetBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "funnel_popup": return <FunnelPopupBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
     case "tea_landing": return <TeaLandingBlock props={block.props} isSelected={isSelected} onSelect={onSelect} onUpdate={update} />;
@@ -304,10 +293,7 @@ const AbsoluteElementWrapper: React.FC<{
   onBringToFront?: () => void;
   onSendToBack?: () => void;
   onToggleHidden?: () => void;
-  onOpenElementInspector?: (blockId: string) => void;
-  inlineEditingBlockId: string | null;
-  onBeginInlineEdit: (blockId: string) => void;
-  onEndInlineEdit: () => void;
+  onOpenInspector?: () => void;
   draftFrame: Partial<ElementFrame> | null;
   globalCss?: string;
   parentLabel?: string;
@@ -329,10 +315,7 @@ const AbsoluteElementWrapper: React.FC<{
   onBringToFront,
   onSendToBack,
   onToggleHidden,
-  onOpenElementInspector,
-  inlineEditingBlockId,
-  onBeginInlineEdit,
-  onEndInlineEdit,
+  onOpenInspector,
   draftFrame,
   globalCss,
   parentLabel,
@@ -376,8 +359,6 @@ const AbsoluteElementWrapper: React.FC<{
         const target = e.target as HTMLElement;
 
         if (target.closest("[data-handle]")) return;
-        if (inlineEditingBlockId === block.id) return;
-        if (target.closest("[data-inline-editable]")) return;
 
         // Với imported HTML preserve mode, iframe cần nhận pointer/mousemove/scroll.
         // Không kéo block khi click trực tiếp vào iframe.
@@ -400,7 +381,7 @@ const AbsoluteElementWrapper: React.FC<{
         style={{
           width: "100%",
           height: "100%",
-          pointerEvents: preservedHtmlBlock || isSelected || inlineEditingBlockId === block.id ? "auto" : "none",
+          pointerEvents: preservedHtmlBlock ? "auto" : "none",
           overflow: preservedHtmlBlock ? "visible" : "hidden",
         }}
       >
@@ -413,15 +394,10 @@ const AbsoluteElementWrapper: React.FC<{
           onUpdateNodeFrame={onUpdateNodeFrame}
           globalCss={globalCss}
           parentId={block.parentId || undefined}
-          inlineEdit={{
-            inlineEditingBlockId,
-            onBeginInlineEdit,
-            onEndInlineEdit,
-          }}
         />
       </div>
 
-      {isSelected && inlineEditingBlockId !== block.id && (
+      {isSelected && (
         <>
           <SelectionOverlay
             block={block}
@@ -441,7 +417,7 @@ const AbsoluteElementWrapper: React.FC<{
             onSendToBack={onSendToBack}
             onToggleHidden={onToggleHidden}
             isHidden={Boolean(block.hidden)}
-            onOpenSettings={() => onOpenElementInspector?.(block.id)}
+            onOpenSettings={onOpenInspector}
             onUpdateBlock={onUpdateBlock}
             parentLabel={parentLabel}
             onAddFormField={
@@ -457,7 +433,7 @@ const AbsoluteElementWrapper: React.FC<{
             }
             onSaveFormData={
               block.type === "form_capture"
-                ? () => onOpenElementInspector?.(block.id)
+                ? () => onOpenInspector?.()
                 : undefined
             }
           />
@@ -707,8 +683,7 @@ interface CanvasProps {
   onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
   onUpdateResponsiveFrameSilent?: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
   onAddSection: (blockType: BlockType, index?: number) => void;
-  onOpenElementInspector?: (blockId: string) => void;
-  onOpenSectionInspector?: (sectionId: string) => void;
+  onOpenInspector?: () => void;
   onAddElementToSection: (sectionId: string, blockType: BlockType, x: number, y: number) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
   onSetBlockHidden?: (id: string, hidden: boolean) => void;
@@ -736,26 +711,10 @@ export const Canvas: React.FC<CanvasProps> = ({
   onMoveUp,
   onMoveDown,
   onSetBlockHidden,
-  onOpenElementInspector,
-  onOpenSectionInspector,
+  onOpenInspector,
   globalCss,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [inlineEditingBlockId, setInlineEditingBlockId] = useState<string | null>(null);
-
-  const handleBeginInlineEdit = useCallback((blockId: string) => {
-    setInlineEditingBlockId(blockId);
-  }, []);
-
-  const handleEndInlineEdit = useCallback(() => {
-    setInlineEditingBlockId(null);
-  }, []);
-
-  useEffect(() => {
-    if (!selectedId) {
-      setInlineEditingBlockId(null);
-    }
-  }, [selectedId]);
   const [viewportWidth, setViewportWidth] = useState(0);
   const canvasWidth = DEVICE_WIDTHS[deviceMode];
   const sectionsHeight = sections.reduce((acc, section) => {
@@ -1048,7 +1007,6 @@ export const Canvas: React.FC<CanvasProps> = ({
       }
 
       if (e.key === "Escape") {
-        if (inlineEditingBlockId) return;
         e.preventDefault();
         onSelectBlock(null);
         return;
@@ -1081,7 +1039,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId, sections, deviceMode, inlineEditingBlockId, onDuplicateBlock, onDeleteBlock, onSelectBlock, onUpdateNodeFrame, onUpdateResponsiveFrame]);
+  }, [selectedId, sections, deviceMode, onDuplicateBlock, onDeleteBlock, onSelectBlock, onUpdateNodeFrame, onUpdateResponsiveFrame]);
 
   // Click on canvas background to deselect
   const handleCanvasBgClick = (e: React.MouseEvent) => {
@@ -1243,30 +1201,22 @@ export const Canvas: React.FC<CanvasProps> = ({
                 >
                   {/* Render Section Background/Title props using Box renderer */}
                   {!hasPreservedHtmlChild && (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: isSelfContained ? "auto" : "100%",
-                        pointerEvents: selectedId === section.id || inlineEditingBlockId === section.id ? "auto" : "none",
-                      }}
-                    >
+                    <div style={{ width: "100%", height: isSelfContained ? "auto" : "100%", pointerEvents: "none" }}>
                       <BlockRenderer
                         block={section}
-                        isSelected={selectedId === section.id}
-                        onSelect={() => onSelectBlock(section.id)}
+                        isSelected={false}
+                        onSelect={() => {}}
                         onUpdateBlock={onUpdateBlock}
                         onUpdateBlockSilent={onUpdateBlockSilent}
                         globalCss={globalCss}
-                        inlineEdit={{
-                          inlineEditingBlockId,
-                          onBeginInlineEdit: handleBeginInlineEdit,
-                          onEndInlineEdit: handleEndInlineEdit,
-                        }}
                       />
                     </div>
                   )}
 
-                  {selectedId === section.id && inlineEditingBlockId !== section.id && (
+                  {(() => {
+                    const isSectionActive = selectedId === section.id || (section.children ?? []).some((child) => child.id === selectedId);
+                    return isSectionActive;
+                  })() && (
                     <>
                       <div
                         className="pointer-events-none absolute right-1 top-1 z-50 select-none rounded bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white"
@@ -1289,7 +1239,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                             : undefined
                         }
                         isHidden={Boolean(section.hidden)}
-                        onOpenSettings={() => onOpenSectionInspector?.(section.id)}
+                        onOpenSettings={onOpenInspector}
                       />
                     </>
                   )}
@@ -1328,10 +1278,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                           ? () => onSetBlockHidden(element.id, !element.hidden)
                           : undefined
                       }
-                      onOpenElementInspector={onOpenElementInspector}
-                      inlineEditingBlockId={inlineEditingBlockId}
-                      onBeginInlineEdit={handleBeginInlineEdit}
-                      onEndInlineEdit={handleEndInlineEdit}
+                      onOpenInspector={onOpenInspector}
                       draftFrame={dragState?.blockId === element.id ? draftFrame : null}
                       globalCss={globalCss}
                       parentLabel={section.label || getBlockDisplayLabel(section)}

@@ -33,11 +33,34 @@ interface EditorTopBarProps {
   pageStatus?: string;
   pageVisibility?: string;
   pageSlug?: string | null;
+  onOpenElements?: () => void;
+  onOpenLayers?: () => void;
+  onOpenAssets?: () => void;
   onOpenAI?: () => void;
   isAiOpen?: boolean;
 }
 
 const ZOOM_PRESETS = [0.5, 0.75, 1, 1.25, 1.5];
+
+const QuickIcon: React.FC<{
+  title: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+  active?: boolean;
+}> = ({ title, onClick, children, active }) => (
+  <button
+    type="button"
+    title={title}
+    onClick={onClick}
+    className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition ${
+      active
+        ? "bg-purple-50 text-[#5b21b6]"
+        : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+    }`}
+  >
+    {children}
+  </button>
+);
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   pageName,
@@ -69,6 +92,9 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   pageStatus = "draft",
   pageVisibility = "private",
   pageSlug,
+  onOpenElements,
+  onOpenLayers,
+  onOpenAssets,
   onOpenAI,
   isAiOpen = false,
 }) => {
@@ -116,6 +142,32 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-purple-100 bg-purple-50 p-1">
         <Image src="/images/logo/logo-icon.svg" alt="Logo" width={24} height={24} className="h-6 w-6" />
       </div>
+
+      <QuickIcon title="Thêm phần tử" onClick={onOpenElements}>
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      </QuickIcon>
+
+      <QuickIcon title="Layers" onClick={onOpenLayers}>
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
+        </svg>
+      </QuickIcon>
+
+      <QuickIcon title="Phần tử / Grid" onClick={onOpenElements}>
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+        </svg>
+      </QuickIcon>
+
+      {onOpenAssets && (
+        <QuickIcon title="Assets" onClick={onOpenAssets}>
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25M21 7.5v9l-9 5.25m0-9L3 7.5m9 5.25v9M3 7.5v9l9 5.25" />
+          </svg>
+        </QuickIcon>
+      )}
 
       <div className="mx-1 hidden h-6 w-px bg-gray-200 sm:block" />
 
