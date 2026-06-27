@@ -71,51 +71,71 @@ export function withHtmlResizeMessenger(html: string, blockId?: string) {
 
   // Inject safe CSS override first
   var styleEl = document.createElement("style");
-  styleEl.innerHTML = "html, body { min-height: 0 !important; overflow-x: hidden !important; }";
+  styleEl.innerHTML = "html, body { margin: 0 !important; padding: 0 !important; min-width: 100% !important; width: 100% !important; min-height: 0 !important; overflow-x: hidden !important; } *, *::before, *::after { box-sizing: border-box !important; }";
   document.head.appendChild(styleEl);
 
   var fallbackApplied = false;
 
-  function measureElement(root) {
-    if (!root || !root.getBoundingClientRect) return 0;
-    var rootRect = root.getBoundingClientRect();
-    var maxBottom = Math.max(root.scrollHeight || 0, root.offsetHeight || 0, root.clientHeight || 0, rootRect.height || 0);
-    var children = root.querySelectorAll("*");
+  function measureBounds() {
+    var minLeft = 0;
+    var maxRight = window.innerWidth || 1280;
+    var minTop = 0;
+    var maxBottom = Math.max(
+      document.body ? document.body.scrollHeight : 0,
+      document.documentElement ? document.documentElement.scrollHeight : 0,
+      document.body ? document.body.offsetHeight : 0,
+      document.documentElement ? document.documentElement.offsetHeight : 0
+    );
+
+    var children = document.body ? document.body.querySelectorAll("*") : [];
     for (var i = 0; i < children.length; i += 1) {
       var el = children[i];
       if (!el || !el.getBoundingClientRect) continue;
 
-      // Exclude position: fixed elements
       try {
         var style = window.getComputedStyle(el);
-        if (style.position === "fixed") {
-          continue;
-        }
+        if (style.display === "none") continue;
+        if (style.position === "fixed") continue;
       } catch (e) {}
 
       var rect = el.getBoundingClientRect();
-      var h = Math.max(rect.height || 0, el.scrollHeight || 0, el.offsetHeight || 0, el.clientHeight || 0);
-      maxBottom = Math.max(maxBottom, rect.top - rootRect.top + h);
+      if (rect.width === 0 && rect.height === 0) continue;
+
+      var elHeight = Math.max(rect.height || 0, el.scrollHeight || 0, el.offsetHeight || 0, el.clientHeight || 0);
+      var elWidth = Math.max(rect.width || 0, el.scrollWidth || 0, el.offsetWidth || 0, el.clientWidth || 0);
+
+      var top = rect.top;
+      var bottom = rect.top + elHeight;
+      var left = rect.left;
+      var right = rect.left + elWidth;
+
+      minLeft = Math.min(minLeft, left);
+      maxRight = Math.max(maxRight, right);
+      maxBottom = Math.max(maxBottom, bottom);
     }
-    return Math.ceil(maxBottom);
+
+    var height = Math.ceil(maxBottom - minTop);
+    var width = Math.ceil(maxRight - minLeft);
+
+    return {
+      height: height,
+      width: width,
+      minLeft: Math.ceil(minLeft),
+      maxRight: Math.ceil(maxRight)
+    };
   }
 
   function postHeight() {
-    var rawHeight = Math.max(
-      measureElement(document.body),
-      measureElement(document.documentElement),
-      document.body ? document.body.scrollHeight : 0,
-      document.documentElement ? document.documentElement.scrollHeight : 0
-    );
+    var bounds = measureBounds();
 
     // Dynamic height fallback checking
     // If the calculated height is exactly at viewport height, but we see multiple stacked child blocks/sections
     // or elements stretching further, apply height: auto and overflow-y: visible
-    if (!fallbackApplied && rawHeight > 0) {
+    if (!fallbackApplied && bounds.height > 0) {
       var viewportHeight = window.innerHeight || 900;
       var documentHeight = document.documentElement.clientHeight || 900;
-      // If rawHeight is close to viewport height
-      if (Math.abs(rawHeight - viewportHeight) <= 15 || Math.abs(rawHeight - documentHeight) <= 15) {
+      // If bounds.height is close to viewport height
+      if (Math.abs(bounds.height - viewportHeight) <= 15 || Math.abs(bounds.height - documentHeight) <= 15) {
         var bodySections = document.body.querySelectorAll("section, header, footer, main, [role='main']");
         if (bodySections.length > 1) {
           // Fallback applied to break viewport height constraints
@@ -123,21 +143,24 @@ export function withHtmlResizeMessenger(html: string, blockId?: string) {
           fallbackStyle.innerHTML = "html, body { height: auto !important; overflow-y: visible !important; }";
           document.head.appendChild(fallbackStyle);
           fallbackApplied = true;
-          // Re-measure after fallback
-          rawHeight = Math.max(
-            measureElement(document.body),
-            measureElement(document.documentElement),
-            document.body ? document.body.scrollHeight : 0,
-            document.documentElement ? document.documentElement.scrollHeight : 0
-          );
+          // Re-measure bounds after fallback
+          bounds = measureBounds();
         }
       }
     }
 
     if (window.top) {
+      var payload = {
+        type: "EM_HTML_EMBED_RESIZE",
+        blockId: blockId,
+        height: bounds.height,
+        width: bounds.width,
+        minLeft: bounds.minLeft,
+        maxRight: bounds.maxRight
+      };
       // Send both message types to ensure compatibility
-      window.top.postMessage({ type: "EM_HTML_EMBED_RESIZE", blockId: blockId, height: rawHeight }, "*");
-      window.top.postMessage({ type: "EASY_MANAGER_HTML_EMBED_RESIZE", blockId: blockId, height: rawHeight }, "*");
+      window.top.postMessage(payload, "*");
+      window.top.postMessage({ ...payload, type: "EASY_MANAGER_HTML_EMBED_RESIZE" }, "*");
     }
   }
 

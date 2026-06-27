@@ -382,12 +382,12 @@ const AbsoluteElementWrapper: React.FC<{
 
   const style: React.CSSProperties = {
     position: "absolute",
-    left: `${finalX}px`,
-    top: `${finalY}px`,
-    width: `${finalW}px`,
+    left: preservedHtmlBlock ? 0 : `${finalX}px`,
+    top: preservedHtmlBlock ? 0 : `${finalY}px`,
+    width: preservedHtmlBlock ? "100%" : `${finalW}px`,
     height: `${finalH}px`,
     zIndex: finalZ,
-    transform: finalR ? `rotate(${finalR}deg)` : undefined,
+    transform: preservedHtmlBlock ? undefined : (finalR ? `rotate(${finalR}deg)` : undefined),
     userSelect: "none",
     overflow: preservedHtmlBlock ? "visible" : undefined,
   };
