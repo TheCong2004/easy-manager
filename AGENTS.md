@@ -35,7 +35,7 @@ Chạy kiểm tra tĩnh trước khi hoàn thành tác vụ:
 npx tsc --noEmit
 
 # Chạy dev server cục bộ
-npm run dev
+pnpm run dev
 
 # Định dạng code
 npm run lint
@@ -51,3 +51,14 @@ Khi nhận được một yêu cầu phát triển lớn, hãy thực hiện the
 3. Chạy `npx tsc --noEmit` để đảm bảo code biên dịch thành công.
 4. Ghi nhận nhật ký thay đổi trong `walkthrough.md`.
 5. Tạo commit chi tiết bằng tiếng Việt và push lên git.
+
+---
+
+## 5. ECC + Codex workflow
+
+- Khi làm frontend Next.js, ưu tiên các skill repo-local: `$frontend-patterns`, `$react-patterns`, `$react-testing`, `$nextjs-turbopack`.
+- Khi sửa logic quan trọng, dùng `$tdd-workflow` trước khi implement và `$verification-loop` trước khi kết thúc.
+- Khi review bảo mật hoặc API/backend, dùng `$security-review`; validate dữ liệu đầu vào bằng `zod` và không expose secret ra frontend.
+- Với Landing Page Editor, luôn giữ ranh giới Editor và Public Runtime: code public `/p/[slug]` không được import dependency nặng hoặc editor-only.
+- Với task lớn, dùng multi-agent Codex: `explorer` để đọc code trước, `docs_researcher` để kiểm chứng tài liệu khi cần, và `reviewer` để kiểm tra sau khi implement.
+- MCP project-local trong `.codex/config.toml` gồm `context7` cho tài liệu framework và `playwright` cho kiểm thử UI/browser.

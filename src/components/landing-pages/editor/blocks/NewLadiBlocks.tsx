@@ -789,12 +789,71 @@ export const HtmlCodeBlock: React.FC<{
   parentId,
   globalCss,
 }) => {
-  const { code, height, preserveHtml, mode } = props;
+  const { code, height } = props;
+  const rawCode = String(code || "");
+  const preserveHtml = props?.preserveHtml === true || props?.mode === "iframe";
+
+  const isViewportSensitiveHtml = React.useMemo(() => {
+    const lower = rawCode.toLowerCase();
+
+    return (
+      lower.includes("100vh") ||
+      lower.includes("100svh") ||
+      lower.includes("position: sticky") ||
+      lower.includes("position:sticky") ||
+      lower.includes("position: fixed") ||
+      lower.includes("position:fixed") ||
+      lower.includes("parallax") ||
+      lower.includes("requestanimationframe") ||
+      lower.includes("window.scrolly") ||
+      lower.includes("scrolltrigger")
+    );
+  }, [rawCode]);
+
+  const editorViewportHeight =
+    typeof (props as any)?.editorViewportHeight === "number"
+      ? (props as any).editorViewportHeight
+      : Number((props as any)?.editorViewportHeight || 900);
+
+  const normalHeight =
+    typeof height === "number"
+      ? height
+      : Number(height || 900);
+
+  const initialHeight = preserveHtml
+    ? Number(height || editorViewportHeight || 900)
+    : normalHeight;
+
+  const [frameHeight, setFrameHeight] = React.useState(
+    Number.isFinite(initialHeight) ? initialHeight : 900,
+  );
+
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [frameHeight, setFrameHeight] = useState<number>(height || 1200);
+  const isDraggingHtmlElementRef = React.useRef(false);
+  const dragRafRef = React.useRef<number | null>(null);
+  const latestPropsRef = React.useRef(props);
+
+  React.useEffect(() => {
+    latestPropsRef.current = props;
+  }, [props]);
+
+  const emitPropsUpdate = React.useCallback(
+    (patch: Record<string, unknown>, silent = false) => {
+      const nextProps = {
+        ...latestPropsRef.current,
+        ...patch,
+      };
+
+      latestPropsRef.current = nextProps;
+      const updateFn = silent ? (onUpdateSilent || onUpdate) : onUpdate;
+      updateFn?.(nextProps);
+    },
+    [onUpdate, onUpdateSilent],
+  );
+
   const lastLoadedCodeRef = useRef<string>("");
 
-  const isPreserved = preserveHtml || mode === "iframe" || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
+  const isPreserved = preserveHtml || code.trim().toLowerCase().startsWith("<!doctype") || code.trim().toLowerCase().startsWith("<html");
 
   const iframeContent = React.useMemo(() => {
     if (isPreserved) {
@@ -828,35 +887,83 @@ export const HtmlCodeBlock: React.FC<{
     }
   }, [code, iframeContent]);
 
-  const measureHeight = useCallback(() => {
+  const measureHeight = React.useCallback(() => {
     const iframe = iframeRef.current;
-    if (!iframe?.contentDocument) return;
+    const doc = iframe?.contentDocument;
 
-    const doc = iframe.contentDocument;
-    const nextHeight = Math.max(
-      doc.documentElement?.scrollHeight || 0,
-      doc.body?.scrollHeight || 0,
-      doc.documentElement?.offsetHeight || 0,
-      doc.body?.offsetHeight || 0,
-      height || 1200
-    );
+    if (!iframe || !doc) return;
 
-    if (nextHeight && Math.abs(nextHeight - frameHeight) > 20) {
-      setFrameHeight(nextHeight);
-      const updateFn = onUpdateSilent || onUpdate;
-      updateFn?.({
-        height: nextHeight
+    try {
+      const body = doc.body;
+      const html = doc.documentElement;
+
+      const measuredHeight = Math.max(
+        body?.scrollHeight || 0,
+        html?.scrollHeight || 0,
+        body?.offsetHeight || 0,
+        html?.offsetHeight || 0,
+        body?.clientHeight || 0,
+        html?.clientHeight || 0,
+      );
+
+      if (!measuredHeight) return;
+
+      /**
+       * Nếu HTML dùng 100vh/sticky/parallax:
+       * - Không bung iframe lên 12000/24000px
+       * - Vì sẽ làm 100vh bị tính sai và layout vỡ
+       */
+      if (preserveHtml && isViewportSensitiveHtml) {
+        const safeHeight = Math.min(
+          Math.max(measuredHeight, 640),
+          editorViewportHeight || 900,
+        );
+
+        setFrameHeight(safeHeight);
+        if (onUpdateNodeFrame) {
+          onUpdateNodeFrame(blockId, { height: safeHeight });
+        }
+        if (parentId && onUpdateNodeFrame) {
+          onUpdateNodeFrame(parentId, { height: safeHeight + 80 });
+        }
+        return;
+      }
+
+      /**
+       * HTML thường:
+       * - Co theo nội dung thật
+       * - Nhưng không cho vượt quá 5000 để tránh phá canvas
+       */
+      const nextHeight = preserveHtml
+        ? Math.min(Math.max(measuredHeight, 480), 5000)
+        : Math.min(Math.max(measuredHeight, 240), 5000);
+
+      setFrameHeight((current) => {
+        if (Math.abs(current - nextHeight) > 20) {
+          emitPropsUpdate({
+            height: nextHeight,
+          });
+
+          if (onUpdateNodeFrame) {
+            onUpdateNodeFrame(blockId, { height: nextHeight });
+          }
+          if (parentId && onUpdateNodeFrame) {
+            onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
+          }
+
+          return nextHeight;
+        }
+
+        return current;
       });
-      if (onUpdateNodeFrame) {
-        onUpdateNodeFrame(blockId, { height: nextHeight });
-      }
-      if (parentId && onUpdateNodeFrame) {
-        onUpdateNodeFrame(parentId, { height: nextHeight + 80 });
-      }
+    } catch {
+      // Giữ height hiện tại nếu browser không cho đo.
     }
-  }, [height, frameHeight, onUpdate, onUpdateSilent, onUpdateNodeFrame, blockId, parentId]);
+  }, [editorViewportHeight, emitPropsUpdate, isViewportSensitiveHtml, preserveHtml, onUpdateNodeFrame, blockId, parentId]);
 
   const scanIframeDom = React.useCallback(() => {
+    if (isDraggingHtmlElementRef.current) return;
+
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
     const win = iframe?.contentWindow;
@@ -1093,14 +1200,40 @@ export const HtmlCodeBlock: React.FC<{
       return ax - bx;
     });
 
-    const updateFn = onUpdateSilent || onUpdate;
-    updateFn?.({
-      ...props,
+    emitPropsUpdate({
       htmlOutline: outline.slice(0, 350),
-    });
-  }, [onUpdate, onUpdateSilent, props]);
+    }, true);
+  }, [emitPropsUpdate]);
 
-  const selectIframeElement = React.useCallback((elementId: string) => {
+  const getIframeElementInfo = React.useCallback((el: HTMLElement) => {
+    const tag = el.tagName.toLowerCase();
+    const text = String(el.innerText || el.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const rect = el.getBoundingClientRect();
+    const iframe = iframeRef.current;
+    const win = iframe?.contentWindow;
+
+    return {
+      id: el.dataset.emId || "",
+      tag,
+      label: `${tag.toUpperCase()} · ${text.slice(0, 80)}`,
+      text,
+      href: tag === "a" ? el.getAttribute("href") || "" : "",
+      src:
+        tag === "img" || tag === "video"
+          ? el.getAttribute("src") || ""
+          : "",
+      alt: tag === "img" ? el.getAttribute("alt") || "" : "",
+      x: Math.round(rect.left + (win?.scrollX ?? 0)),
+      y: Math.round(rect.top + (win?.scrollY ?? 0)),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    };
+  }, []);
+
+  const selectIframeElement = React.useCallback((elementId: string, options?: { scroll?: boolean }) => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
 
@@ -1142,11 +1275,13 @@ export const HtmlCodeBlock: React.FC<{
 
     doc.body.appendChild(overlay);
 
-    el.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "center",
-    });
+    if (options?.scroll !== false) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
 
     window.setTimeout(() => {
       const nextRect = el.getBoundingClientRect();
@@ -1163,8 +1298,7 @@ export const HtmlCodeBlock: React.FC<{
 
     onSelect?.();
 
-    const updateFn = onUpdateSilent || onUpdate;
-    updateFn?.({
+    emitPropsUpdate({
       selectedHtmlElement: {
         id: elementId,
         tag,
@@ -1174,8 +1308,8 @@ export const HtmlCodeBlock: React.FC<{
         src: tag === "img" || tag === "video" ? el.getAttribute("src") || "" : "",
         alt: tag === "img" ? el.getAttribute("alt") || "" : "",
       },
-    });
-  }, [onSelect, onUpdate, onUpdateSilent]);
+    }, true);
+  }, [onSelect, emitPropsUpdate]);
 
   const serializeIframeHtml = React.useCallback(() => {
     const iframe = iframeRef.current;
@@ -1185,22 +1319,265 @@ export const HtmlCodeBlock: React.FC<{
 
     const cloned = doc.documentElement.cloneNode(true) as HTMLElement;
 
-    cloned.querySelectorAll("[data-em-selected='true']").forEach((el) => {
+    cloned.querySelector("#__easy_manager_html_selection_overlay")?.remove();
+
+    cloned.querySelectorAll("[data-em-selected]").forEach((el) => {
       el.removeAttribute("data-em-selected");
       (el as HTMLElement).style.outline = "";
       (el as HTMLElement).style.outlineOffset = "";
       (el as HTMLElement).style.boxShadow = "";
     });
 
-    const overlay = cloned.querySelector("#__easy_manager_html_selection_overlay");
-    overlay?.remove();
-
     cloned.querySelectorAll("[data-em-id]").forEach((el) => {
       el.removeAttribute("data-em-id");
     });
 
+    cloned.querySelectorAll("[data-em-base-transform]").forEach((el) => {
+      el.removeAttribute("data-em-base-transform");
+    });
+
+    cloned.querySelectorAll("[data-em-move-x]").forEach((el) => {
+      el.removeAttribute("data-em-move-x");
+    });
+
+    cloned.querySelectorAll("[data-em-move-y]").forEach((el) => {
+      el.removeAttribute("data-em-move-y");
+    });
+
     return "<!DOCTYPE html>\n" + cloned.outerHTML;
   }, [code]);
+
+  const enableIframeElementDrag = React.useCallback(() => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    const win = iframe?.contentWindow;
+
+    if (!iframe || !doc || !win) return;
+
+    const anyDoc = doc as Document & {
+      __EASY_MANAGER_DRAG_BOUND__?: boolean;
+    };
+
+    if (anyDoc.__EASY_MANAGER_DRAG_BOUND__) return;
+    anyDoc.__EASY_MANAGER_DRAG_BOUND__ = true;
+
+    let dragState: {
+      el: HTMLElement;
+      elementId: string;
+      startX: number;
+      startY: number;
+      baseMoveX: number;
+      baseMoveY: number;
+      baseTransform: string;
+      started: boolean;
+      nextX: number;
+      nextY: number;
+      oldTransition: string;
+      oldWillChange: string;
+      oldZIndex: string;
+      oldPosition: string;
+    } | null = null;
+
+    const updateOverlay = (el: HTMLElement) => {
+      const overlay = doc.getElementById("__easy_manager_html_selection_overlay");
+      if (!overlay) return;
+
+      const rect = el.getBoundingClientRect();
+
+      overlay.style.left = `${rect.left + win.scrollX}px`;
+      overlay.style.top = `${rect.top + win.scrollY}px`;
+      overlay.style.width = `${rect.width}px`;
+      overlay.style.height = `${rect.height}px`;
+    };
+
+    const applyDragFrame = () => {
+      dragRafRef.current = null;
+
+      if (!dragState) return;
+
+      dragState.el.style.transform =
+        `${dragState.baseTransform} translate3d(${dragState.nextX}px, ${dragState.nextY}px, 0)`.trim();
+
+      updateOverlay(dragState.el);
+    };
+
+    const scheduleDragFrame = () => {
+      if (dragRafRef.current !== null) return;
+
+      dragRafRef.current = win.requestAnimationFrame(applyDragFrame);
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const directTag = target.tagName.toLowerCase();
+
+      if (
+        directTag === "input" ||
+        directTag === "textarea" ||
+        directTag === "select"
+      ) {
+        return;
+      }
+
+      const el = target.closest("[data-em-id]") as HTMLElement | null;
+      if (!el) return;
+
+      const elementId = el.dataset.emId;
+      if (!elementId) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      selectIframeElement(elementId, { scroll: false });
+
+      const computed = win.getComputedStyle(el);
+      const currentPosition = computed.position || "";
+
+      if (currentPosition === "static" || !currentPosition) {
+        el.style.position = "relative";
+      }
+
+      if (!el.dataset.emBaseTransform) {
+        el.dataset.emBaseTransform = el.style.transform || "";
+      }
+
+      const baseMoveX = Number(el.dataset.emMoveX || 0);
+      const baseMoveY = Number(el.dataset.emMoveY || 0);
+
+      dragState = {
+        el,
+        elementId,
+        startX: event.clientX,
+        startY: event.clientY,
+        baseMoveX,
+        baseMoveY,
+        baseTransform: el.dataset.emBaseTransform || "",
+        started: false,
+        nextX: baseMoveX,
+        nextY: baseMoveY,
+        oldTransition: el.style.transition,
+        oldWillChange: el.style.willChange,
+        oldZIndex: el.style.zIndex,
+        oldPosition: el.style.position,
+      };
+
+      doc.body.style.userSelect = "none";
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!dragState) return;
+
+      const rawDx = event.clientX - dragState.startX;
+      const rawDy = event.clientY - dragState.startY;
+
+      /**
+       * Chưa vượt ngưỡng 4px thì coi như click chọn,
+       * không kích hoạt kéo để tránh rung/nhảy khi click.
+       */
+      if (!dragState.started) {
+        const distance = Math.sqrt(rawDx * rawDx + rawDy * rawDy);
+
+        if (distance < 4) return;
+
+        dragState.started = true;
+        isDraggingHtmlElementRef.current = true;
+
+        dragState.el.style.transition = "none";
+        dragState.el.style.willChange = "transform";
+        dragState.el.style.zIndex = "2147483000";
+        dragState.el.style.cursor = "grabbing";
+
+        doc.body.style.cursor = "grabbing";
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const dx = Math.round(rawDx);
+      const dy = Math.round(rawDy);
+
+      const nextX = dragState.baseMoveX + dx;
+      const nextY = dragState.baseMoveY + dy;
+
+      dragState.nextX = nextX;
+      dragState.nextY = nextY;
+
+      dragState.el.dataset.emMoveX = String(nextX);
+      dragState.el.dataset.emMoveY = String(nextY);
+
+      scheduleDragFrame();
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (!dragState) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const wasDragging = dragState.started;
+      const currentEl = dragState.el;
+
+      if (dragRafRef.current !== null) {
+        win.cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = null;
+      }
+
+      if (wasDragging) {
+        currentEl.style.transform =
+          `${dragState.baseTransform} translate3d(${dragState.nextX}px, ${dragState.nextY}px, 0)`.trim();
+
+        updateOverlay(currentEl);
+
+        const info = getIframeElementInfo(currentEl);
+        const nextHtml = serializeIframeHtml();
+
+        emitPropsUpdate({
+          code: nextHtml,
+          selectedHtmlElement: info,
+        });
+
+        window.setTimeout(() => {
+          isDraggingHtmlElementRef.current = false;
+          scanIframeDom();
+        }, 250);
+      } else {
+        isDraggingHtmlElementRef.current = false;
+      }
+
+      currentEl.style.transition = dragState.oldTransition;
+      currentEl.style.willChange = dragState.oldWillChange;
+      currentEl.style.cursor = "";
+
+      /**
+       * Không restore zIndex/position nếu element đã được move,
+       * vì nó cần z-index/relative để transform hiển thị ổn định.
+       */
+      if (!wasDragging) {
+        currentEl.style.zIndex = dragState.oldZIndex;
+        currentEl.style.position = dragState.oldPosition;
+      }
+
+      doc.body.style.userSelect = "";
+      doc.body.style.cursor = "";
+
+      dragState = null;
+    };
+
+    doc.addEventListener("pointerdown", handlePointerDown, true);
+    doc.addEventListener("pointermove", handlePointerMove, true);
+    doc.addEventListener("pointerup", handlePointerUp, true);
+    doc.addEventListener("pointercancel", handlePointerUp, true);
+  }, [
+    emitPropsUpdate,
+    getIframeElementInfo,
+    scanIframeDom,
+    selectIframeElement,
+    serializeIframeHtml,
+  ]);
 
   const patchIframeElement = React.useCallback(
     (elementId: string, patch: Record<string, unknown>) => {
@@ -1286,15 +1663,14 @@ export const HtmlCodeBlock: React.FC<{
       // Update the ref so the useEffect doesn't trigger iframe reload
       lastLoadedCodeRef.current = nextHtml;
 
-      onUpdate?.({
-        ...props,
+      emitPropsUpdate({
         code: nextHtml,
         selectedHtmlElement: nextSelectedElement,
       });
 
       window.setTimeout(scanIframeDom, 100);
     },
-    [onUpdate, props, scanIframeDom, serializeIframeHtml],
+    [emitPropsUpdate, scanIframeDom, serializeIframeHtml],
   );
 
   const handleIframeClick = useCallback((event: MouseEvent) => {
@@ -1353,7 +1729,7 @@ export const HtmlCodeBlock: React.FC<{
 
       if (!detail || detail.blockId !== blockId || !detail.elementId) return;
 
-      selectIframeElement(detail.elementId);
+      selectIframeElement(detail.elementId, { scroll: true });
     };
 
     window.addEventListener(
@@ -1409,7 +1785,7 @@ export const HtmlCodeBlock: React.FC<{
         position: "relative",
         border: isSelected ? "1.5px solid #8b5cf6" : "none",
         background: "#ffffff",
-        overflow: "visible",
+        overflow: "hidden",
       }}
     >
       {/* Overlay to intercept click and drag events so the editor selection works cleanly */}
@@ -1419,6 +1795,7 @@ export const HtmlCodeBlock: React.FC<{
         ref={iframeRef}
         title="Imported HTML"
         className="w-full border-none"
+        scrolling="yes"
         onLoad={() => {
           measureHeight();
           const doc = iframeRef.current?.contentDocument;
@@ -1444,10 +1821,22 @@ export const HtmlCodeBlock: React.FC<{
               (iframeRef.current as any).__heightObserver = observer;
             }
           }
-          window.setTimeout(scanIframeDom, 300);
-          window.setTimeout(scanIframeDom, 1200);
-          window.setTimeout(measureHeight, 500);
-          window.setTimeout(measureHeight, 1500);
+          window.setTimeout(() => {
+            measureHeight();
+            scanIframeDom();
+            enableIframeElementDrag();
+          }, 300);
+
+          window.setTimeout(() => {
+            measureHeight();
+            scanIframeDom();
+            enableIframeElementDrag();
+          }, 1200);
+
+          window.setTimeout(() => {
+            measureHeight();
+            scanIframeDom();
+          }, 2500);
         }}
         style={{
           width: "100%",
@@ -1456,7 +1845,7 @@ export const HtmlCodeBlock: React.FC<{
           border: 0,
           display: "block",
           background: "#ffffff",
-          overflow: "hidden",
+          overflow: "auto",
           pointerEvents: isSelected ? "auto" : "none",
         }}
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
