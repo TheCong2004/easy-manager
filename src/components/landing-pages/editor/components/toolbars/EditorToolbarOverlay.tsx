@@ -39,6 +39,7 @@ export interface EditorToolbarOverlayProps {
   ) => void;
   getSiblingZRange: (blockId: string) => { min: number; max: number };
   toolbarWidth?: number;
+  zoom?: number;
 }
 
 function getTargetElement(selection: EditorSelection, toolbarKind: string): HTMLElement | null {
@@ -53,7 +54,7 @@ function getTargetElement(selection: EditorSelection, toolbarKind: string): HTML
 }
 
 function computeToolbarPosition(
-  rect: DOMRect,
+  rect: { top: number; left: number; width: number; height: number; bottom?: number },
   toolbarWidth: number,
   isSection: boolean,
 ): ToolbarPosition {
@@ -68,8 +69,10 @@ function computeToolbarPosition(
   let top = rect.top - HORIZONTAL_TOOLBAR_HEIGHT - 8;
   let placement: "above" | "below" = "above";
 
+  const rectBottom = rect.bottom !== undefined ? rect.bottom : rect.top + rect.height;
+
   if (top < TOPBAR_SAFE) {
-    top = rect.bottom + 8;
+    top = rectBottom + 8;
     placement = "below";
   }
 
@@ -96,6 +99,7 @@ export const EditorToolbarOverlay: React.FC<EditorToolbarOverlayProps> = ({
   onMoveSectionDown,
   onAlignBlock,
   toolbarWidth = 520,
+  zoom = 1,
 }) => {
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
   const toolbarMeasureRef = useRef<HTMLDivElement>(null);
@@ -111,15 +115,48 @@ export const EditorToolbarOverlay: React.FC<EditorToolbarOverlayProps> = ({
       setPosition(null);
       return;
     }
-    const el = getTargetElement(selection, toolbarKind);
-    if (!el) {
-      setPosition(null);
-      return;
+
+    let rect: { top: number; left: number; width: number; height: number; bottom?: number } | null = null;
+
+    if (blockForKind?.type === "html_code" && blockForKind.props.selectedHtmlElement) {
+      const subEl = blockForKind.props.selectedHtmlElement as {
+        id: string;
+        tag: string;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      };
+
+      const iframeEl = document.querySelector(`[data-editor-block-id="${blockForKind.id}"] iframe`) as HTMLIFrameElement | null;
+      const subDomEl = iframeEl?.contentDocument?.querySelector(`[data-em-id="${subEl.id}"]`) as HTMLElement | null;
+
+      if (iframeEl && subDomEl) {
+        const iframeRect = iframeEl.getBoundingClientRect();
+        const subRect = subDomEl.getBoundingClientRect();
+
+        rect = {
+          left: iframeRect.left + subRect.left * zoom,
+          top: iframeRect.top + subRect.top * zoom,
+          width: subRect.width * zoom,
+          height: subRect.height * zoom,
+          bottom: iframeRect.top + subRect.bottom * zoom,
+        };
+      }
     }
-    const rect = el.getBoundingClientRect();
+
+    if (!rect) {
+      const el = getTargetElement(selection, toolbarKind);
+      if (!el) {
+        setPosition(null);
+        return;
+      }
+      rect = el.getBoundingClientRect();
+    }
+
     const isSection = toolbarKind === "section";
     setPosition(computeToolbarPosition(rect, measuredWidth, isSection));
-  }, [selection, measuredWidth, toolbarKind]);
+  }, [selection, measuredWidth, toolbarKind, blockForKind, zoom]);
 
   useLayoutEffect(() => {
     recomputePosition();
@@ -157,18 +194,18 @@ export const EditorToolbarOverlay: React.FC<EditorToolbarOverlayProps> = ({
           top: position.top,
           left: Math.max(8, position.left),
           transform: "translateY(-50%)",
-          zIndex: 9990,
+          zIndex: 99999,
         }
       : {
           position: "fixed",
           top: position.top,
           left: position.left,
-          zIndex: 9990,
+          zIndex: 99999,
         };
 
   return (
     <div className="toolbar-position-wrapper pointer-events-none" style={positionStyle}>
-      <div ref={toolbarMeasureRef} className="inline-flex">
+      <div ref={toolbarMeasureRef} className="inline-flex pointer-events-auto">
         <EditorToolbarRouter
           selection={selection}
           sections={sections}

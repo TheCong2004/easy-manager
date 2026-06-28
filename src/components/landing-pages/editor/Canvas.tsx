@@ -1348,6 +1348,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         onMoveSectionDown={onMoveDown}
         onAlignBlock={handleAlignBlock}
         getSiblingZRange={getSiblingZRange}
+        zoom={visualScale}
       />
 
       {/* Device Indicator Widget floating on bottom left */}
