@@ -12,6 +12,7 @@ import {
   INSPECTOR_PANEL_STORAGE_KEY,
   type DragHandleProps,
 } from "./hooks/useDraggablePanel";
+import type { InspectorMode } from "./inspector-state";
 
 const INSPECTOR_PANEL_WIDTH = 288;
 
@@ -1517,7 +1518,7 @@ type InspectorTab = "design" | "events" | "effects" | "advanced";
 
 interface InspectorPanelProps {
   selectedBlock: EditorBlock | null;
-  inspectorMode?: "page" | "section" | "element";
+  inspectorMode?: InspectorMode;
   pageSettings: EditorData["pageSettings"];
   onUpdateBlock: (id: string, newProps: Record<string, unknown>) => void;
   onUpdateBlockSilent?: (id: string, newProps: Record<string, unknown>) => void;
@@ -1651,8 +1652,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const showPageSettings = inspectorMode === "page" || !selectedBlock;
   const InspectorComponent = selectedBlock ? INSPECTOR_MAP[selectedBlock.type] : null;
   const nodeKind = selectedBlock ? getNodeKind(selectedBlock.type, selectedBlock.kind) : null;
-  const isSection = !showPageSettings && nodeKind === "section";
-  const isElement = Boolean(selectedBlock && !showPageSettings && !isSection);
+  const isSection =
+    inspectorMode === "section" || (!showPageSettings && nodeKind === "section");
+  const isElement = Boolean(
+    selectedBlock &&
+      !showPageSettings &&
+      !isSection &&
+      (inspectorMode === "text" ||
+        inspectorMode === "image" ||
+        inspectorMode === "button" ||
+        inspectorMode === "block" ||
+        inspectorMode === "group" ||
+        inspectorMode === "html" ||
+        inspectorMode === "htmlSubElement"),
+  );
   const sectionIndex = selectedBlock && isSection
     ? sections.findIndex((s) => s.id === selectedBlock.id)
     : -1;

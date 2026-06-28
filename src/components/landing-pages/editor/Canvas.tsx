@@ -20,7 +20,15 @@ import {
   CarouselBlock, TabsBlock, FrameBlock, AccordionBlock, TableBlock,
   SurveyBlock, MenuBlock, HtmlCodeBlock
 } from "./blocks/NewLadiBlocks";
-import { EditorContextToolbar, getBlockDisplayLabel } from "./components/EditorContextToolbar";
+import { getBlockDisplayLabel } from "./components/EditorContextToolbar";
+import { EditorToolbarOverlay } from "./components/toolbars/EditorToolbarOverlay";
+import {
+  EditorSelection,
+  findBlockInSections,
+  resolveSelectionFromClickTarget,
+  selectionFromBlock,
+  findParentSectionId,
+} from "./editor-selection";
 
 function isPreservedHtmlBlock(block: EditorBlock): boolean {
   if (block.type !== "html_code") return false;
@@ -198,9 +206,9 @@ const SelectionOverlay: React.FC<{
   };
 
   return (
-    <div style={overlayStyle}>
+    <div className="selection-outline" style={overlayStyle}>
       <div
-        className="absolute rounded bg-[#3b82f6] font-extrabold uppercase tracking-wider text-white select-none"
+        className="selection-label pointer-events-none absolute rounded bg-[#3b82f6] font-extrabold uppercase tracking-wider text-white select-none"
         style={{
           top: `-${18 / zoom}px`,
           right: `-${offset}px`,
@@ -358,7 +366,13 @@ const AbsoluteElementWrapper: React.FC<{
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;
 
-        if (target.closest("[data-handle]")) return;
+        if (
+          target.closest(
+            "[data-handle], [data-editor-toolbar], [data-editor-popover], [data-no-drag], button, input, textarea, select, [contenteditable='true']",
+          )
+        ) {
+          return;
+        }
 
         // Với imported HTML preserve mode, iframe cần nhận pointer/mousemove/scroll.
         // Không kéo block khi click trực tiếp vào iframe.
@@ -370,6 +384,8 @@ const AbsoluteElementWrapper: React.FC<{
       }}
       onClick={onSelect}
       id={block.id}
+      data-editor-block-id={block.id}
+      data-editor-block-type={block.type}
       {...{
         [ONLOOK_ATTRIBUTES.DATA_ONLOOK_ID]: block.oid,
         [ONLOOK_ATTRIBUTES.DATA_ONLOOK_INSTANCE_ID]: block.instanceId,
@@ -406,37 +422,7 @@ const AbsoluteElementWrapper: React.FC<{
             onPointerDownResize={(e, dir) => onPointerDownResize(e, block, dir)}
             onPointerDownRotate={(e) => onPointerDownRotate(e, block)}
           />
-          <EditorContextToolbar
-            block={block}
-            zoom={zoom}
-            onDelete={() => onDeleteBlock(block.id)}
-            onDuplicate={() => onDuplicateBlock(block.id)}
-            onBringForward={() => onMoveNodeZIndex(block.id, "forward")}
-            onSendBackward={() => onMoveNodeZIndex(block.id, "backward")}
-            onBringToFront={onBringToFront}
-            onSendToBack={onSendToBack}
-            onToggleHidden={onToggleHidden}
-            isHidden={Boolean(block.hidden)}
-            onOpenSettings={onOpenInspector}
-            onUpdateBlock={onUpdateBlock}
-            parentLabel={parentLabel}
-            onAddFormField={
-              block.type === "form_capture"
-                ? () => {
-                    const fields = (block.props.fields as { id: string; label: string; type: string; required: boolean }[]) ?? [];
-                    onUpdateBlock(block.id, {
-                      ...block.props,
-                      fields: [...fields, { id: `f_${Date.now()}`, label: "Trường mới", type: "text", required: false }],
-                    });
-                  }
-                : undefined
-            }
-            onSaveFormData={
-              block.type === "form_capture"
-                ? () => onOpenInspector?.()
-                : undefined
-            }
-          />
+
         </>
       )}
     </div>
@@ -655,13 +641,37 @@ function computeDragSnap(
 }
 
 // ── Main Canvas ───────────────────────────────────────────────
+function getAlignParentBounds(
+  block: EditorBlock,
+  sections: EditorBlock[],
+  canvasWidth: number,
+): { width: number; height: number } | null {
+  let parentId = block.parentId;
+  if (!parentId) {
+    const parentSection = sections.find((s) => s.children?.some((c) => c.id === block.id));
+    if (parentSection) parentId = parentSection.id;
+  }
+  if (!parentId) return null;
+  const parent = findBlockRecursive(sections, parentId);
+  if (!parent) return null;
+  const height =
+    parent.frame?.height ??
+    (typeof parent.props?.minHeight === "number" ? (parent.props.minHeight as number) : 500);
+  return {
+    width: parent.frame?.width ?? canvasWidth,
+    height,
+  };
+}
+
 interface CanvasProps {
   sections: EditorBlock[];
   selectedId: string | null;
+  editorSelection: EditorSelection;
   deviceMode: DeviceMode;
   zoom: number;
   pageBgColor: string;
   onSelectBlock: (id: string | null) => void;
+  onSelectSelection: (selection: EditorSelection) => void;
   onDropItem: (
     item: { id?: string; type?: BlockType; isPalette?: boolean },
     containerId?: string,
@@ -683,20 +693,23 @@ interface CanvasProps {
   onUpdateResponsiveFrame: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
   onUpdateResponsiveFrameSilent?: (id: string, deviceMode: DeviceMode, frame: Partial<ElementFrame>) => void;
   onAddSection: (blockType: BlockType, index?: number) => void;
-  onOpenInspector?: () => void;
+  onOpenInspector?: (mode?: import("./inspector-state").InspectorMode) => void;
   onAddElementToSection: (sectionId: string, blockType: BlockType, x: number, y: number) => void;
   onMoveNodeZIndex: (id: string, direction: "forward" | "backward") => void;
   onSetBlockHidden?: (id: string, hidden: boolean) => void;
+  onSetBlockLocked?: (id: string, locked: boolean) => void;
   globalCss?: string;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
   sections,
   selectedId,
+  editorSelection,
   deviceMode,
   zoom,
   pageBgColor,
   onSelectBlock,
+  onSelectSelection,
   onDropItem,
   onDeleteBlock,
   onDuplicateBlock,
@@ -711,6 +724,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onMoveUp,
   onMoveDown,
   onSetBlockHidden,
+  onSetBlockLocked,
   onOpenInspector,
   globalCss,
 }) => {
@@ -1041,12 +1055,58 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedId, sections, deviceMode, onDuplicateBlock, onDeleteBlock, onSelectBlock, onUpdateNodeFrame, onUpdateResponsiveFrame]);
 
-  // Click on canvas background to deselect
   const handleCanvasBgClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("[data-editor-toolbar], [data-editor-popover]")) return;
+
+    const hitSelection = resolveSelectionFromClickTarget(target, sections);
+    if (hitSelection) {
+      e.stopPropagation();
+      onSelectSelection(hitSelection);
+      return;
+    }
+
     if (e.target === e.currentTarget) {
-      onSelectBlock(null);
+      onSelectSelection({ type: "page" });
     }
   };
+
+  const handleAlignBlock = useCallback(
+    (blockId: string, action: "left" | "centerH" | "right" | "top" | "centerV" | "bottom") => {
+      const block = findBlockInSections(sections, blockId);
+      if (!block) return;
+      const bounds = getAlignParentBounds(block, sections, canvasWidth);
+      if (!bounds) return;
+      const frame = getEffectiveFrame(block, deviceMode);
+      let patch: Partial<ElementFrame> = {};
+      switch (action) {
+        case "left":
+          patch = { x: 0 };
+          break;
+        case "centerH":
+          patch = { x: Math.round((bounds.width - frame.width) / 2) };
+          break;
+        case "right":
+          patch = { x: Math.max(0, bounds.width - frame.width) };
+          break;
+        case "top":
+          patch = { y: 0 };
+          break;
+        case "centerV":
+          patch = { y: Math.round((bounds.height - frame.height) / 2) };
+          break;
+        case "bottom":
+          patch = { y: Math.max(0, bounds.height - frame.height) };
+          break;
+      }
+      if (deviceMode === "desktop") {
+        onUpdateNodeFrame(blockId, patch);
+      } else {
+        onUpdateResponsiveFrame(blockId, deviceMode, patch);
+      }
+    },
+    [sections, canvasWidth, deviceMode, onUpdateNodeFrame, onUpdateResponsiveFrame],
+  );
 
   const previewFrameWidth = canvasWidth * visualScale;
   const previewFrameHeight = minPageHeight * visualScale;
@@ -1110,7 +1170,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         {/* Render Snap Lines */}
         {snapGuides?.vertical !== undefined && (
           <div
-            className="absolute border-l border-dashed border-violet-500 z-50 pointer-events-none"
+            className="canvas-guide snap-guide absolute border-l border-dashed border-violet-500 z-50 pointer-events-none"
             style={{
               left: `${snapGuides.vertical}px`,
               top: 0,
@@ -1120,7 +1180,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         )}
         {snapGuides?.horizontal !== undefined && (
           <div
-            className="absolute border-t border-dashed border-sky-500 z-50 pointer-events-none"
+            className="canvas-guide snap-guide absolute border-t border-dashed border-sky-500 z-50 pointer-events-none"
             style={{
               top: `${snapGuides.horizontal}px`,
               left: 0,
@@ -1174,7 +1234,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 height: hasPreservedHtmlChild ? `${naturalHeight}px` : undefined,
                 zIndex: section.frame?.zIndex ?? 1,
                 overflow: "visible",
-                border: selectedId === section.id ? "2px dashed #3b82f6" : "1px dashed #e2e8f0",
+                border: editorSelection.type === "section" && editorSelection.sectionId === section.id ? "2px dashed #3b82f6" : "1px dashed #e2e8f0",
               }
             : {
                 position: "relative",
@@ -1182,7 +1242,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 height: `${naturalHeight}px`,
                 zIndex: section.frame?.zIndex ?? 1,
                 overflow: "hidden",
-                border: selectedId === section.id ? "2px dashed #3b82f6" : "1px dashed #e2e8f0",
+                border: editorSelection.type === "section" && editorSelection.sectionId === section.id ? "2px dashed #3b82f6" : "1px dashed #e2e8f0",
               };
 
           return (
@@ -1193,9 +1253,13 @@ export const Canvas: React.FC<CanvasProps> = ({
               <SectionDropZoneWrapper section={section} zoom={visualScale} onDropItem={onDropItem}>
                 <div
                   style={sectionStyle}
+                  data-editor-section-id={section.id}
                   onClick={(e) => {
-                    if (e.target === e.currentTarget) {
-                      onSelectBlock(section.id);
+                    const target = e.target as HTMLElement;
+                    if (target.closest("[data-editor-block-id]")) return;
+                    if (e.target === e.currentTarget || target.closest("[data-editor-section-id]") === e.currentTarget) {
+                      e.stopPropagation();
+                      onSelectSelection({ type: "section", sectionId: section.id });
                     }
                   }}
                 >
@@ -1213,37 +1277,6 @@ export const Canvas: React.FC<CanvasProps> = ({
                     </div>
                   )}
 
-                  {(() => {
-                    const isSectionActive = selectedId === section.id || (section.children ?? []).some((child) => child.id === selectedId);
-                    return isSectionActive;
-                  })() && (
-                    <>
-                      <div
-                        className="pointer-events-none absolute right-1 top-1 z-50 select-none rounded bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white"
-                      >
-                        {getBlockDisplayLabel(section)}
-                      </div>
-                      <EditorContextToolbar
-                        block={section}
-                        zoom={visualScale}
-                        orientation="vertical"
-                        onDelete={() => onDeleteBlock(section.id)}
-                        onDuplicate={() => onDuplicateBlock(section.id)}
-                        onMoveUp={index > 0 ? () => onMoveUp(index) : undefined}
-                        onMoveDown={index < sections.length - 1 ? () => onMoveDown(index) : undefined}
-                        onMoveToFirst={index > 0 ? () => onMoveBlock(index, 0) : undefined}
-                        onMoveToLast={index < sections.length - 1 ? () => onMoveBlock(index, sections.length - 1) : undefined}
-                        onToggleHidden={
-                          onSetBlockHidden
-                            ? () => onSetBlockHidden(section.id, !section.hidden)
-                            : undefined
-                        }
-                        isHidden={Boolean(section.hidden)}
-                        onOpenSettings={onOpenInspector}
-                      />
-                    </>
-                  )}
-
                   {/* Absolute Element Layers inside this Section */}
                   {(section.children ?? []).map((element) => (
                     <AbsoluteElementWrapper
@@ -1254,8 +1287,10 @@ export const Canvas: React.FC<CanvasProps> = ({
                       zoom={visualScale}
                       onSelect={(e) => {
                         e.stopPropagation();
-                        onSelectBlock(element.id);
+                        const sectionId = findParentSectionId(sections, element.id);
+                        onSelectSelection(selectionFromBlock(element, sectionId));
                       }}
+
                       onPointerDownDrag={handlePointerDownDrag}
                       onPointerDownResize={handlePointerDownResize}
                       onPointerDownRotate={handlePointerDownRotate}
@@ -1295,6 +1330,25 @@ export const Canvas: React.FC<CanvasProps> = ({
           </div>
         </div>
       </div>
+
+      <EditorToolbarOverlay
+        selection={editorSelection}
+        sections={sections}
+        deviceMode={deviceMode}
+        scrollContainerRef={viewportRef}
+        onUpdateBlock={onUpdateBlock}
+        onDeleteBlock={onDeleteBlock}
+        onDuplicateBlock={onDuplicateBlock}
+        onMoveNodeZIndex={onMoveNodeZIndex}
+        onUpdateNodeFrame={onUpdateNodeFrame}
+        onToggleHidden={onSetBlockHidden}
+        onSetLocked={onSetBlockLocked}
+        onOpenInspector={(mode) => onOpenInspector?.(mode)}
+        onMoveSectionUp={onMoveUp}
+        onMoveSectionDown={onMoveDown}
+        onAlignBlock={handleAlignBlock}
+        getSiblingZRange={getSiblingZRange}
+      />
 
       {/* Device Indicator Widget floating on bottom left */}
       <div className="fixed bottom-4 left-20 z-50 flex select-none items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-black text-gray-800 shadow-lg">

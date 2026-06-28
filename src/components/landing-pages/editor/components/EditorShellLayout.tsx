@@ -26,6 +26,22 @@ export const EditorShellLayout: React.FC<EditorShellLayoutProps> = ({
       className="landing-editor-shell fixed inset-0 z-[999999] flex flex-col text-gray-800"
       style={{ fontFamily: "Inter, sans-serif", fontSize: 13, backgroundColor: "#f7f7f8" }}
     >
+      <style>{`
+        .selection-outline,
+        .selection-label,
+        .toolbar-position-wrapper,
+        .canvas-guide,
+        .snap-guide {
+          pointer-events: none;
+        }
+        .toolbar-position-wrapper > *,
+        [data-editor-toolbar],
+        [data-editor-toolbar] button,
+        [data-editor-popover],
+        [data-editor-popover] button {
+          pointer-events: auto;
+        }
+      `}</style>
       {/* A. Topbar — full width, sticky */}
       <header className="relative z-50 flex-shrink-0">{topBar}</header>
 

@@ -1,6 +1,13 @@
-import { EditorBlock, getNodeKind } from "./types";
+import { EditorBlock } from "./types";
+import {
+  InspectorMode,
+  InspectorState,
+  resolveInspectorModeFromBlock,
+  resolveInspectorModeFromSelection,
+  EditorSelection,
+} from "./editor-selection";
 
-export type InspectorMode = "page" | "section" | "element";
+export type { InspectorMode, InspectorState, EditorSelection };
 
 export const INSPECTOR_OPEN_STORAGE_KEY = "landing-builder:inspector-open";
 
@@ -17,8 +24,9 @@ export function persistInspectorOpenPreference(isOpen: boolean): void {
 }
 
 export function resolveInspectorMode(block: EditorBlock | null): InspectorMode {
-  if (!block) return "page";
-  const kind = getNodeKind(block.type, block.kind);
-  if (kind === "section") return "section";
-  return "element";
+  return resolveInspectorModeFromBlock(block);
+}
+
+export function resolveInspectorModeForSelection(selection: EditorSelection): InspectorMode {
+  return resolveInspectorModeFromSelection(selection);
 }

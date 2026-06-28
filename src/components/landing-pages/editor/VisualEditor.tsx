@@ -34,6 +34,17 @@ import {
 } from "./core/editor-supabase-storage";
 import { getEditorDataFingerprint, migrateEditorData } from "./core/editor-migration";
 import { findBlockRecursive } from "./core/editor-reducer";
+import {
+  EditorSelection,
+  getSelectedBlockId,
+  selectionFromBlockId,
+} from "./editor-selection";
+import {
+  InspectorState,
+  persistInspectorOpenPreference,
+  readInspectorOpenPreference,
+  resolveInspectorModeForSelection,
+} from "./inspector-state";
 import { findMatchingCommand } from "./core/ai-command-registry";
 import { parseHtmlToImportedPageSchema } from "../../../features/landing-pages/import/html-to-landing-schema";
 import { importZipLandingPage } from "../../../features/landing-pages/import/zip-importer";
@@ -172,7 +183,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editorSelection, setEditorSelection] = useState<EditorSelection>({ type: "page" });
+  const [inspectorState, setInspectorState] = useState<InspectorState>(() => ({
+    open: readInspectorOpenPreference(),
+    mode: "page",
+  }));
+  const selectedId = getSelectedBlockId(editorSelection);
+  const setSelectedId = useCallback((id: string | null) => {
+    setEditorSelection(selectionFromBlockId(id, data.sections));
+  }, [data.sections]);
   const [isEditorLoading, setIsEditorLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>("desktop");
@@ -199,7 +218,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [leftDrawerCategory, setLeftDrawerCategory] = useState<DrawerCategoryId>("elements");
   const [elementPaletteCategory, setElementPaletteCategory] = useState("text");
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
-  const [isInspectorOpen, setIsInspectorOpen] = useState(true);
+
 
   useEffect(() => {
     setBuilderSessionToken(getBuilderSessionTokenFromSearch(window.location.search));
@@ -240,11 +259,31 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [chatInput, setChatInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
 
+  const handleSelectSelection = useCallback((selection: EditorSelection) => {
+    setEditorSelection(selection);
+    setInspectorState((prev) =>
+      prev.open
+        ? { ...prev, mode: resolveInspectorModeForSelection(selection) }
+        : prev,
+    );
+  }, []);
+
   const handleSelectBlock = useCallback((id: string | null) => {
-    setSelectedId(id);
-    if (id) {
-      setIsInspectorOpen(true);
-    }
+    const selection = selectionFromBlockId(id, data.sections);
+    handleSelectSelection(selection);
+  }, [data.sections, handleSelectSelection]);
+
+  const handleOpenInspector = useCallback((mode?: InspectorState["mode"]) => {
+    setInspectorState({
+      open: true,
+      mode: mode ?? resolveInspectorModeForSelection(editorSelection),
+    });
+    persistInspectorOpenPreference(true);
+  }, [editorSelection]);
+
+  const handleCloseInspector = useCallback(() => {
+    setInspectorState((prev) => ({ ...prev, open: false }));
+    persistInspectorOpenPreference(false);
   }, []);
 
   const saveDraft = useCallback(async (nextData: EditorData = data, nextActions: LandingEditorAction[] = actionLog) => {
@@ -1068,10 +1107,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             <Canvas
               sections={data.sections}
               selectedId={selectedId}
+              editorSelection={editorSelection}
               deviceMode={deviceMode}
               zoom={zoom}
               pageBgColor={data.pageSettings.bgColor}
               onSelectBlock={handleSelectBlock}
+              onSelectSelection={handleSelectSelection}
               onDropItem={handleDropItem}
               onMoveBlock={handleMoveBlock}
               onMoveWithinParent={handleMoveWithinParent}
@@ -1086,17 +1127,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               onUpdateResponsiveFrame={handleUpdateResponsiveFrame}
               onUpdateResponsiveFrameSilent={handleUpdateResponsiveFrameSilent}
               onAddSection={handleAddSection}
-              onOpenInspector={() => setIsInspectorOpen(true)}
+              onOpenInspector={handleOpenInspector}
               onAddElementToSection={handleAddElementToSection}
               onMoveNodeZIndex={handleMoveNodeZIndex}
               onSetBlockHidden={handleSetBlockHidden}
+              onSetBlockLocked={handleSetBlockLocked}
             />
           )
         }
         inspector={
-          isInspectorOpen ? (
+          inspectorState.open ? (
             <InspectorPanel
               selectedBlock={selectedBlock}
+              inspectorMode={inspectorState.mode}
               sections={data.sections}
               pageSettings={data.pageSettings}
               onUpdateBlock={handleUpdateBlock}
@@ -1119,12 +1162,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               handleSendChatMessage={handleSendChatMessage}
               isAiTyping={isAiTyping}
               variant="floating"
-              onClose={() => setIsInspectorOpen(false)}
+              onClose={handleCloseInspector}
             />
           ) : (
             <button
               type="button"
-              onClick={() => setIsInspectorOpen(true)}
+              onClick={() => handleOpenInspector()}
               className="pointer-events-auto fixed right-6 top-20 z-[45] flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-lg hover:text-[#5b21b6]"
               title="Mở Inspector"
             >
