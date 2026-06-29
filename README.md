@@ -1,208 +1,246 @@
-# TailAdmin Next.js - Free Next.js Tailwind Admin Dashboard Template
+# Next-Gen LadiPage SaaS
 
-TailAdmin is a free and open-source admin dashboard template built on **Next.js and Tailwind CSS** providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web project.
+Nền tảng xây dựng và quản lý landing page, xây dựng trên **Next.js App Router** và shell **TailAdmin**. Hệ thống gồm dashboard quản trị, Visual Editor kéo-thả, public runtime nhẹ cho SEO, và các module tích hợp (AI SEO, OfferKit, Education).
 
-![TailAdmin - Next.js Dashboard Preview](./banner.png)
+![Dashboard preview](./banner.png)
 
-With TailAdmin Next.js, you get access to all the necessary dashboard UI components, elements, and pages required to build a high-quality and complete dashboard or admin panel. Whether you're building a dashboard or admin panel for a complex web application or a simple website.
+---
 
-TailAdmin utilizes the powerful features of **Next.js 16** and common features of Next.js such as server-side rendering (SSR), static site generation (SSG), and seamless API route integration. Combined with the advancements of **React 19** and the robustness of **TypeScript**, TailAdmin is the perfect solution to help get your project up and running quickly.
+## Tính năng chính
 
-## Overview
+| Module | Mô tả |
+|--------|--------|
+| **Landing Page Builder** | Visual Editor (React DnD) — kéo thả section/block, toolbar theo loại đối tượng, inspector, undo/redo, import HTML/ZIP |
+| **Public Runtime** | Trang public `/p/[slug]` render `published_html` — không tải code editor |
+| **Admin Dashboard** | Quản lý landing pages, templates, analytics (TailAdmin shell) |
+| **AI SEO** | Quét, tối ưu và triển khai SEO cho landing page |
+| **OfferKit** | Loyalty, voucher, campaign, referral |
+| **Education** | Module LMS / EMS (tách route riêng) |
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
+---
 
-* Next.js 16.x
-* React 19
-* TypeScript
-* Tailwind CSS V4
+## Công nghệ
 
-### Quick Links
+- **Next.js 16** · **React 19** · **TypeScript**
+- **Tailwind CSS v4**
+- **Supabase** — Auth, PostgreSQL, Storage
+- **Zod** — validate API payload
+- **Vitest** — unit test
 
-* [✨ Visit Website](https://tailadmin.com)
-* [📄 Documentation](https://tailadmin.com/docs)
-* [⬇️ Download](https://tailadmin.com/download)
-* [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1463141366275764364)
-* [⚡ Get PRO Version](https://tailadmin.com/pricing)
+---
 
-### Demos
+## Kiến trúc Editor ↔ Backend
 
-* [Free Version](https://nextjs-free-demo.tailadmin.com)
-* [Pro Version](https://nextjs-demo.tailadmin.com)
+```
+Admin / SDK                    Visual Editor                 Supabase
+─────────────                  ─────────────                 ────────
+openLandingBuilder()    →      /builder/[pageId]      →      landing_pages
+POST /api/builder/session      ?session=...                  ├─ editor_data (JSON draft)
+                               VisualEditor                  ├─ published_html
+                               ├─ loadLandingPage()          ├─ status / visibility
+                               ├─ saveDraft()                └─ slug
+                               └─ handlePublish()
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    │ Có ?session=                      │ Không session
+                    ▼                                   ▼
+         PATCH /api/builder/pages/[id]        PUT /api/landing-pages + JWT
+         (header: x-builder-session)          + localStorage backup
+                    │                                   │
+                    └─────────────────┬─────────────────┘
+                                      ▼
+                            editor_data được lưu DB
 
-### Other Versions
-
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [React.js Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-- [Angular Version](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
-- [Laravel Version](https://github.com/TailAdmin/tailadmin-laravel)
-
-## Installation
-
-### Prerequisites
-
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
-
-* Node.js 18.x or later (recommended to use Node.js 20.x or later)
-
-### Cloning the Repository
-
-Clone the repository using the following command:
-
-```bash
-git clone https://github.com/TailAdmin/free-nextjs-admin-dashboard.git
+Publish: render HTML client-side → ghi published_html → /p/[slug] serve HTML tĩnh
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+### Bảng dữ liệu landing page (thực tế trong code)
 
-1. Install dependencies:
+Bảng **`landing_pages`** (không phải `pages.draft_data` như tài liệu cũ):
 
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+| Cột | Vai trò |
+|-----|---------|
+| `editor_data` | JSON draft của Visual Editor (`sections`, `pageSettings`, `schemaVersion`…) |
+| `published_html` | HTML đã render khi publish |
+| `status` | `draft` / `published` |
+| `visibility` | `private` / `public` |
+| `slug` | URL public: `/p/{slug}` |
 
-   > Use `--legacy-peer-deps` flag if you face peer-dependency error during installation.
+Đồng bộ phụ: bảng `website_pages` (canonical page registry), `landing_page_versions` (lịch sử phiên bản).
 
-2. Start the development server:
+### Ranh giới Editor / Public Runtime
 
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+- **Editor** (`/builder/[pageId]`): tải đầy đủ canvas, toolbar, inspector, AI panel — chỉ dùng để soạn và lưu `editor_data`.
+- **Public** (`/p/[slug]`): chỉ serve `published_html` khi `status=published` và `visibility=public` — không import dependency editor.
 
-## Components
+Chi tiết hướng dẫn agent: xem [`Agents.md`](./Agents.md).
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using Next.js and Tailwind CSS. The template includes:
+---
 
-* Sophisticated and accessible sidebar
-* Data visualization components
-* Profile management and custom 404 page
-* Tables and Charts(Line and Bar)
-* Authentication forms and input elements
-* Alerts, Dropdowns, Modals, Buttons and more
-* Can't forget Dark Mode 🕶️
+## Cài đặt
 
-All components are built with React and styled using Tailwind CSS for easy customization.
+### Yêu cầu
 
-## Feature Comparison
+- **Node.js 20+** (tối thiểu 18)
+- **pnpm** (khuyến nghị) hoặc npm
 
-### Free Version
+### Bước 1 — Clone & cài dependency
 
-* 1 Unique Dashboard
-* 30+ dashboard components
-* 50+ UI elements
-* Basic Figma design files
-* Community support
+```bash
+git clone <repo-url>
+cd free-nextjs-admin-dashboard
+pnpm install
+```
 
-### Pro Version
+### Bước 2 — Biến môi trường
 
-* 7 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, SaaS, Stocks, Logistics (more coming soon)
-* 500+ dashboard components and UI elements
-* Complete Figma design file
-* Email support
+Tạo file `.env.local` ở thư mục gốc:
 
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
+```env
+# Supabase (bắt buộc cho production; thiếu sẽ chạy localStorage-only)
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 
-## Changelog
+# Server-only — KHÔNG expose ra frontend
+SUPABASE_SECRET_KEY=<service-role-key>
 
-### Version 2.3.0 - [April 28, 2026]
+# Builder session (tùy chọn, khuyến nghị production)
+BUILDER_SESSION_SECRET=<random-secret>
 
-- **New Feature**: Added **AI Dashboard** with token usage and revenue tracking.
-- **New Feature**: Added **Sales Dashboard** with retention and multi-channel analytics.
-- **New Feature**: Added **Finance Dashboard** with cashflow and balance management.
-- **New Feature**: Introduced **6 New Layout variations** for improved UI flexibility.
-- **Enhancement**: Integrated **Advanced Data Visualization** with 7+ new chart types.
+# Tùy chọn — module khác
+NEXT_PUBLIC_API_BASE_URL=
+NEXT_PUBLIC_OWNCAST_URL=
+FLOWISE_API_URL=
+GADS_API_URL=
+```
 
-### Version 2.2.3 - [March 15, 2026]
+> Không commit `.env.local`. `SUPABASE_SECRET_KEY` chỉ dùng trong API routes server-side.
 
-* update ESLint configuration and dependencies; upgrade Next.js to version 16.1.6
+### Bước 3 — Chạy dev
 
-### Version 2.2.2 - [December 30, 2025]
+```bash
+pnpm run dev
+```
 
-* Fixed date picker positioning and functionality in Statistics Chart.
+Mở [http://localhost:3000](http://localhost:3000).
 
+| Route | Mô tả |
+|-------|--------|
+| `/landing-pages` | Danh sách landing page (admin) |
+| `/builder/[pageId]` | Visual Editor |
+| `/landing-pages/editor/[pageId]` | Redirect → `/builder/[pageId]` |
+| `/p/[slug]` | Trang public đã publish |
+| `/templates/[slug]` | Xem trước template |
 
-### Version 2.1.0 - [November 15, 2025]
+---
 
-* Updated to Next.js 16.x
-* Fixed all reported minor bugs
+## Cấu trúc thư mục
 
-### Version 2.0.2 - [March 25, 2025]
+```
+src/
+├── app/
+│   ├── (admin)/          # Dashboard TailAdmin (landing-pages, offerkit, ai-seo…)
+│   ├── (builder)/        # Shell editor full-screen
+│   ├── api/
+│   │   ├── builder/      # Session, save draft, publish, upload
+│   │   └── landing-pages/# CRUD landing page (JWT)
+│   └── p/[slug]/         # Public runtime
+├── components/
+│   └── landing-pages/
+│       └── editor/       # VisualEditor, Canvas, toolbars, blocks
+├── features/
+│   ├── landing-builder/  # SDK mở builder, builder session
+│   ├── landing-pages/    # Import HTML/ZIP
+│   ├── landing-templates/
+│   ├── ai-seo/
+│   └── offerkit/
+└── lib/
+    └── supabase.ts       # Supabase client (browser)
+```
 
-* Upgraded to Next.js 16.x for [CVE-2025-29927](https://nextjs.org/blog/cve-2025-29927) concerns
-* Included overrides vectormap for packages to prevent peer dependency errors during installation.
-* Migrated from react-flatpickr to flatpickr package for React 19 support
+### File quan trọng — luồng lưu/tải
 
-### Version 2.0.1 - [February 27, 2025]
+| File | Vai trò |
+|------|---------|
+| `src/components/landing-pages/editor/VisualEditor.tsx` | Orchestrator: load, save, publish |
+| `src/components/landing-pages/editor/core/editor-supabase-storage.ts` | `loadLandingPage`, `saveLandingPage`, `publishLandingPage` |
+| `src/features/landing-builder/store/manual-save.ts` | `saveBuilderDraft` → `PATCH /api/builder/pages/[id]` |
+| `src/features/landing-builder/sdk/open-builder.ts` | Tạo session & mở editor từ admin |
+| `src/app/api/builder/pages/[pageId]/route.ts` | GET/PATCH draft qua builder session |
+| `src/app/api/landing-pages/route.ts` | POST/PUT qua JWT user |
 
-#### Update Overview
+---
 
-* Upgraded to Tailwind CSS v4 for better performance and efficiency.
-* Updated class usage to match the latest syntax and features.
-* Replaced deprecated class and optimized styles.
+## API Builder (embed / SDK)
 
-#### Next Steps
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| `POST` | `/api/builder/session` | Tạo token, trả `builderUrl` |
+| `GET` | `/api/builder/pages/[pageId]` | Đọc draft (cần `x-builder-session`) |
+| `PATCH` | `/api/builder/pages/[pageId]` | Lưu `editor_data` (cần `x-builder-session`) |
+| `POST` | `/api/builder/publish` | Publish server-side (có sẵn, editor hiện publish qua client Supabase) |
+| `POST` | `/api/builder/upload` | Upload asset |
+| `POST` | `/api/builder/import-html` | Import HTML |
 
-* Run npm install or yarn install to update dependencies.
-* Check for any style changes or compatibility issues.
-* Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-* This update keeps the project up to date with the latest Tailwind improvements. 🚀
+Mở editor từ code admin:
 
-### v2.0.0 (February 2025)
+```ts
+import { openLandingBuilder } from "@/features/landing-builder/sdk/open-builder";
 
-A major update focused on Next.js 16 implementation and comprehensive redesign.
+await openLandingBuilder({ pageId: "<uuid>", mode: "same-tab" });
+// → POST /api/builder/session → /builder/<pageId>?session=<token>
+```
 
-#### Major Improvements
+---
 
-* Complete redesign using Next.js 16 App Router and React Server Components
-* Enhanced user interface with Next.js-optimized components
-* Improved responsiveness and accessibility
-* New features including collapsible sidebar, chat screens, and calendar
-* Redesigned authentication using Next.js App Router and server actions
-* Updated data visualization using ApexCharts for React
+## Scripts
 
-#### Breaking Changes
+```bash
+pnpm run dev              # Dev server (Turbopack)
+pnpm run dev:webpack      # Dev server (Webpack)
+pnpm run build            # Production build
+pnpm run start            # Chạy build production
+pnpm run lint             # ESLint
+pnpm test                 # Vitest
+npx tsc --noEmit          # Kiểm tra TypeScript
 
-* Migrated from Next.js 14 to Next.js 16
-* Chart components now use ApexCharts for React
-* Authentication flow updated to use Server Actions and middleware
+pnpm run seed:templates         # Seed landing page templates
+pnpm run seed:builder-elements  # Seed builder element catalog
+```
 
-[Read more](https://tailadmin.com/docs/update-logs/nextjs) on this release.
+---
 
-### v1.3.4 (July 01, 2024)
+## Phát triển
 
-* Fixed JSvectormap rendering issues
+### Quy trình kiểm tra trước khi merge
 
-### v1.3.3 (June 20, 2024)
+```powershell
+npx tsc --noEmit
+pnpm run lint
+pnpm run build
+```
 
-* Fixed build error related to Loader component
+### Nguyên tắc quan trọng
 
-### v1.3.2 (June 19, 2024)
+1. **Không expose** `SUPABASE_SECRET_KEY` hoặc OfferKit private keys ra client.
+2. **Validate** mọi API input bằng Zod.
+3. **Tách Editor / Runtime** — code trong `/p/[slug]` không được import thư viện editor.
+4. **Schema `editor_data`** — thay đổi cấu trúc JSON cần cập nhật `editor-migration.ts` và `schemaVersion`.
 
-* Added ClickOutside component for dropdown menus
-* Refactored sidebar components
-* Updated Jsvectormap package
+### Tài liệu bổ sung
 
-### v1.3.1 (Feb 12, 2024)
+| File | Nội dung |
+|------|----------|
+| [`Agents.md`](./Agents.md) | Hướng dẫn cho coding agent |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Kiến trúc tổng quan (một phần còn tham chiếu Puck — xem README này là nguồn chính xác cho editor) |
+| [`docs/DB_SCHEMA.md`](./docs/DB_SCHEMA.md) | Schema DB (đang cập nhật dần) |
+| [`docs/PRODUCT_SPEC.md`](./docs/PRODUCT_SPEC.md) | Product spec |
+| [`docs/OFFERKIT_INTEGRATION.md`](./docs/OFFERKIT_INTEGRATION.md) | Tích hợp OfferKit |
 
-* Fixed layout naming consistency
-* Updated styles
+---
 
-### v1.3.0 (Feb 05, 2024)
+## Ghi chú về TailAdmin
 
-* Upgraded to Next.js 14
-* Added Flatpickr integration
-* Improved form elements
-* Enhanced multiselect functionality
-* Added default layout component
+Dự án fork từ [TailAdmin Next.js Free](https://github.com/TailAdmin/free-nextjs-admin-dashboard) làm shell dashboard. Phần Landing Page Builder, AI SEO, OfferKit và Education là phát triển riêng trên nền đó.
 
-## License
-
-TailAdmin Next.js Free Version is released under the MIT License.
-
-## Support
-If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing and maintaining this template.
+TailAdmin Free được phát hành theo [MIT License](https://opensource.org/licenses/MIT).
