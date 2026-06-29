@@ -164,18 +164,16 @@ export const BlockToolbar: React.FC<BlockToolbarProps> = ({ block, actions, vari
             <ToolbarMenuItem label="Sao chép" onClick={() => { actions.onDuplicate(); setMoreOpen(false); }} />
             <ToolbarMenuItem label="Lưu ảnh (chưa hỗ trợ)" onClick={() => {}} disabled />
             <ToolbarMenuItem label="Đồng bộ (chưa hỗ trợ)" onClick={() => {}} disabled />
-            {actions.onToggleHidden && (
-              <ToolbarMenuItem
-                label={actions.isHidden ? "Hiện phần tử" : "Ẩn phần tử"}
-                onClick={() => { actions.onToggleHidden!(); setMoreOpen(false); }}
-              />
-            )}
-            {actions.onSetLocked && (
-              <ToolbarMenuItem
-                label={actions.isLocked ? "Mở khóa" : "Khóa phần tử"}
-                onClick={() => { actions.onSetLocked!(!actions.isLocked); setMoreOpen(false); }}
-              />
-            )}
+            <ToolbarMenuItem
+              label={actions.isHidden ? "Hiện phần tử" : "Ẩn phần tử"}
+              disabled={!actions.onToggleHidden}
+              onClick={() => { actions.onToggleHidden?.(); setMoreOpen(false); }}
+            />
+            <ToolbarMenuItem
+              label={actions.isLocked ? "Mở khóa" : "Khóa phần tử"}
+              disabled={!actions.onSetLocked}
+              onClick={() => { actions.onSetLocked?.(!actions.isLocked); setMoreOpen(false); }}
+            />
           </div>
         )}
       </div>

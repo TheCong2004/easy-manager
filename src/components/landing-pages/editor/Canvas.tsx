@@ -780,7 +780,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         ),
       )
     : 1;
-  const effectiveZoom = Math.min(zoom, fitZoom);
+  const effectiveZoom = zoom;
   const visualScale = Math.max(0.28, effectiveZoom * CANVAS_VISUAL_PREVIEW_FACTOR);
 
   const [dragState, setDragState] = useState<DragState | null>(null);

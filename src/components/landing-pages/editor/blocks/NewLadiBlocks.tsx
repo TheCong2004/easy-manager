@@ -1320,27 +1320,60 @@ export const HtmlCodeBlock: React.FC<{
 
     cloned.querySelector("#__easy_manager_html_selection_overlay")?.remove();
 
-    cloned.querySelectorAll("[data-em-selected]").forEach((el) => {
-      el.removeAttribute("data-em-selected");
-      (el as HTMLElement).style.outline = "";
-      (el as HTMLElement).style.outlineOffset = "";
-      (el as HTMLElement).style.boxShadow = "";
+    const attrsToRemove = [
+      "data-em-selected",
+      "data-em-base-transform",
+      "data-em-move-x",
+      "data-em-move-y",
+      "contenteditable",
+      "spellcheck",
+      "data-editor-selected",
+      "data-editor-overlay",
+      "data-editor-toolbar",
+      "data-editor-popover",
+      "data-temp-selection",
+      "data-hovered",
+      "data-resize-handle"
+    ];
+
+    attrsToRemove.forEach((attr) => {
+      cloned.querySelectorAll(`[${attr}]`).forEach((el) => {
+        el.removeAttribute(attr);
+      });
+      if (cloned.hasAttribute(attr)) {
+        cloned.removeAttribute(attr);
+      }
     });
 
     cloned.querySelectorAll("[data-em-id]").forEach((el) => {
       el.removeAttribute("data-em-id");
     });
 
-    cloned.querySelectorAll("[data-em-base-transform]").forEach((el) => {
-      el.removeAttribute("data-em-base-transform");
+    const classesToRemove = [
+      "selected",
+      "editor-selected",
+      "editor-hover",
+      "editor-outline",
+      "resizing",
+      "dragging"
+    ];
+
+    classesToRemove.forEach((className) => {
+      cloned.querySelectorAll(`.${className}`).forEach((el) => {
+        el.classList.remove(className);
+      });
+      if (cloned.classList.contains(className)) {
+        cloned.classList.remove(className);
+      }
     });
 
-    cloned.querySelectorAll("[data-em-move-x]").forEach((el) => {
-      el.removeAttribute("data-em-move-x");
-    });
-
-    cloned.querySelectorAll("[data-em-move-y]").forEach((el) => {
-      el.removeAttribute("data-em-move-y");
+    cloned.querySelectorAll("*").forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      if (htmlEl.style) {
+        if (htmlEl.style.outline) htmlEl.style.outline = "";
+        if (htmlEl.style.outlineOffset) htmlEl.style.outlineOffset = "";
+        if (htmlEl.style.boxShadow) htmlEl.style.boxShadow = "";
+      }
     });
 
     return "<!DOCTYPE html>\n" + cloned.outerHTML;
@@ -1575,7 +1608,7 @@ export const HtmlCodeBlock: React.FC<{
   ]);
 
   const patchIframeElement = React.useCallback(
-    (elementId: string, patch: Record<string, unknown>) => {
+    (elementId: string, patch: Record<string, any>) => {
       const iframe = iframeRef.current;
       const doc = iframe?.contentDocument;
 
@@ -1585,78 +1618,198 @@ export const HtmlCodeBlock: React.FC<{
         `[data-em-id="${elementId}"]`,
       ) as HTMLElement | null;
 
-      if (!el) return;
+      if (!el) {
+        console.warn(`[patchIframeElement] Element not found with data-em-id: ${elementId}`);
+        return;
+      }
 
       const tag = el.tagName.toLowerCase();
 
-      if (Object.prototype.hasOwnProperty.call(patch, "textContent")) {
-        if (
-          tag !== "img" &&
-          tag !== "video" &&
-          tag !== "input" &&
-          tag !== "textarea" &&
-          tag !== "select"
-        ) {
-          el.textContent = String(patch.textContent ?? "");
+      if (patch.action === "delete") {
+        el.remove();
+
+        const nextHtml = serializeIframeHtml();
+        lastLoadedCodeRef.current = nextHtml;
+
+        emitPropsUpdate({
+          code: nextHtml,
+          selectedHtmlElement: null,
+        });
+
+        window.setTimeout(scanIframeDom, 100);
+        return;
+      }
+
+      if (patch.action === "duplicate") {
+        const clone = el.cloneNode(true) as HTMLElement;
+
+        clone.removeAttribute("data-em-selected");
+        if (clone.style) {
+          clone.style.outline = "";
+          clone.style.boxShadow = "";
         }
 
-        if (tag === "input" || tag === "textarea") {
-          (el as HTMLInputElement).value = String(patch.textContent ?? "");
-          el.setAttribute("value", String(patch.textContent ?? ""));
+        const generateNewIds = (node: HTMLElement) => {
+          if (node.dataset && node.dataset.emId) {
+            node.dataset.emId = `em-clicked-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+          }
+          if (node.id) {
+            node.id = `id-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+          }
+          Array.from(node.children).forEach((child) => generateNewIds(child as HTMLElement));
+        };
+        generateNewIds(clone);
+
+        el.parentNode?.insertBefore(clone, el.nextSibling);
+
+        const nextHtml = serializeIframeHtml();
+        lastLoadedCodeRef.current = nextHtml;
+
+        const cloneInfo = getIframeElementInfo(clone);
+
+        emitPropsUpdate({
+          code: nextHtml,
+          selectedHtmlElement: cloneInfo,
+        });
+
+        window.setTimeout(scanIframeDom, 100);
+        return;
+      }
+
+      if (patch.action === "bringForward") {
+        const style = window.getComputedStyle(el);
+        const position = style.position;
+        const isPositioned = position === "absolute" || position === "relative" || position === "fixed" || position === "sticky";
+        const currentZ = parseInt(style.zIndex, 10);
+
+        if (isPositioned && !isNaN(currentZ)) {
+          el.style.zIndex = String(currentZ + 1);
+        } else {
+          const next = el.nextElementSibling;
+          if (next) {
+            el.parentNode?.insertBefore(next, el);
+          }
         }
       }
 
-      if (Object.prototype.hasOwnProperty.call(patch, "href")) {
-        if (tag === "a") {
-          el.setAttribute("href", String(patch.href ?? ""));
+      if (patch.action === "sendBackward") {
+        const style = window.getComputedStyle(el);
+        const position = style.position;
+        const isPositioned = position === "absolute" || position === "relative" || position === "fixed" || position === "sticky";
+        const currentZ = parseInt(style.zIndex, 10);
+
+        if (isPositioned && !isNaN(currentZ)) {
+          el.style.zIndex = String(currentZ - 1);
+        } else {
+          const prev = el.previousElementSibling;
+          if (prev) {
+            el.parentNode?.insertBefore(el, prev);
+          }
         }
       }
 
-      if (Object.prototype.hasOwnProperty.call(patch, "src")) {
-        if (tag === "img" || tag === "video") {
-          el.setAttribute("src", String(patch.src ?? ""));
+      if (patch.action === "bringToFront") {
+        const style = window.getComputedStyle(el);
+        const position = style.position;
+        const isPositioned = position === "absolute" || position === "relative" || position === "fixed" || position === "sticky";
+
+        if (isPositioned) {
+          const siblings = Array.from(el.parentNode?.children || []) as HTMLElement[];
+          const zIndices = siblings
+            .map((s) => parseInt(window.getComputedStyle(s).zIndex, 10))
+            .filter((z) => !isNaN(z));
+          const maxZ = zIndices.length > 0 ? Math.max(...zIndices) : 1;
+          el.style.zIndex = String(maxZ + 1);
+        } else {
+          el.parentNode?.appendChild(el);
         }
       }
 
-      if (Object.prototype.hasOwnProperty.call(patch, "alt")) {
-        if (tag === "img") {
-          el.setAttribute("alt", String(patch.alt ?? ""));
+      if (patch.action === "sendToBack") {
+        const style = window.getComputedStyle(el);
+        const position = style.position;
+        const isPositioned = position === "absolute" || position === "relative" || position === "fixed" || position === "sticky";
+
+        if (isPositioned) {
+          const siblings = Array.from(el.parentNode?.children || []) as HTMLElement[];
+          const zIndices = siblings
+            .map((s) => parseInt(window.getComputedStyle(s).zIndex, 10))
+            .filter((z) => !isNaN(z));
+          const minZ = zIndices.length > 0 ? Math.min(...zIndices) : 1;
+          el.style.zIndex = String(minZ - 1);
+        } else {
+          if (el.parentNode) {
+            el.parentNode.insertBefore(el, el.parentNode.firstChild);
+          }
         }
       }
 
-      if (patch.style && typeof patch.style === "object") {
-        Object.entries(patch.style as Record<string, string>).forEach(
-          ([key, value]) => {
+      if (patch.action === "setStyle") {
+        if (patch.style && typeof patch.style === "object") {
+          Object.entries(patch.style).forEach(([key, value]) => {
             if (!key) return;
             el.style.setProperty(
               key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`),
               String(value ?? ""),
             );
-          },
-        );
+          });
+        }
       }
 
-      const text = String(el.innerText || el.textContent || "")
-        .replace(/\s+/g, " ")
-        .trim();
+      if (patch.action === "setText") {
+        if (tag !== "img" && tag !== "video" && tag !== "input" && tag !== "textarea" && tag !== "select") {
+          if (patch.html !== undefined) {
+            let cleanHtml = String(patch.html || "");
+            cleanHtml = cleanHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+            cleanHtml = cleanHtml.replace(/on\w+="[^"]*"/gi, "");
+            cleanHtml = cleanHtml.replace(/on\w+='[^']*'/gi, "");
+            cleanHtml = cleanHtml.replace(/href\s*=\s*"javascript:[^"]*"/gi, 'href="#"');
+            cleanHtml = cleanHtml.replace(/href\s*=\s*'javascript:[^']*'/gi, "href='#'");
+            el.innerHTML = cleanHtml;
+          } else if (patch.text !== undefined) {
+            el.textContent = String(patch.text || "");
+          }
+        } else if (tag === "input" || tag === "textarea") {
+          (el as HTMLInputElement).value = String(patch.text || "");
+          el.setAttribute("value", String(patch.text || ""));
+        }
+      }
 
-      const nextSelectedElement = {
-        id: elementId,
-        tag,
-        label: `${tag.toUpperCase()} · ${text.slice(0, 80)}`,
-        text,
-        href: tag === "a" ? el.getAttribute("href") || "" : "",
-        src:
-          tag === "img" || tag === "video"
-            ? el.getAttribute("src") || ""
-            : "",
-        alt: tag === "img" ? el.getAttribute("alt") || "" : "",
-      };
+      if (patch.action === "replaceImage") {
+        if (tag === "img") {
+          el.setAttribute("src", String(patch.src || ""));
+          if (patch.srcset) el.setAttribute("srcset", String(patch.srcset || ""));
+          if (patch.alt) el.setAttribute("alt", String(patch.alt || ""));
+        } else if (tag === "video") {
+          el.setAttribute("src", String(patch.src || ""));
+        } else {
+          el.style.backgroundImage = `url("${String(patch.src || "")}")`;
+        }
+      }
+
+      if (patch.action === "setAttribute") {
+        if (patch.attributes && typeof patch.attributes === "object") {
+          Object.entries(patch.attributes).forEach(([key, value]) => {
+            if (value === null) {
+              el.removeAttribute(key);
+            } else {
+              let cleanValue = String(value || "");
+              if (key === "href") {
+                const lowerVal = cleanValue.toLowerCase().trim();
+                if (lowerVal.startsWith("javascript:") || lowerVal.startsWith("data:")) {
+                  cleanValue = "#";
+                }
+              }
+              el.setAttribute(key, cleanValue);
+            }
+          });
+        }
+      }
 
       const nextHtml = serializeIframeHtml();
-
-      // Update the ref so the useEffect doesn't trigger iframe reload
       lastLoadedCodeRef.current = nextHtml;
+
+      const nextSelectedElement = getIframeElementInfo(el);
 
       emitPropsUpdate({
         code: nextHtml,
@@ -1665,7 +1818,7 @@ export const HtmlCodeBlock: React.FC<{
 
       window.setTimeout(scanIframeDom, 100);
     },
-    [emitPropsUpdate, scanIframeDom, serializeIframeHtml],
+    [emitPropsUpdate, scanIframeDom, serializeIframeHtml, getIframeElementInfo],
   );
 
   const handleIframeClick = useCallback((event: MouseEvent) => {

@@ -1037,7 +1037,7 @@ const HtmlCodeElementInspector: React.FC<{ block?: EditorBlock }> = ({ block }) 
             key={`${htmlSelectedElement.id}-text`}
             className="min-h-[72px] w-full rounded-lg border border-gray-200 bg-white p-2 text-xs outline-none focus:border-purple-500"
             defaultValue={htmlSelectedElement.text || ""}
-            onBlur={(event) => patchHtmlElement({ textContent: event.target.value })}
+            onBlur={(event) => patchHtmlElement({ action: "setText", text: event.target.value })}
           />
         </div>
       )}
@@ -1049,7 +1049,7 @@ const HtmlCodeElementInspector: React.FC<{ block?: EditorBlock }> = ({ block }) 
             key={`${htmlSelectedElement.id}-href`}
             className="w-full rounded-lg border border-gray-200 bg-white p-2 text-xs outline-none focus:border-purple-500"
             defaultValue={htmlSelectedElement.href || ""}
-            onBlur={(event) => patchHtmlElement({ href: event.target.value })}
+            onBlur={(event) => patchHtmlElement({ action: "setAttribute", attributes: { href: event.target.value } })}
           />
         </div>
       )}
@@ -1061,7 +1061,7 @@ const HtmlCodeElementInspector: React.FC<{ block?: EditorBlock }> = ({ block }) 
             key={`${htmlSelectedElement.id}-src`}
             className="w-full rounded-lg border border-gray-200 bg-white p-2 text-xs outline-none focus:border-purple-500"
             defaultValue={htmlSelectedElement.src || ""}
-            onBlur={(event) => patchHtmlElement({ src: event.target.value })}
+            onBlur={(event) => patchHtmlElement({ action: "replaceImage", src: event.target.value })}
           />
         </div>
       )}
@@ -1073,7 +1073,7 @@ const HtmlCodeElementInspector: React.FC<{ block?: EditorBlock }> = ({ block }) 
             key={`${htmlSelectedElement.id}-alt`}
             className="w-full rounded-lg border border-gray-200 bg-white p-2 text-xs outline-none focus:border-purple-500"
             defaultValue={htmlSelectedElement.alt || ""}
-            onBlur={(event) => patchHtmlElement({ alt: event.target.value })}
+            onBlur={(event) => patchHtmlElement({ action: "replaceImage", src: htmlSelectedElement.src || "", alt: event.target.value })}
           />
         </div>
       )}
@@ -1147,7 +1147,8 @@ const _HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upd
                   defaultValue={htmlSelectedElement.text || ""}
                   onBlur={(event) => {
                     patchHtmlElement({
-                      textContent: event.target.value,
+                      action: "setText",
+                      text: event.target.value,
                     });
                   }}
                 />
@@ -1166,7 +1167,8 @@ const _HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upd
                 defaultValue={htmlSelectedElement.href || ""}
                 onBlur={(event) => {
                   patchHtmlElement({
-                    href: event.target.value,
+                    action: "setAttribute",
+                    attributes: { href: event.target.value },
                   });
                 }}
               />
@@ -1186,6 +1188,7 @@ const _HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upd
                 defaultValue={htmlSelectedElement.src || ""}
                 onBlur={(event) => {
                   patchHtmlElement({
+                    action: "replaceImage",
                     src: event.target.value,
                   });
                 }}
@@ -1205,6 +1208,8 @@ const _HtmlCodeInspector: React.FC<{ props: Record<string, unknown>; update: Upd
                 defaultValue={htmlSelectedElement.alt || ""}
                 onBlur={(event) => {
                   patchHtmlElement({
+                    action: "replaceImage",
+                    src: htmlSelectedElement.src || "",
                     alt: event.target.value,
                   });
                 }}
