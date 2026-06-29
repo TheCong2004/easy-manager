@@ -85,6 +85,10 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
   const [colorAnchor, setColorAnchor] = useState<DOMRect | null>(null);
   const colorBtnRef = useRef<HTMLButtonElement>(null);
 
+  const isHtmlSubElement = block.type === "html_code" && !!block.props?.selectedHtmlElement;
+  const subEl = (isHtmlSubElement ? block.props.selectedHtmlElement : null) as Record<string, unknown> | null;
+  const currentProps = subEl ? { ...props, ...subEl } : props;
+
   const update = (patch: Record<string, unknown>) => {
     onUpdateBlock(block.id, { ...props, ...patch });
   };
@@ -97,12 +101,12 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
 
   useClickOutside(Boolean(colorPicker), colorBtnRef, () => setColorPicker(null));
 
-  const isBold = props.fontWeight === "bold" || props.fontWeight === 700;
-  const isItalic = props.fontStyle === "italic";
-  const decoration = (props.textDecoration as string) || "";
+  const isBold = currentProps.fontWeight === "bold" || currentProps.fontWeight === 700 || currentProps.fontWeight === "700";
+  const isItalic = currentProps.fontStyle === "italic";
+  const decoration = (currentProps.textDecoration as string) || "";
   const isUnderline = decoration.includes("underline");
   const isStrike = decoration.includes("line-through");
-  const isUppercase = props.textTransform === "uppercase";
+  const isUppercase = currentProps.textTransform === "uppercase";
 
   const toggleDecoration = (flag: "underline" | "line-through") => {
     let next = decoration;
@@ -126,7 +130,7 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
         <ToolbarButton
           title="Liên kết"
           onClick={() => {
-            const current = (props.link as string) || (props.href as string) || "";
+            const current = (currentProps.link as string) || (currentProps.href as string) || "";
             const url = prompt("Nhập URL liên kết:", current);
             if (url !== null) update({ link: url, href: url });
           }}
@@ -149,7 +153,7 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
           <span className="text-[11px] font-extrabold leading-none">A</span>
           <div
             className="mt-0.5 h-[2.5px] w-4 rounded-sm"
-            style={{ backgroundColor: (props.color as string) || "#374151" }}
+            style={{ backgroundColor: (currentProps.color as string) || "#374151" }}
           />
         </button>
 
@@ -160,7 +164,7 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
         </ToolbarButton>
 
         <FontSizeCombobox
-          value={Number(props.fontSize ?? 16)}
+          value={Number(currentProps.fontSize ?? 16)}
           onChange={(size) => update({ fontSize: size })}
         />
 
@@ -207,8 +211,8 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
         <ColorPickerPopover
           value={
             colorPicker === "text"
-              ? ((props.color as string) || "#374151")
-              : ((props.backgroundColor as string) || "#ffffff")
+              ? ((currentProps.color as string) || "#374151")
+              : ((currentProps.backgroundColor as string) || "#ffffff")
           }
           onChange={(color) => {
             if (colorPicker === "text") update({ color });

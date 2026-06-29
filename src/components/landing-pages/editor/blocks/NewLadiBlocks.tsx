@@ -1214,6 +1214,39 @@ export const HtmlCodeBlock: React.FC<{
     const iframe = iframeRef.current;
     const win = iframe?.contentWindow;
 
+    const rgbToHex = (rgbStr: string): string => {
+      if (!rgbStr) return "#000000";
+      const match = rgbStr.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/);
+      if (!match) return rgbStr;
+      const r = parseInt(match[1], 10);
+      const g = parseInt(match[2], 10);
+      const b = parseInt(match[3], 10);
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    };
+
+    let fontSize = 16;
+    let fontWeight = "normal";
+    let fontStyle = "normal";
+    let textDecoration = "none";
+    let textTransform = "none";
+    let color = "#000000";
+    let backgroundColor = "transparent";
+
+    if (win) {
+      const computed = win.getComputedStyle(el);
+      fontSize = parseInt(computed.fontSize || "16", 10) || 16;
+      fontWeight = computed.fontWeight;
+      fontStyle = computed.fontStyle;
+      textDecoration = computed.textDecoration;
+      textTransform = computed.textTransform;
+      color = rgbToHex(computed.color || "#000000");
+      backgroundColor = rgbToHex(computed.backgroundColor || "transparent");
+
+      if (computed.backgroundColor === "rgba(0, 0, 0, 0)" || computed.backgroundColor === "transparent") {
+        backgroundColor = "transparent";
+      }
+    }
+
     return {
       id: el.dataset.emId || "",
       tag,
@@ -1229,6 +1262,13 @@ export const HtmlCodeBlock: React.FC<{
       y: Math.round(rect.top + (win?.scrollY ?? 0)),
       width: Math.round(rect.width),
       height: Math.round(rect.height),
+      fontSize,
+      fontWeight,
+      fontStyle,
+      textDecoration,
+      textTransform,
+      color,
+      backgroundColor,
     };
   }, []);
 
