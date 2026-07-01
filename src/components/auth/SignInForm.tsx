@@ -48,7 +48,9 @@ export default function SignInForm() {
       if (authError) {
         setError(authError.message || "Tên đăng nhập hoặc mật khẩu không chính xác.");
       } else if (data?.user) {
-        router.push("/");
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get("redirect_to") || "/";
+        router.push(redirectTo);
       }
     } catch (err: any) {
       console.error("Login unexpected error:", err);

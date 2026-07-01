@@ -2,6 +2,7 @@
   "name": "free-nextjs-admin-dashboard",
   "version": "2.3.0",
   "private": true,
+  "packageManager": "pnpm@11.0.9",
   "scripts": {
     "dev": "next dev",
     "dev:webpack": "next dev --webpack",

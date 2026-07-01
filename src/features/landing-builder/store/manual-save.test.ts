@@ -11,7 +11,7 @@ describe("saveBuilderDraft", () => {
       pageId: "page-1",
       pageName: "Manual Save Page",
       sections: [],
-      pageSettings: { slug: "manual-save-page" },
+      pageSettings: { slug: "manual-save-page" }, 
       schemaVersion: 2,
     };
 
